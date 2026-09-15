@@ -33,41 +33,60 @@ const homePath = getRelativeLocaleUrl(locale, "");
     data-home-path={homePath}
     class="app-layout my-1"
   >
-    <section id="hero" class="border-border border-b pt-8 pb-6">
-      <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
-        Ayulog
-      </h1>
-      <a
-        target="_blank"
-        href={`${import.meta.env.BASE_URL.replace(/\/?$/, "/")}rss.xml`}
-        class="inline-block"
-        aria-label="RSS Feed"
-        title="RSS Feed"
-      >
-        <IconRss
-          width={20}
-          height={20}
-          class="stroke-accent scale-125 stroke-3 rtl:-rotate-90"
-        />
-        <span class="sr-only">RSS Feed</span>
-      </a>
-
-      <p>
-        记录技术、生活、游戏，以及各种折腾。
-      </p>
-      <p class="mt-2">
-        随便写写，慢慢积累。
-      </p>
-      {
-        socials.length > 0 && (
-          <div class="mt-4 flex max-sm:flex-col sm:items-center">
-            <div class="me-2 mb-1 whitespace-nowrap sm:mb-0">
-              {t.home.socialLinks}:
-            </div>
-            <Socials />
+    <section id="hero" class="border-border border-b pt-8 pb-8">
+      <div class="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-3">
+            <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
+              Ayulog
+            </h1>
+            <a
+              target="_blank"
+              href={`${import.meta.env.BASE_URL.replace(/\/?$/, "/")}rss.xml`}
+              class="inline-block"
+              aria-label="RSS Feed"
+              title="RSS Feed"
+            >
+              <IconRss
+                width={20}
+                height={20}
+                class="stroke-accent scale-125 stroke-3 rtl:-rotate-90"
+              />
+              <span class="sr-only">RSS Feed</span>
+            </a>
           </div>
-        )
-      }
+
+          <p class="max-w-xl text-lg leading-8">
+            记录生活、技术、游戏，以及一些慢慢积累的小事。
+          </p>
+          <p class="mt-2 text-muted-foreground">
+            随便写写，慢慢更新。
+          </p>
+          {
+            socials.length > 0 && (
+              <div class="mt-5 flex max-sm:flex-col sm:items-center">
+                <div class="me-2 mb-1 whitespace-nowrap sm:mb-0">
+                  {t.home.socialLinks}:
+                </div>
+                <Socials />
+              </div>
+            )
+          }
+        </div>
+
+        <div class="shrink-0 self-center sm:self-auto">
+          <div class="border-border bg-muted/40 rounded-full border p-2 shadow-sm">
+            <img
+              src={`${import.meta.env.BASE_URL.replace(/\/?$/, "/")}avatar.png`}
+              alt="Ayulog 像素小鸡头像"
+              width="160"
+              height="160"
+              class="h-32 w-32 rounded-full object-contain sm:h-40 sm:w-40"
+              loading="eager"
+            />
+          </div>
+        </div>
+      </div>
     </section>
 
     {

@@ -4,7 +4,7 @@ export default defineAstroPaperConfig({
   site: {
     url: "https://ayulog.github.io/",
     title: "Ayulog",
-    description: "记录技术、生活与折腾。",
+    description: "记录生活、技术、游戏，以及一些慢慢积累的小事。",
     author: "Ayulog",
     profile: "https://github.com/Ayulog",
     ogImage: "default-og.jpg",
