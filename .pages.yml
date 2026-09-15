@@ -1,0 +1,117 @@
+media:
+  - name: post_images
+    label: 文章图片
+    input: public/images/posts
+    output: /images/posts
+    categories: [image]
+    extensions: [jpg, jpeg, png, webp, gif, avif]
+    rename: safe
+
+content:
+  - name: posts
+    label: 文章
+    type: collection
+    path: src/content/posts
+    format: yaml-frontmatter
+    subfolders: false
+    filename: "{year}-{month}-{day}-{title}.md"
+    view:
+      primary: title
+      fields: [title, pubDatetime, draft, featured]
+      sort: [pubDatetime, title]
+      search: [title, description, tags]
+      default:
+        sort: pubDatetime
+        order: desc
+    fields:
+      - name: title
+        label: 标题
+        type: string
+        required: true
+        options:
+          maxlength: 120
+
+      - name: description
+        label: 摘要
+        type: text
+        required: true
+        description: 用一两句话介绍这篇文章。
+        options:
+          maxlength: 280
+
+      - name: pubDatetime
+        label: 发布时间
+        type: date
+        required: true
+        options:
+          time: true
+          format: "yyyy-MM-dd'T'HH:mm:ssxxx"
+
+      - name: modDatetime
+        label: 最后修改时间
+        type: date
+        default: ""
+        options:
+          time: true
+          format: "yyyy-MM-dd'T'HH:mm:ssxxx"
+
+      - name: tags
+        label: 标签
+        type: string
+        list: true
+        description: 例如 Docker、生活、GitHub。
+
+      - name: featured
+        label: 首页精选
+        type: boolean
+        default: false
+
+      - name: draft
+        label: 草稿
+        type: boolean
+        default: false
+        description: 打开后文章不会作为正式文章发布。
+
+      - name: ogImage
+        label: 封面图片
+        type: image
+        options:
+          media: post_images
+          rename: safe
+          categories: [image]
+
+      - name: canonicalURL
+        label: 原文链接
+        type: string
+        description: 如果文章最先发布在别处，可填写原文 URL；一般留空。
+
+      - name: hideEditPost
+        label: 隐藏“编辑文章”链接
+        type: boolean
+        default: false
+
+      - name: timezone
+        label: 单篇文章时区
+        type: string
+        description: 一般留空，使用站点默认时区。
+
+      - name: body
+        label: 正文
+        type: rich-text
+        required: true
+        options:
+          format: markdown
+          media: post_images
+          rename: safe
+          categories: [image]
+          switcher: true
+
+settings:
+  content:
+    merge: true
+  commit:
+    templates:
+      create: "content: 发布 {filename}"
+      update: "content: 更新 {filename}"
+      delete: "content: 删除 {filename}"
+      rename: "content: 重命名 {oldPath} -> {newPath}"
