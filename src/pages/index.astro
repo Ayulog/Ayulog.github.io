@@ -34,10 +34,14 @@ const homePath = getRelativeLocaleUrl(locale, "");
     class="app-layout my-1"
   >
     <section id="hero" class="border-border border-b pt-8 pb-8">
-      <div class="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        class="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-3">
-            <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
+            <h1
+              class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl"
+            >
               Ayulog
             </h1>
             <a
@@ -59,9 +63,7 @@ const homePath = getRelativeLocaleUrl(locale, "");
           <p class="max-w-xl text-lg leading-8">
             记录生活、技术、游戏，以及一些慢慢积累的小事。
           </p>
-          <p class="mt-2 text-muted-foreground">
-            随便写写，慢慢更新。
-          </p>
+          <p class="text-muted-foreground mt-2">随便写写，慢慢更新。</p>
           {
             socials.length > 0 && (
               <div class="mt-5 flex max-sm:flex-col sm:items-center">

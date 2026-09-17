@@ -50,7 +50,7 @@ content:
       - name: modDatetime
         label: 最后修改时间
         type: date
-        default: ""
+        description: 首次发布可以留空；更新文章后再填写。
         options:
           time: true
           format: "yyyy-MM-dd'T'HH:mm:ssxxx"

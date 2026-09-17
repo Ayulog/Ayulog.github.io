@@ -1,0 +1,5 @@
+# Match Prettier on Windows, macOS and Linux without altering binary assets.
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf

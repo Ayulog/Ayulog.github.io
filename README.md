@@ -98,6 +98,36 @@ Documentation can be read in two formats\_ _markdown_ & _blog post_.
 
 ## 👨🏻‍💻 Running Locally
 
+### 使用 Pages CMS 写作
+
+日常写作入口为 [Pages CMS](https://app.pagescms.org/)。连接 `Ayulog/Ayulog.github.io` 后，仓库根目录的 `.pages.yml` 提供文章表单和图片上传配置：文章保存到 `src/content/posts/`，图片保存到 `public/images/posts/`。
+
+保存到 `main` 会触发 GitHub Actions 构建并发布到 GitHub Pages。当前 CMS 的草稿开关默认关闭；暂不发布的文章请打开“草稿”。未来发布时间不会自动触发新的部署，需要在届时再次触发构建。
+
+发布时间必填，使用带时区的 ISO 日期；最后修改时间可以留空。文章校验兼容 YAML 日期与 CMS 保存的 ISO 字符串，并拒绝无效日期。`src/content/posts/2026-09-17-hello-world.md` 是保留为草稿的测试文章，包含中文、图片、列表和代码块。
+
+日期兼容检查：`node --test scripts/check-content-dates.mjs`。草稿不会出现在站点或搜索结果中；本地预览正文时可临时关闭草稿，检查后再恢复。
+
+### 本博客的本地开发
+
+本地环境用于修改主题、排查构建问题和预览，使用 Node.js 24 和 pnpm 11.3.0；包管理器版本已在 `package.json` 中声明，与 CI 保持一致。在已克隆的博客目录中执行：
+
+```sh
+pnpm install --frozen-lockfile
+pnpm build
+pnpm preview
+```
+
+Windows PowerShell、macOS 和 Linux 使用相同命令。构建依次执行类型检查、站点生成、Pagefind 索引生成和索引同步；最后一步由 `scripts/sync-pagefind.mjs` 使用 Node.js 完成，无需 `cp` 或 Git Bash。`dist/pagefind/` 用于发布，`public/pagefind/` 用于本地开发搜索，两者都是生成文件。
+
+生成索引前会先清理 `dist/pagefind/` 中的旧文件，避免删除或转回草稿的文章残留搜索片段。
+
+`.gitattributes` 将文本文件统一为 LF 换行，与 Prettier 配置一致，避免 Windows 检出为 CRLF 后出现整库格式检查失败。
+
+日常写作运行 `pnpm dev`；文章变化后重新构建可更新搜索索引。本博客推送 `main` 会触发 GitHub Pages 部署，本地构建与预览不会发布。
+
+### 从上游主题新建站点
+
 You can start using this project locally by running the following command in your desired directory:
 
 ```bash
