@@ -1,0 +1,13 @@
+# Generic example based on the upstream MT Photos installation guide.
+services:
+  mtphotos:
+    image: mtphotos/mt-photos:latest
+    restart: unless-stopped
+    ports:
+      - 8063:8063
+    volumes:
+      - ./config:/config
+      - ./upload:/upload
+      - /path/to/photos:/photos
+    environment:
+      TZ: Asia/Shanghai

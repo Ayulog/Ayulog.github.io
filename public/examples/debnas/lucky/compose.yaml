@@ -1,0 +1,8 @@
+# Generic Linux host-network example based on the upstream Lucky guide.
+services:
+  lucky:
+    image: gdy666/lucky:v2
+    restart: always
+    network_mode: host
+    volumes:
+      - ./config:/app/conf

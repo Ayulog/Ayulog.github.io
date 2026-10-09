@@ -1,0 +1,33 @@
+# Upstream CMS example, with credentials supplied through .env.
+services:
+  cloud-media-sync:
+    # Retained from the upstream CMS installation example.
+    privileged: true
+    container_name: cloud-media-sync
+    image: imaliang/cloud-media-sync:latest
+    restart: always
+    volumes:
+      - ./config:/config
+      - ./logs:/logs
+      - ./cache:/var/cache/nginx/emby
+      - ${STRM_ROOT:?Set STRM_ROOT in .env}:/media
+    ports:
+      - 9527:9527
+      - 9096:9096
+    environment:
+      PUID: ${PUID:?Set PUID in .env}
+      PGID: ${PGID:?Set PGID in .env}
+      UMASK: "022"
+      TZ: Asia/Shanghai
+      RUN_ENV: online
+      ADMIN_USERNAME: ${CMS_ADMIN_USERNAME:?Set CMS_ADMIN_USERNAME in .env}
+      ADMIN_PASSWORD: ${CMS_ADMIN_PASSWORD:?Set CMS_ADMIN_PASSWORD in .env}
+      CMS_API_TOKEN: ${CMS_API_TOKEN:?Set CMS_API_TOKEN in .env}
+      EMBY_HOST_PORT: http://emby:8096
+      EMBY_API_KEY: ${EMBY_API_KEY:?Set EMBY_API_KEY in .env}
+      DONATE_CODE: ${CMS_DONATE_CODE:?Set CMS_DONATE_CODE in .env}
+    networks:
+      - media
+networks:
+  media:
+    external: true

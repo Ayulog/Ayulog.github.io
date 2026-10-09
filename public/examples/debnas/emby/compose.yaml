@@ -1,0 +1,22 @@
+# Basic Emby example with local media and STRM libraries.
+services:
+  emby:
+    image: emby/embyserver:latest
+    container_name: embyserver
+    restart: on-failure
+    environment:
+      UID: ${EMBY_UID:?Set EMBY_UID in .env}
+      GID: ${EMBY_GID:?Set EMBY_GID in .env}
+      GIDLIST: ${EMBY_GIDLIST:?Set EMBY_GIDLIST in .env}
+    volumes:
+      - ./config:/config
+      - ${MEDIA_ROOT:?Set MEDIA_ROOT in .env}/library:/data/library:ro
+      - ${STRM_ROOT:?Set STRM_ROOT in .env}:/strm:ro
+    ports:
+      - 8096:8096
+      - 8920:8920
+    networks:
+      - media
+networks:
+  media:
+    external: true

@@ -1,0 +1,17 @@
+# Copy to ./config/config.yaml and replace every REPLACE_* value.
+# This direct-only example contains no subscription, provider, or proxy node.
+mixed-port: 7890
+allow-lan: true
+bind-address: "*"
+authentication:
+  - "REPLACE_PROXY_USER:REPLACE_PROXY_PASSWORD"
+mode: rule
+log-level: info
+external-controller: 0.0.0.0:9090
+secret: "REPLACE_WITH_A_LONG_RANDOM_SECRET"
+external-controller-cors:
+  allow-origins:
+    - "http://NAS_IP:8080"
+  allow-private-network: true
+rules:
+  - MATCH,DIRECT

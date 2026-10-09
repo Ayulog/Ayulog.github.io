@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="552" viewBox="0 0 440 552" role="img" aria-labelledby="title desc" lang="zh-CN">
+  <title id="title">DebNAS 本地下载后整理到网盘的观影流程</title>
+  <desc id="desc">四步流程：本地 BT 下载，视频保存在 HDD 并保留做种；MoviePilot V3 按规则将文件复制到网盘，并确认云端完成；CMS 同步已整理目录并生成 STRM；Emby 入库后由播放器按 STRM 取得云端视频。</desc>
+  <rect width="440" height="552" rx="18" fill="#f3f2e9"/>
+  <g font-family="system-ui, 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif">
+    <text x="24" y="42" fill="#283f49" font-size="27" font-weight="700">本地下载 → 网盘路线</text>
+    <text x="24" y="70" fill="#52666a" font-size="18">先下载到本地，再整理到云端</text>
+
+    <rect x="20" y="90" width="400" height="88" rx="12" fill="#dfe7eb"/>
+    <circle cx="48" cy="121" r="15" fill="#4b6675"/>
+    <text x="48" y="127" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">1</text>
+    <text x="78" y="128" fill="#2d4858" font-size="24" font-weight="650">本地 BT 下载</text>
+    <text x="78" y="157" fill="#425a67" font-size="18">HDD 下载，保留做种</text>
+
+    <path d="M220 184v16m-5-5 5 5 5-5" fill="none" stroke="#7c8b79" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="20" y="206" width="400" height="88" rx="12" fill="#e1e9df"/>
+    <circle cx="48" cy="237" r="15" fill="#506d56"/>
+    <text x="48" y="243" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">2</text>
+    <text x="78" y="244" fill="#2f4e3b" font-size="24" font-weight="650">MoviePilot V3 → 网盘</text>
+    <text x="78" y="273" fill="#41574a" font-size="18">按规则复制；确认云端完成</text>
+
+    <path d="M220 300v16m-5-5 5 5 5-5" fill="none" stroke="#7c8b79" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="20" y="322" width="400" height="88" rx="12" fill="#eee5ce"/>
+    <circle cx="48" cy="353" r="15" fill="#806a3f"/>
+    <text x="48" y="359" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">3</text>
+    <text x="78" y="360" fill="#5f4b29" font-size="24" font-weight="650">CMS 生成 STRM</text>
+    <text x="78" y="389" fill="#6a593b" font-size="18">同步已整理目录</text>
+
+    <path d="M220 416v16m-5-5 5 5 5-5" fill="none" stroke="#7c8b79" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="20" y="438" width="400" height="88" rx="12" fill="#e1e9df"/>
+    <circle cx="48" cy="469" r="15" fill="#506d56"/>
+    <text x="48" y="475" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">4</text>
+    <text x="78" y="476" fill="#2f4e3b" font-size="24" font-weight="650">Emby → 播放器</text>
+    <text x="78" y="505" fill="#41574a" font-size="18">按 STRM 取得云端视频</text>
+  </g>
+</svg>

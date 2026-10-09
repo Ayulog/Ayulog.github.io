@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="552" viewBox="0 0 440 552" role="img" aria-labelledby="title desc" lang="zh-CN">
+  <title id="title">DebNAS 本地硬盘观影流程</title>
+  <desc id="desc">四步流程：PT 或公网 BT 订阅命中或手动添加；qBittorrent 或 Transmission 下载到本地并保留做种；MoviePilot V3 识别、整理和刮削；Emby 入库后由播放器播放本地文件。</desc>
+  <rect width="440" height="552" rx="18" fill="#f3f2e9"/>
+  <g font-family="system-ui, 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif">
+    <text x="24" y="42" fill="#283f49" font-size="27" font-weight="700">本地硬盘路线</text>
+    <text x="24" y="70" fill="#52666a" font-size="18">视频保存在本地数据盘</text>
+
+    <rect x="20" y="90" width="400" height="88" rx="12" fill="#e1e9df"/>
+    <circle cx="48" cy="121" r="15" fill="#506d56"/>
+    <text x="48" y="127" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">1</text>
+    <text x="78" y="128" fill="#2f4e3b" font-size="24" font-weight="650">PT / 公网 BT</text>
+    <text x="78" y="157" fill="#41574a" font-size="18">订阅命中或手动添加</text>
+
+    <path d="M220 184v16m-5-5 5 5 5-5" fill="none" stroke="#7c8b79" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="20" y="206" width="400" height="88" rx="12" fill="#dfe7eb"/>
+    <circle cx="48" cy="237" r="15" fill="#4b6675"/>
+    <text x="48" y="243" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">2</text>
+    <text x="78" y="244" fill="#2d4858" font-size="21" font-weight="650">qBittorrent / Transmission</text>
+    <text x="78" y="273" fill="#425a67" font-size="18">下载到 HDD、保留做种</text>
+
+    <path d="M220 300v16m-5-5 5 5 5-5" fill="none" stroke="#7c8b79" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="20" y="322" width="400" height="88" rx="12" fill="#eee5ce"/>
+    <circle cx="48" cy="353" r="15" fill="#806a3f"/>
+    <text x="48" y="359" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">3</text>
+    <text x="78" y="360" fill="#5f4b29" font-size="24" font-weight="650">MoviePilot V3</text>
+    <text x="78" y="389" fill="#6a593b" font-size="18">识别、整理、刮削</text>
+
+    <path d="M220 416v16m-5-5 5 5 5-5" fill="none" stroke="#7c8b79" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="20" y="438" width="400" height="88" rx="12" fill="#e1e9df"/>
+    <circle cx="48" cy="469" r="15" fill="#506d56"/>
+    <text x="48" y="475" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">4</text>
+    <text x="78" y="476" fill="#2f4e3b" font-size="24" font-weight="650">Emby → 播放器</text>
+    <text x="78" y="505" fill="#41574a" font-size="18">本地文件入库与播放</text>
+  </g>
+</svg>

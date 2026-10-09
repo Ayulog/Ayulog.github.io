@@ -1,0 +1,25 @@
+# Upstream ports and Web UI; /data is this tutorial's shared media path.
+services:
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID:?Set PUID in .env}
+      PGID: ${PGID:?Set PGID in .env}
+      TZ: Etc/UTC
+      USER: ${TR_USER:?Set TR_USER in .env}
+      PASS: ${TR_PASSWORD:?Set TR_PASSWORD in .env}
+    volumes:
+      - ./config:/config
+      - ./watch:/watch
+      - ${MEDIA_ROOT:?Set MEDIA_ROOT in .env}:/data
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    networks:
+      - media
+networks:
+  media:
+    external: true

@@ -1,0 +1,25 @@
+# General example based on the upstream MoviePilot V3 beginner setup.
+services:
+  moviepilot:
+    image: jxxghp/moviepilot-v3:latest
+    container_name: moviepilot-v3
+    restart: always
+    stop_grace_period: 120s
+    ports:
+      - 3000:3000
+      - 3001:3001
+    volumes:
+      - ./config:/config
+      - ${MEDIA_ROOT:?Set MEDIA_ROOT in .env}:/data
+      - ${CLOUD_MEDIA_ROOT:?Set CLOUD_MEDIA_ROOT in .env}:/cloud
+    environment:
+      NGINX_PORT: "3000"
+      PORT: "3001"
+      PUID: ${PUID:?Set PUID in .env}
+      PGID: ${PGID:?Set PGID in .env}
+      TZ: Asia/Shanghai
+    networks:
+      - media
+networks:
+  media:
+    external: true

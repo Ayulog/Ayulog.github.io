@@ -1,0 +1,15 @@
+# Basic explicit-proxy example; prepare ./config/config.yaml before starting.
+services:
+  mihomo:
+    image: ghcr.io/metacubex/mihomo:latest
+    restart: unless-stopped
+    ports:
+      - 7890:7890
+      - 9090:9090
+    volumes:
+      - ./config:/root/.config/mihomo
+  metacubexd:
+    image: ghcr.io/metacubex/metacubexd:latest
+    restart: unless-stopped
+    ports:
+      - 8080:80
