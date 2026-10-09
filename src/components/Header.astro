@@ -11,11 +11,17 @@ import LinkButton from "./LinkButton.astro";
 import { stripBase, stripLocale } from "@/utils/withBase";
 import { useTranslations } from "@/i18n";
 import config from "@/config";
+import { mediaCategories } from "@/data/media";
+import { setupCategories } from "@/data/setup";
 
 const { site, features } = config;
 
 const locale = Astro.currentLocale ?? config.site.lang;
 const t = useTranslations(locale);
+const dropdownGroups = [
+  { slug: "setup", label: "装机", categories: setupCategories },
+  { slug: "media", label: "Media", categories: mediaCategories },
+];
 
 // Strip the base prefix so isActive comparisons work regardless of deploy subdirectory.
 // e.g. with base "/blog": "/blog/posts/slug" → "/posts/slug"
@@ -72,20 +78,83 @@ const isActive = (path: string) => {
       </button>
       <ul
         id="menu-items"
-        class="[&>li>a]:hover:text-accent mt-4 hidden w-44 grid-cols-2 place-content-center gap-2 sm:mt-0 sm:flex sm:w-auto sm:gap-x-5 sm:gap-y-0 sm:[&>li]:h-8 [&>li>a]:block [&>li>a]:px-4 [&>li>a]:py-3 [&>li>a]:text-center [&>li>a]:font-medium sm:[&>li>a]:px-2 sm:[&>li>a]:py-1"
+        class="[&>li>a]:hover:text-accent mt-4 hidden w-full grid-cols-2 place-content-center gap-2 sm:mt-0 sm:flex sm:w-auto sm:gap-x-2 sm:gap-y-0 sm:[&>li]:h-8 [&>li>a]:block [&>li>a]:px-4 [&>li>a]:py-3 [&>li>a]:text-center [&>li>a]:font-medium sm:[&>li>a]:px-2 sm:[&>li>a]:py-1"
       >
         <li class="col-span-2">
           <a
-            href={getRelativeLocaleUrl(locale, "posts")}
-            class:list={{ "active-nav": isActive("/posts") }}
+            href={getRelativeLocaleUrl(locale, "")}
+            class:list={{ "active-nav": currentPath === "/" }}
+            aria-current={currentPath === "/" ? "page" : undefined}
           >
-            {t.nav.posts}
+            {t.nav.home}
           </a>
         </li>
+        {
+          dropdownGroups.map(group => (
+            <li class="col-span-2">
+              <details
+                id={`${group.slug}-menu`}
+                data-nav-dropdown
+                name="nav-dropdowns"
+                class="relative"
+              >
+                <summary
+                  class:list={[
+                    "hover:text-accent flex cursor-pointer list-none items-center justify-center gap-1.5 px-4 py-3 font-medium sm:px-2 sm:py-1",
+                    { "active-nav text-accent": isActive(`/${group.slug}`) },
+                  ]}
+                >
+                  {group.label}
+                  <svg
+                    aria-hidden="true"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="nav-chevron motion-safe:transition-transform"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </summary>
+                <ul class="nav-submenu bg-background relative z-20 mx-2 mb-2 grid gap-1 p-2 sm:absolute sm:start-0 sm:top-full sm:mx-0 sm:mt-3 sm:mb-0 sm:w-44">
+                  {group.categories.map(category => (
+                    <li>
+                      <a
+                        href={getRelativeLocaleUrl(
+                          locale,
+                          `${group.slug}/${category.slug}`
+                        )}
+                        class:list={[
+                          "hover:text-accent block px-4 py-2.5 text-center sm:text-start",
+                          {
+                            "active-nav text-accent":
+                              currentPath === `/${group.slug}/${category.slug}`,
+                          },
+                        ]}
+                        aria-current={
+                          currentPath === `/${group.slug}/${category.slug}`
+                            ? "page"
+                            : undefined
+                        }
+                      >
+                        {category.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </li>
+          ))
+        }
         <li class="col-span-2">
           <a
             href={getRelativeLocaleUrl(locale, "tags")}
             class:list={{ "active-nav": isActive("/tags") }}
+            aria-current={currentPath === "/tags" ? "page" : undefined}
           >
             {t.nav.tags}
           </a>
@@ -94,6 +163,7 @@ const isActive = (path: string) => {
           <a
             href={getRelativeLocaleUrl(locale, "about")}
             class:list={{ "active-nav": isActive("/about") }}
+            aria-current={currentPath === "/about" ? "page" : undefined}
           >
             {t.nav.about}
           </a>
@@ -164,7 +234,36 @@ const isActive = (path: string) => {
   </div>
 </header>
 
+<style>
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:focus-visible {
+    outline: 2px dashed var(--accent);
+    outline-offset: 2px;
+  }
+
+  details[open] .nav-chevron {
+    transform: rotate(180deg);
+  }
+
+  details:not([open]) .nav-submenu {
+    display: none;
+  }
+</style>
+
 <script>
+  function closeDropdowns(exceptTarget?: Node | null) {
+    document
+      .querySelectorAll<HTMLDetailsElement>("[data-nav-dropdown]")
+      .forEach(dropdown => {
+        if (!exceptTarget || !dropdown.contains(exceptTarget)) {
+          dropdown.open = false;
+        }
+      });
+  }
+
   function toggleNav() {
     const menuBtn = document.querySelector<HTMLButtonElement>("#menu-btn");
     const menuItems = document.querySelector("#menu-items");
@@ -186,8 +285,43 @@ const isActive = (path: string) => {
       menuItems.classList.toggle("grid");
       menuIcon.classList.toggle("hidden");
       closeIcon.classList.toggle("hidden");
+      if (openMenu) {
+        closeDropdowns();
+      }
     });
   }
+
+  // Resolve the current elements on every event, including after page transitions.
+  document.addEventListener("click", event => {
+    if (event.target instanceof Node) {
+      closeDropdowns(event.target);
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Tab") {
+      // Let focus move first. Pointer clicks close in the click handler so
+      // collapsing the mobile submenu cannot move a button before mouseup.
+      requestAnimationFrame(() => {
+        closeDropdowns(document.activeElement);
+      });
+      return;
+    }
+    if (event.key !== "Escape") return;
+    const openDropdown = document.querySelector<HTMLDetailsElement>(
+      "[data-nav-dropdown][open]"
+    );
+    if (openDropdown) {
+      openDropdown.open = false;
+      openDropdown.querySelector("summary")?.focus();
+      return;
+    }
+    const menuBtn = document.querySelector<HTMLButtonElement>("#menu-btn");
+    if (menuBtn?.getAttribute("aria-expanded") === "true") {
+      menuBtn.click();
+      menuBtn.focus();
+    }
+  });
 
   function handleSkipToContent() {
     const skipLink = document.getElementById("skip-to-content");

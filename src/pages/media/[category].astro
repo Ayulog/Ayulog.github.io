@@ -1,0 +1,99 @@
+---
+import { getCollection } from "astro:content";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import type { GetStaticPaths } from "astro";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Main from "@/components/Main.astro";
+import Card from "@/components/Card.astro";
+import Footer from "@/components/Footer.astro";
+import {
+  mediaCategories,
+  matchesMediaCategory,
+  type MediaCategory,
+} from "@/data/media";
+import { getSortedPosts } from "@/utils/getSortedPosts";
+import config from "@/config";
+
+export const getStaticPaths = (() =>
+  mediaCategories.map(category => ({
+    params: { category: category.slug },
+    props: { category },
+  }))) satisfies GetStaticPaths;
+
+type Props = { category: MediaCategory };
+
+const { category } = Astro.props;
+const locale = Astro.currentLocale ?? config.site.lang;
+const posts = getSortedPosts(await getCollection("posts")).filter(({ data }) =>
+  matchesMediaCategory(data.tags, category)
+);
+---
+
+<Layout
+  title={`${category.label} · Media | ${config.site.title}`}
+  description={category.description}
+>
+  <Header />
+
+  <nav class="app-layout mt-8 mb-1" aria-label="面包屑导航">
+    <ol class="text-muted-foreground flex flex-wrap items-center gap-x-2">
+      <li>
+        <a href={getRelativeLocaleUrl(locale, "")} class="hover:text-accent">
+          首页
+        </a>
+      </li>
+      <li aria-hidden="true">&raquo;</li>
+      <li>
+        <a
+          href={getRelativeLocaleUrl(locale, "media")}
+          class="hover:text-accent"
+        >
+          Media
+        </a>
+      </li>
+      <li aria-hidden="true">&raquo;</li>
+      <li aria-current="page">{category.label}</li>
+    </ol>
+  </nav>
+
+  <Main pageTitle={category.label} pageDesc={category.description}>
+    <nav class="mb-8" aria-label="Media 分类">
+      <ul class="flex flex-wrap gap-x-6 gap-y-2">
+        {
+          mediaCategories.map(item => (
+            <li>
+              <a
+                href={getRelativeLocaleUrl(locale, `media/${item.slug}`)}
+                aria-current={item.slug === category.slug ? "page" : undefined}
+                class:list={[
+                  "hover:text-accent inline-block py-3 text-sm transition-colors",
+                  item.slug === category.slug ? "active-nav text-accent" : "",
+                ]}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    {
+      posts.length > 0 ? (
+        <ul>
+          {posts.map(post => (
+            <Card {...post} />
+          ))}
+        </ul>
+      ) : (
+        <div class="py-8">
+          <p class="font-medium">这里暂时还没有内容。</p>
+          <p class="text-muted-foreground mt-2">慢慢整理，陆续更新。</p>
+        </div>
+      )
+    }
+  </Main>
+
+  <Footer />
+</Layout>
