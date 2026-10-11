@@ -15,7 +15,7 @@ tags:
 
 CloudDrive2 将网盘显示成 NAS 目录或 Windows 盘符，供播放器和其他软件读取。文件仍在远端，打开时需要网络；目录里看得到文件，不代表本地已有离线副本。
 
-支持的网盘可以直接添加。已经在 AList 配好存储时，也可以把 [AList 的 WebDAV](/posts/2026-10-10-alist-guide/) 接进来，再挂载成本地路径。其他家庭影音工具放在 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+支持的网盘可以直接添加。已经在 AList 配好存储时，也可以把 [AList 的 WebDAV](/posts/2026-10-10-alist-guide/) 接进来，再挂载成本地路径。其他家庭影音工具放在 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 可写挂载中的删除、移动和覆盖可能直接修改网盘原文件。第一次只挂一个测试目录，确认路径和读写范围后再交给自动整理程序。
 

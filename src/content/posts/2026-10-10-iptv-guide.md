@@ -3,6 +3,7 @@ title: IPTV：在 NAS 上部署 Allinone 与直播源整理服务
 description: 以绿联 NAS 为例，整理 Allinone 的 Docker Compose 部署、鉴权准备、M3U 订阅、allinone_format 频道分组与格式转换，以及播放器接入、更新和常见故障排查。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
+modDatetime: "2026-10-11T00:00:00+08:00"
 draft: false
 setupCategory: nas
 tags:
@@ -16,9 +17,11 @@ tags:
 
 这里记录 **Allinone 生成直播订阅 → allinone_format 整理频道 → 播放器读取列表** 的接法。电视、电脑和平板共用一个入口，频道分组在服务端维护。
 
+想先找现成直播列表、导入播放器和配置节目单，可以看 [IPTVindex：找直播源、接入播放器与节目单](/posts/2026-10-11-iptv-index/)。
+
 Allinone 镜像页面指向的说明短链在核对时已失效，当前完整鉴权参数无法确认。下文保留待填授权参数的模板，具体频道也未验证；拿到维护者当前的有效配置后才能继续部署。
 
-Docker 环境见 [Docker 官方安装文档](https://docs.docker.com/engine/install/)，其他播放器和媒体服务见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+Docker 环境见 [Docker 官方安装文档](https://docs.docker.com/engine/install/)，其他播放器和媒体服务见 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 目录
 
@@ -122,7 +125,7 @@ docker compose logs --tail=100 allinone
 http://NAS_IP:35455/tv.m3u
 ```
 
-将 `NAS_IP` 换成 NAS 的局域网地址，例如 `192.168.1.10`。先在同一局域网的电脑上访问，再导入播放器的“网络串流”“订阅源”或类似入口。
+将 `NAS_IP` 换成 NAS 的局域网地址。先在同一局域网的电脑上访问，再导入播放器的“网络串流”“订阅源”或类似入口。
 
 验证分三步：
 

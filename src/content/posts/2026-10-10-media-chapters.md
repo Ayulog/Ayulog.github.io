@@ -2,9 +2,10 @@
 mediaCategory: diy
 mediaRole: guide
 title: 章节的处理
-description: DIY 入门第三篇：提取章节、获取名称与调整时间，再用 MKVToolNix 写入 MKV，或用 tsMuxer、BDFix Pro 处理蓝光结构中的章节，并检查最终跳转结果。
+description: 提取章节、获取名称与调整时间，再用 MKVToolNix 写入 MKV，或用 tsMuxer、BDFix Pro 处理蓝光结构中的章节，并检查最终跳转结果。
 author: Ayulog
 pubDatetime: "2026-10-10T22:00:00+08:00"
+modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 tags:
   - 章节
@@ -16,7 +17,7 @@ tags:
 
 前两篇分别介绍了[蓝光碟片与播放列表](/posts/2026-10-10-understanding-blu-ray/)、[HDR 与杜比视界](/posts/2026-10-10-understanding-hdr/)。从这一篇开始，把这些概念用到文件整理里：先提取章节，再补名称、调整时间，最后写入成品。
 
-用到的软件都放在 [DIY 常用软件与资料](/posts/2026-10-10-media-diy-software/)。下面按处理顺序说明各工具的作用，不需要把所有软件都装一遍。公开资料核对到 **2026 年 10 月 10 日**；正文以普通线性播放的电影章节为主，多版本与 Ordered Chapters 另行区分。
+用到的软件都放在 [DIY 总篇：流程、软件与教程](/posts/2026-10-10-media-diy-software/)。下面按处理顺序说明各工具的作用，不需要把所有软件都装一遍。公开资料核对到 **2026 年 10 月 10 日**；正文以普通线性播放的电影章节为主，多版本与 Ordered Chapters 另行区分。
 
 ## 目录
 
@@ -329,7 +330,7 @@ mkvextract "movie.chaptered.mkv" chapters "chapters-check.xml"
 1. **列表完整**：有没有旧章节与新章节重复出现，是否出现不需要的多个 Edition。
 2. **名称正确**：中文、英文与特殊字符是否正常，顺序是否和菜单对应。
 3. **位置正确**：抽查开头、中间、结尾，以及调整过或跨分支的章节，观察是否跳到对应场景。
-4. **播放正常**：音画同步、字幕、所需轨道与 HDR 播放状态是否符合预期。HDR 相关检查见[第二篇](/posts/2026-10-10-understanding-hdr/#diy-时哪些信息不能随便丢)。
+4. **播放正常**：音画同步、字幕、所需轨道与 HDR 播放状态是否符合预期。HDR 相关检查见[HDR 说明](/posts/2026-10-10-understanding-hdr/#diy-时哪些信息不能随便丢)。
 
 播放器的跳转实现可能受关键帧与解码策略影响。轻微的落点差异不应立即通过修改章节时间“补偿”；可以换一个播放器交叉核对，再判断是章节本身还是播放器寻址行为。
 
@@ -348,7 +349,7 @@ mkvextract "movie.chaptered.mkv" chapters "chapters-check.xml"
 
 FFmpeg 使用的 `FFMETADATA1` 章节文本也不是这里的 OGM 文本；它有自己的 `[CHAPTER]`、`TIMEBASE`、`START`、`END` 等字段，见[官方元数据格式说明][ffmpeg-metadata]。扩展名同样是 `.txt`，并不代表可以直接互换。
 
-下一篇[蓝光原盘 Remux](/posts/2026-10-10-blu-ray-remux/)，把章节与视频、音轨、字幕一起整理，并说明 Dolby Vision 原始数据保留和兼容转换的区别。
+继续处理时可看[蓝光原盘 Remux](/posts/2026-10-10-blu-ray-remux/)，把章节与视频、音轨、字幕一起整理，并说明 Dolby Vision 原始数据保留和兼容转换的区别。
 
 ## 参考资料
 

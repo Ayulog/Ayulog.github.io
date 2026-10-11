@@ -15,7 +15,7 @@ tags:
 
 Dockge 可以在网页里编辑 `compose.yaml`、部署应用和查看日志。一个项目放一个目录，文件仍留在磁盘上，随时能回到终端用 Compose 命令维护。
 
-返回 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
+返回 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
 
 ## 开始之前
 

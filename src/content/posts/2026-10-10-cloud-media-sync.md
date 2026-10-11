@@ -16,7 +16,7 @@ tags:
 
 [Cloud-Media-Sync（CMS）][cms-docs] 读取网盘目录，在本地生成 STRM，让 Emby 扫描这些小文件，播放时再获取远端视频。这里记录 **115 → CMS → Emby** 的部署、同步与 302 播放。
 
-如果需要本地文件系统路径，可以走 [CloudDrive2 挂载](/posts/2026-10-10-cloud-storage-local-mount/)；两种接法不要混用目录。Emby 自身配置见 [Emby 教程](/posts/2026-10-10-emby-guide/)，其他工具见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+如果需要本地文件系统路径，可以走 [CloudDrive2 挂载](/posts/2026-10-10-cloud-storage-local-mount/)；两种接法不要混用目录。Emby 自身配置见 [Emby 教程](/posts/2026-10-10-emby-guide/)，其他工具见 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 当前官方安装说明将 `DONATE_CODE` 列为必填，并限定个人测试、局域网使用，禁止公网部署及商业行为。部署前核对[当前授权条件][cms-install]，旧教程里没有捐赠码的 Compose 不能直接沿用。
 
@@ -173,7 +173,7 @@ docker network create media
 
 本站现有的 CMS 与 Emby 模板已经声明这个外部网络。已有其他 Emby Compose 时，在保留原有卷、端口和设备设置的基础上加入共同网络；两个独立的 Compose 项目不会自动共享默认网络。
 
-如果 Emby 使用 host 模式、原生套件，或暂时不方便加入该网络，就把 `EMBY_HOST_PORT` 改为 CMS 容器能够访问的 NAS 局域网地址，例如 `http://192.168.1.20:8096`。这是示例 IP，应替换为实际地址。不要在桥接容器中填写 `http://127.0.0.1:8096`，它指向 CMS 容器自己。
+如果 Emby 使用 host 模式、原生套件，或暂时不方便加入该网络，就把 `EMBY_HOST_PORT` 改为 CMS 容器能够访问的 NAS 局域网地址，例如 `http://NAS_IP:8096`。这是示例地址，应替换为实际地址。不要在桥接容器中填写 `http://127.0.0.1:8096`，它指向 CMS 容器自己。
 
 ### 启动并区分三个入口
 

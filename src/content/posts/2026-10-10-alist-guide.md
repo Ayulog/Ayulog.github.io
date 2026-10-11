@@ -15,7 +15,7 @@ tags:
 
 AList 把多个存储放到同一棵目录树里，提供网页浏览和 WebDAV 访问。它不会把网盘容量合成一块本地硬盘，添加存储也不会自动建立 NAS 文件系统挂载点。
 
-播放器支持 WebDAV 时，可以直接连接 AList；只认本地路径的软件，再经 [CloudDrive2](/posts/2026-10-10-cloud-storage-local-mount/) 挂载。其他软件见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+播放器支持 WebDAV 时，可以直接连接 AList；只认本地路径的软件，再经 [CloudDrive2](/posts/2026-10-10-cloud-storage-local-mount/) 挂载。其他软件见 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 目录
 

@@ -15,7 +15,7 @@ tags:
 
 Emby 把 NAS 上的电影和剧集整理成海报墙，保存用户、观看记录和播放进度。这里使用 LinuxServer 的 Docker 镜像，记录目录权限、首次配置、硬件转码，以及手机、电视和电脑端的客户端选择。
 
-MoviePilot 整理本地文件、CMS 生成 STRM 后，都可以交给 Emby 入库。完整接法见 [DebNAS 自动观影流程](/posts/2026-10-09-debnas-media-workflow/)；其他媒体库与配套工具放在 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+MoviePilot 整理本地文件、CMS 生成 STRM 后，都可以交给 Emby 入库。完整接法见 [DebNAS 自动观影流程](/posts/2026-10-09-debnas-media-workflow/)；其他媒体库与配套工具放在 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 目录
 

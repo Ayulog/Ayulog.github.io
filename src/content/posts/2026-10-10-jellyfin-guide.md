@@ -14,7 +14,7 @@ tags:
 
 Jellyfin 的服务端和官方客户端免费，账号由自己的服务器管理。Docker 部署最容易卡住的地方是媒体目录权限和核显设备权限，下面分开配置。
 
-本文使用 Linux 上的官方镜像。Windows / macOS 按官方建议使用原生安装，不把 Docker Desktop 的路径、挂载和 GPU 行为当作与 NAS 相同。相关工具见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+本文使用 Linux 上的官方镜像。Windows / macOS 按官方建议使用原生安装，不把 Docker Desktop 的路径、挂载和 GPU 行为当作与 NAS 相同。相关工具见 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 目录
 

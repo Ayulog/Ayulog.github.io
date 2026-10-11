@@ -230,5 +230,4 @@ sudo journalctl -u seedbox-qbittorrent-seedbox.service -n 100 --no-pager
 - [本次核对的 Install.sh](https://github.com/jerry048/Dedicated-Seedbox/blob/97470df47a948b0f39082e7679c630eaeff438d1/Install.sh)、[qBittorrent 组件](https://github.com/jerry048/Dedicated-Seedbox/blob/97470df47a948b0f39082e7679c630eaeff438d1/lib/components/qbittorrent.bash)与[环境检测](https://github.com/jerry048/Dedicated-Seedbox/blob/97470df47a948b0f39082e7679c630eaeff438d1/lib/core/detect.bash)：参数、版本选择、配置写入与系统要求。
 - [Hetzner 官网](https://www.hetzner.com/)、[官方流量说明](https://docs.hetzner.com/robot/general/traffic/)、[服务条款](https://www.hetzner.com/legal/terms-and-conditions/)与[系统政策](https://www.hetzner.com/legal/system-policies/)：产品及流量政策以订单和当前官方条款为准。
 - [autobrr 过滤规则](https://autobrr.com/filters/)与[autoremove-torrents 文档](https://autoremove-torrents.readthedocs.io/en/latest/intro.html)：自动筛选与删除功能的边界。
-- [语雀：VPS 安装刷流环境](https://www.yuque.com/liyaohui-4vwmf/kb/ut79tysu7a79ysby#Cd381)：本次访问只能确认标题，未取得可核验正文，因此没有据此复述安装步骤。
 - [Hostloc 手机版入口](https://hostloc.com/misc.php?mod=mobile)：社区入口，不作为供应商政策或性能结论的依据。

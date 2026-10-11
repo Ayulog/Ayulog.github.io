@@ -5,6 +5,7 @@ title: 音频处理篇：音轨识别、提取与编码
 description: 从 MediaInfo 识别蓝光与视频文件中的音轨，按用途选择直通、提取核心、无损转换或重新编码，并记录 QAAC 与 deew 的当前使用入口。
 author: Ayulog
 pubDatetime: "2026-10-11T10:00:00+08:00"
+modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 tags:
   - 音频
@@ -19,7 +20,7 @@ tags:
 
 音频处理先要回答一个问题：**成品需要保留原始码流，还是要生成另一种编码？** 只把轨道从容器中取出、或在不改变编码的情况下重新封装，属于分流和封装；把 TrueHD 解码成 PCM，再编码为 DTS、AAC 或 Dolby Digital Plus，则是一次新的有损或无损转换。两条路线的输入、依赖和验收方式不同，不能只看文件扩展名判断结果。
 
-这篇按“识别来源 → 选择路线 → 处理 → 封装 → 回看”记录常见做法。工具入口见[音频常用软件与资料](/posts/2026-10-10-audio-software/)，蓝光播放列表、分流与 Remux 的上下文见[蓝光原盘 Remux](/posts/2026-10-10-blu-ray-remux/)。deew 的命令和依赖依据项目 README 于 **2026 年 10 月 11 日**核对；QAAC 的中文参数参考为 [NAZOrip 的教程](https://www.nazorip.site/archives/44/)，页面标题标注 **2026.8 更新**。版本、编码器和操作界面会变化，正式处理前仍要查看手头版本的帮助信息。
+这篇按“识别来源 → 选择路线 → 处理 → 封装 → 回看”记录常见做法。工具入口见[音频总篇：流程、软件与教程](/posts/2026-10-10-audio-software/)，蓝光播放列表、分流与 Remux 的上下文见[蓝光原盘 Remux](/posts/2026-10-10-blu-ray-remux/)。deew 的命令和依赖依据项目 README 于 **2026 年 10 月 11 日**核对；QAAC 的中文参数参考为 [NAZOrip 的教程](https://www.nazorip.site/archives/44/)，页面标题标注 **2026.8 更新**。版本、编码器和操作界面会变化，正式处理前仍要查看手头版本的帮助信息。
 
 ## 目录
 
@@ -196,6 +197,6 @@ deew 只是包装层：它不提供 Dolby 编码器，也不替代 Dolby 的许�
 - [eac3to](https://forum.doom9.org/showthread.php?t=125966) 与 [UsEac3To](https://forum.doom9.org/showthread.php?t=145574)：音轨分析、分流和转换入口。
 - [MKVToolNix 文档](https://mkvtoolnix.download/doc/mkvmerge.html)：混流、音频轨道属性和章节说明。
 - [MediaInfo](https://mediaarea.net/en/MediaInfo)：查看容器、编码、声道、采样率和轨道元数据。
-- [音频常用软件与资料](/posts/2026-10-10-audio-software/)：本博客的工具与资料总览。
+- [音频总篇：流程、软件与教程](/posts/2026-10-10-audio-software/)：本博客的工具与资料总览。
 
 下一篇可以按目标设备单独记录 AAC、DDP 或 DTS 兼容轨的批处理参数；在此之前，先用一条样本跑通并保存日志。

@@ -17,7 +17,7 @@ v2rayA 自带网页管理界面，导入订阅后就能选节点、调分流，�
 
 需要先有 Linux Docker Engine 和 Compose V2，安装步骤见 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。这里用 bridge 网络，应用主动连接代理端口，透明代理保持关闭；不需要 `privileged: true`、host 网络或宿主机内核模块挂载。
 
-返回 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+返回 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 先认清四个端口
 
@@ -62,7 +62,7 @@ services:
         max-file: "3"
 ```
 
-将四处 `NAS_LAN_IP` 替换为 **NAS 自身的局域网 IPv4 地址**，例如 `192.168.1.10`；它是端口绑定地址，不能填客户端地址或容器地址。示例将端口绑定到这个地址，后续 NAS 地址变化时也要同步修改。`./config` 持久化账号、订阅与设置，图形化 Compose 管理器中需确认项目目录，或改成 NAS 上真实的绝对路径。
+将四处 `NAS_LAN_IP` 替换为 **NAS 自身的局域网 IPv4 地址**，例如 `NAS_IP`；它是端口绑定地址，不能填客户端地址或容器地址。示例将端口绑定到这个地址，后续 NAS 地址变化时也要同步修改。`./config` 持久化账号、订阅与设置，图形化 Compose 管理器中需确认项目目录，或改成 NAS 上真实的绝对路径。
 
 此处固定 `v2.5.10` 便于复现，镜像来自项目官方 GHCR；原文使用的 Docker Hub 仓库 `mzz2017/v2raya` 也是项目提供的镜像来源。先确保 NAS 能拉取所选仓库的镜像，再启动代理。
 

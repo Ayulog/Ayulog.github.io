@@ -14,7 +14,7 @@ tags:
 
 Portainer CE 更适合集中查看容器、镜像、网络、卷和 Stack。本文连接本机 Linux Docker Engine，沿用[官方安装文档][portainer-install]的 `lts` 镜像和 HTTPS `9443` 端口。
 
-返回 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
+返回 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
 
 ## 开始之前
 

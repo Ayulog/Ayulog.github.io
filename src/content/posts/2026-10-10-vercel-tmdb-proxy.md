@@ -15,7 +15,7 @@ tags:
 
 影片命名没有问题，海报和简介仍然读不出来时，可以分别检查 TMDB API 与图片服务。确实是连接问题，而且应用支持自定义 TMDB 地址，再考虑部署反向代理。
 
-[imaliang/tmdb-proxy](https://github.com/imaliang/tmdb-proxy) 可部署在 Vercel，下面记录域名、DNS、API 与图片验证，以及 MoviePilot 和 Emby 插件的接法。其他家庭影音工具见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+[imaliang/tmdb-proxy](https://github.com/imaliang/tmdb-proxy) 可部署在 Vercel，下面记录域名、DNS、API 与图片验证，以及 MoviePilot 和 Emby 插件的接法。其他家庭影音工具见 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 目录
 

@@ -16,7 +16,7 @@ tags:
 
 家庭宽带重拨后，公网 IP 可能会变。ddns-go 定期获取地址并更新 DNS，省得每次手动改域名记录。它只管解析，端口转发、证书和反向代理需要另外配置。
 
-先确认[远程访问的网络条件](/posts/2026-10-09-nas-remote-access/)。如果还需要管理 HTTPS 入口，可以直接用 [Lucky](/posts/2026-10-10-lucky-guide/) 的 DDNS；同一条记录不要交给两个工具反复更新。其他软件收在 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+先确认[远程访问的网络条件](/posts/2026-10-09-nas-remote-access/)。如果还需要管理 HTTPS 入口，可以直接用 [Lucky](/posts/2026-10-10-lucky-guide/) 的 DDNS；同一条记录不要交给两个工具反复更新。其他软件收在 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## Docker 部署
 

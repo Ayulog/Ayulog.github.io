@@ -1,8 +1,9 @@
 ---
-title: PT 常用软件记录
-description: 记录 PT 下载、长期做种、RSS、辅种和硬链接整理常用软件，附各软件设置笔记、浏览器工具与参考资料。
+title: PT 总篇：流程、软件与教程
+description: 按目录规划、下载做种、RSS、辅种、整理与迁移梳理 PT 流程，汇总下载器、管理工具和独立教程。
 author: Ayulog
 pubDatetime: "2026-10-09T22:55:00+08:00"
+modDatetime: "2026-10-11T00:00:00+08:00"
 draft: false
 setupCategory: pt
 setupRole: overview
@@ -13,7 +14,19 @@ tags:
   - 做种
 ---
 
-PT 这部分围绕下载器来整理：qBittorrent 或 Transmission 保存任务和文件，其他工具负责订阅、辅种、整理，或者远程管理。软件入口和设置笔记放在这里，目录映射等共用问题另外记。
+PT 类目的总入口。qBittorrent 或 Transmission 保存任务和文件，其他工具负责订阅、辅种、整理或远程管理。这里先列流程和选用关系，再按用途收录软件与独立教程。
+
+## 流程概览
+
+| 阶段               | 先完成什么                                                 | 对应子篇                                                                                                    |
+| ------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 规划存储           | 确定下载目录、容器路径和权限，区分管理端口与 Peer 端口     | [下载目录与做种常识](/posts/2026-10-10-nas-downloader/)                                                     |
+| 建立下载与做种环境 | 核对站点允许的客户端版本，完成一次下载、校验与做种         | [qBittorrent](/posts/2026-10-10-qbittorrent-guide/) · [Transmission](/posts/2026-10-10-transmission-guide/) |
+| 订阅与任务管理     | 接入已可用的下载器，按分类与规则逐步启用 RSS               | [Vertex](/posts/2026-10-10-vertex-guide/)                                                                   |
+| 辅种与转移任务     | 核对文件和目录映射，先校验已有数据，再处理辅种或转移       | [IYUUPlus](/posts/2026-10-10-iyuuplus-docker-guide/)                                                        |
+| 使用远端 Seedbox   | 核对服务器与成本，安装下载器，安排远程管理、备份和退租迁移 | [PT Seedbox](/posts/2026-10-09-pt-seedbox-guide/)                                                           |
+
+整理进媒体库时，继续看 [NAS 自动观影流程](/posts/2026-10-09-debnas-media-workflow/)。下载、做种和入库是相连的步骤，各自保留原始任务与数据位置，不靠修改原做种目录来满足媒体库命名。
 
 <span id="先看各自负责什么"></span>
 <span id="下载器qbittorrent-与-transmission"></span>
@@ -76,5 +89,4 @@ PTtool 的硬链接也不会添加种子任务。媒体库里多了一个文件�
 
 - [Transmission 配置文件参数中文详细解释](https://cloud.tencent.com/developer/article/1966381)：2022 年的中文参数资料，默认值与字段需对照当前版本。
 - [Transmission 论坛讨论](https://forum.transmissionbt.com/viewtopic.php?t=18976)：收藏入口，正文尚未核实，不据此给出配置结论。
-- [语雀：VPS 安装刷流环境](https://www.yuque.com/liyaohui-4vwmf/kb/ut79tysu7a79ysby#Cd381)：正文未取得，安装步骤采用 Seedbox 笔记中已核对的项目文档。
 - [Hostloc](https://hostloc.com/misc.php?mod=mobile)：社区入口，选机时同时核对具体产品、测试时间和商家条款。

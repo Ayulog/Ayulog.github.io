@@ -108,7 +108,9 @@ const mediaCategory = mediaCategories.find(
 const articleCategory = setupCategory ?? mediaCategory;
 const sectionSlug = setupCategory ? "setup" : "media";
 const sectionLabel = setupCategory ? "折腾" : "Media";
-const overviewLabel = setupCategory ? "常用软件记录" : "常用软件与资料";
+const isOverview = setupCategory
+  ? post.data.setupRole === "overview"
+  : post.data.mediaRole === "overview";
 const overview = articleCategory
   ? getSortedPosts(await getCollection("posts")).find(
       entry =>
@@ -179,17 +181,19 @@ const ogImage = ogImageUrl
           </li>
           {overview && (
             <>
-              <li aria-hidden="true">&middot;</li>
+              <li aria-hidden="true">&raquo;</li>
               <li>
                 <a
                   href={getPostUrl(overview.id, overview.filePath, locale)}
                   class="hover:text-accent"
                 >
-                  {overviewLabel}
+                  {articleCategory.label}总篇
                 </a>
               </li>
             </>
           )}
+          <li aria-hidden="true">&raquo;</li>
+          <li aria-current="page">{isOverview ? "总篇" : "子篇"}</li>
         </ol>
       </nav>
     )

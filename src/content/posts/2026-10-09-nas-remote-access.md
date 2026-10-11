@@ -16,7 +16,7 @@ tags:
 
 出门后要连家里的 NAS，先看网络条件，再选工具。没有公网 IPv4，还可以查一下 IPv6；DDNS 只是跟踪地址变化，不能把原本不通的网络变通。
 
-安装步骤见 [Lucky](/posts/2026-10-10-lucky-guide/) 和 [ddns-go](/posts/2026-10-10-ddns-go-guide/)，软件总表在 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+安装步骤见 [Lucky](/posts/2026-10-10-lucky-guide/) 和 [ddns-go](/posts/2026-10-10-ddns-go-guide/)，软件总表在 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 目录
 

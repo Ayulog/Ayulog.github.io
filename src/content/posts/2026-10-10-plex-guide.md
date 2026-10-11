@@ -14,7 +14,7 @@ tags:
 
 Plex 用账号认领自己的媒体服务器，再让手机、电视和电脑连接。下面采用 Linux NAS 上的官方 Docker 镜像，从本地媒体库开始，最后处理硬件转码和外网播放授权。
 
-其他播放器、整理和网盘工具见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+其他播放器、整理和网盘工具见 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 目录
 

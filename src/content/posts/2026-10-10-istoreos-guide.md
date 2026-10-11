@@ -15,7 +15,7 @@ tags:
 
 iStoreOS 基于 OpenWrt，提供网络向导和 iStore 软件中心。这里记录镜像选择、首次配网、绿联 NAS 虚拟机部署和插件安装。设备、镜像和虚拟机界面会随版本变化，安装时仍需对照对应设备的文档；本文未在绿联 NAS 上实机验证。
 
-系统与插件入口见 [软路由常用软件记录](/posts/2026-10-10-soft-router-software/)。LuCI 基础设置、Wi-Fi、AP、SQM 等通用内容见 [OpenWrt 配网与插件笔记](/posts/2026-10-09-openwrt-guide/)。
+系统与插件入口见 [软路由总篇](/posts/2026-10-10-soft-router-software/)。LuCI 基础设置、Wi-Fi、AP、SQM 等通用内容见 [OpenWrt 配网与插件笔记](/posts/2026-10-09-openwrt-guide/)。
 
 ## 目录
 
@@ -61,7 +61,7 @@ Get-FileHash -Algorithm SHA256 -LiteralPath ".\istoreos.img.gz"
       │
       │ WAN：自动获取 192.168.1.x
    iStoreOS
-      │ LAN：192.168.50.1/24
+      │ LAN：ROUTER_IP/24
       │
    测试电脑：192.168.50.x
 ```
@@ -70,16 +70,16 @@ Get-FileHash -Algorithm SHA256 -LiteralPath ".\istoreos.img.gz"
 
 1. 暂时不接上游，只把电脑连接到 iStoreOS 的 LAN 口，让电脑自动获取地址。按设备文档查初始管理地址和网口分配，不默认第一个物理口就是 WAN。
 2. 进入管理页面，设置管理员密码，检查系统时间与时区。时间错误会影响 HTTPS 和软件下载。
-3. 将 LAN 地址改为 `192.168.50.1/24`，启用该网段的 DHCP 服务。例如地址池使用 `192.168.50.100` 至 `192.168.50.199`。LAN 网关留空，本例默认路由由 WAN 获取。
-4. 应用后让电脑重新获取地址，再打开 `http://192.168.50.1`；使用 HTTPS 的系统按实际协议访问。出现确认或回滚倒计时时，按页面提示完成确认。
+3. 将 LAN 地址改为 `ROUTER_IP/24`，启用该网段的 DHCP 服务。例如地址池使用 `192.168.50.100` 至 `192.168.50.199`。LAN 网关留空，本例默认路由由 WAN 获取。
+4. 应用后让电脑重新获取地址，再打开 `http://ROUTER_IP`；使用 HTTPS 的系统按实际协议访问。出现确认或回滚倒计时时，按页面提示完成确认。
 5. 连接“主路由 LAN → iStoreOS WAN”，打开 **网络向导 → 连接现有路由器 → DHCP**。入口以 [当前网络向导文档](https://doc.istoreos.com/zh/guide/istoreos/basic/network_guide.html) 为准。主路由已经负责拨号时，这里不重复设置 PPPoE。
-6. 检查 WAN 是否取得 `192.168.1.x`、上游网关和 DNS，LAN 是否仍为 `192.168.50.1`。保留路由模式需要的 LAN 到 WAN 转发、WAN 区域 IPv4 地址伪装及 WAN 入站限制。
+6. 检查 WAN 是否取得 `192.168.1.x`、上游网关和 DNS，LAN 是否仍为 `ROUTER_IP`。保留路由模式需要的 LAN 到 WAN 转发、WAN 区域 IPv4 地址伪装及 WAN 入站限制。
 
-测试电脑应获得 `192.168.50.x`，默认网关为 `192.168.50.1`，能够访问后台、解析域名并打开 HTTPS 网页。Windows 可辅助检查：
+测试电脑应获得 `192.168.50.x`，默认网关为 `ROUTER_IP`，能够访问后台、解析域名并打开 HTTPS 网页。Windows 可辅助检查：
 
 ```powershell
 ipconfig /all
-ping 192.168.50.1
+ping ROUTER_IP
 nslookup example.com
 ```
 

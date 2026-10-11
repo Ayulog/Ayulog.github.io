@@ -1,8 +1,9 @@
 ---
-title: Docker 管理工具与维护笔记
-description: Dockge、Portainer、Watchtower、DockerCopilot 和 1Panel 怎么选，以及迁移、更新、备份时容易遇到的问题。
+title: Docker 应用维护：迁移、更新与备份
+description: 围绕一次 Docker 应用维护，记录原部署确认、目录迁移、版本与业务数据备份、更新验证和常见问题。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
+modDatetime: "2026-10-11T00:00:00+08:00"
 draft: false
 setupCategory: nas
 setupRole: guide
@@ -13,45 +14,32 @@ tags:
   - Docker Compose
 ---
 
-改 Compose、看日志、更新镜像，命令行都能做。想放到网页里操作，再挑一个合适的管理工具就够了。已有 NAS 面板用得顺手，也可以继续用。
+这篇围绕一次 Docker 应用维护展开：确认原部署、记录版本和数据位置，备份后再迁移或更新，最后验证业务与恢复能力。管理工具的选择和安装入口集中在 [NAS 总篇](/posts/2026-10-09-nas-software-websites/#容器管理与定时任务)。
 
-各软件的安装步骤已分成单篇，这里只记选择和维护时的共通问题。软件总表在 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+## 维护顺序
 
-## 选哪个工具
+1. 确认应用由哪份 Compose、哪个 Stack 或面板维护，避免改错部署来源。
+2. [记录现有部署](#先记录现有部署)，核对项目目录、绑定挂载和命名卷。
+3. [保存版本与业务数据](#升级前备份什么)，确定遇到问题时的恢复方式。
+4. 需要迁移时先核对新位置的路径与权限；需要更新时按原管理入口重建服务。
+5. [查看日志并验证业务](#排错记录)，确认登录、数据与关联服务正常后再清理旧镜像。
 
-| 工具          | 主要用途                         | 适合怎样使用                                            | 需要记住的边界                                        |
-| ------------- | -------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- |
-| Dockge        | 围绕 `compose.yaml` 管理项目     | 已经按 Compose 整理应用，希望在网页里编辑、部署和看日志 | 主要管理 Compose 项目，不以完整 Docker 资源管理为目标 |
-| Portainer CE  | 管理容器、镜像、网络、卷和 Stack | 想集中查看 Docker 资源，或管理多个环境                  | 能看到已有容器，不等于已接管其原始部署文件            |
-| Watchtower    | 定时检查镜像，按策略重建容器     | 维护已有部署，或了解标签筛选和更新流程                  | 官方项目已停止维护；需先确认 API 兼容性               |
-| DockerCopilot | 手动更新、清理镜像、备份容器设置 | 想通过简单界面做日常容器维护                            | 设置备份不包含业务数据，也不代替原 Compose            |
-| 1Panel        | 应用商店与服务器管理             | 更希望通过应用模板和表单部署服务                        | 官方原生安装与社区容器镜像是两种部署方式              |
+<span id="选哪个工具"></span>
+
+## 维护前先确定管理入口
 
 每个应用留一个主要维护入口：自己的 Compose 项目交给 Dockge 或原命令行，Portainer 创建的 Stack 在原 Stack 里维护，1Panel 商店安装的应用按商店支持的方式管理。其他工具可以辅助查看，但同一项目的版本、端口、挂载不要在几个地方轮流修改。
 
 更新也只保留一套策略。计划用 DockerCopilot 手动更新的服务，就不要同时让 Watchtower 自动重建；PT 下载器、数据库、网盘挂载和媒体库优先按应用要求安排维护时间。特别是 qBittorrent、Transmission，升级前还要核对站点允许的客户端版本。
 
-## 安装笔记
+<span id="安装笔记"></span>
+<span id="dockge"></span>
+<span id="portainer-ce"></span>
+<span id="watchtower"></span>
+<span id="dockercopilot"></span>
+<span id="1panel"></span>
 
-<a id="dockge"></a>
-
-- [Dockge 安装与使用](/posts/2026-10-10-dockge-guide/)
-
-<a id="portainer-ce"></a>
-
-- [Portainer CE 安装与使用](/posts/2026-10-10-portainer-guide/)
-
-<a id="watchtower"></a>
-
-- [Watchtower 安装与使用](/posts/2026-10-10-watchtower-guide/)
-
-<a id="dockercopilot"></a>
-
-- [DockerCopilot 安装与使用](/posts/2026-10-10-dockercopilot/)
-
-<a id="1panel"></a>
-
-- [1Panel 安装与使用](/posts/2026-10-10-1panel-guide/)
+Dockge、Portainer CE、Watchtower、DockerCopilot 和 1Panel 的对比与安装子篇已集中到 [NAS 总篇的容器管理部分](/posts/2026-10-09-nas-software-websites/#容器管理与定时任务)，选定工具后再继续下面的维护步骤。
 
 ## 路径、权限与备份
 

@@ -15,7 +15,7 @@ tags:
 
 1Panel 把应用商店、容器、网站、数据库和备份放在一个面板里。它能省去一部分手写配置的工作，安装应用时仍要看清镜像来源、端口和数据目录。
 
-返回 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
+返回 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
 
 ## 开始之前
 

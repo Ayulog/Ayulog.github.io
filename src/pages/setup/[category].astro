@@ -72,7 +72,9 @@ const guides = posts.filter(post => post.data.setupRole !== "overview");
     {
       overview && (
         <section aria-label="总篇" class="border-border mb-10 border-s-2 ps-5">
-          <p class="text-muted-foreground mb-2 text-sm">总篇</p>
+          <p class="text-muted-foreground mb-2 text-sm">
+            总篇 · 流程、软件与教程入口
+          </p>
           <h2 class="text-xl font-semibold">
             <a
               href={getPostUrl(overview.id, overview.filePath, locale)}
@@ -87,10 +89,13 @@ const guides = posts.filter(post => post.data.setupRole !== "overview");
     }
     <section aria-labelledby="guides">
       <h2 id="guides" class="text-xl font-semibold">
-        教程与笔记 <span class="text-muted-foreground text-sm font-normal"
+        子篇 <span class="text-muted-foreground text-sm font-normal"
           >{guides.length} 篇</span
         >
       </h2>
+      <p class="text-muted-foreground mt-2 text-sm">
+        单个流程、软件或具体问题的教程。
+      </p>
       {
         guides.length > 0 ? (
           <ul>
@@ -99,7 +104,9 @@ const guides = posts.filter(post => post.data.setupRole !== "overview");
             ))}
           </ul>
         ) : (
-          <p class="text-muted-foreground py-8">慢慢整理，陆续更新。</p>
+          <p class="text-muted-foreground py-8">
+            该类目暂无子篇，可先查看总篇中的流程与软件。
+          </p>
         )
       }
     </section>

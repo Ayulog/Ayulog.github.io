@@ -16,7 +16,7 @@ tags:
 
 Watchtower 检查的是容器正在使用的镜像引用。使用 `example/app:1.2.3`，不会自动改成 `1.2.4`；使用 `latest`，则跟踪该标签变化。它按容器现有配置重建，不会替你改原 Compose，也不会完成应用的大版本迁移。
 
-返回 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
+返回 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
 
 ## 开始之前
 

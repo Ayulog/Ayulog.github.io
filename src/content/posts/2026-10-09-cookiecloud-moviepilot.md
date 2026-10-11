@@ -15,7 +15,7 @@ tags:
 
 [CookieCloud](https://github.com/easychen/CookieCloud) 从浏览器读取指定站点的 Cookie，加密后上传到服务端。[MoviePilot](/posts/2026-10-10-moviepilot-guide/) 再拉取这些数据，更新受支持站点的登录信息。
 
-下面分别配置上传端、服务端和 MoviePilot。扩展版本与商店更新可能不同，加密选项要与 MoviePilot V3 的支持情况一致。相关软件放在 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)，PT 下载与做种工具见 [PT 常用软件记录](/posts/2026-10-09-pt-software/)。
+下面分别配置上传端、服务端和 MoviePilot。扩展版本与商店更新可能不同，加密选项要与 MoviePilot V3 的支持情况一致。相关软件放在 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)，PT 下载与做种工具见 [PT 总篇](/posts/2026-10-09-pt-software/)。
 
 ## 目录
 

@@ -38,8 +38,9 @@
 - `pubDatetime` 使用带时区的 ISO 日期时间；更新已发布文章时保留原发布日期，按需设置 `modDatetime`。
 - 日期字段兼容 YAML Date 与带时区 ISO 字符串；`modDatetime` 可以留空，非法日期仍报错。修改日期校验后运行 `node --test scripts/check-content-dates.mjs`。
 - 可选字段包括 `featured`、`draft`、`ogImage`、`canonicalURL`、`hideEditPost`、`timezone`，不要自行添加 schema 未定义的约定。
-- 折腾文章使用 `setupCategory` 指定一个主分类：`windows`、`games`、`nas`、`soft-router`、`pt`。每类“常用软件记录”设 `setupRole: overview`；软件教程、系统设置和常识笔记使用 `guide`（默认值）。标签不再决定折腾分类。非折腾文章不填 `setupCategory`。
-- Media 文章使用 `mediaCategory` 指定一个主分类：`subtitles`（字幕）、`audio`（音频）、`diy`（蓝光与媒体封装）、`encode`（压制）。每类常用软件与资料总篇设 `mediaRole: overview`；教程与笔记使用 `guide`（默认值）。标签不决定 Media 分类，非 Media 文章不填 `mediaCategory`。
+- 每个类目固定一篇总篇，汇总整体流程、软件分工、子篇教程入口与参考资料；总篇不只列软件。子篇围绕一个具体流程、软件或问题展开，避免另设只重复目录的中间总篇。新增子篇时同步补入所属总篇；跨类内容通过链接引用，一篇文章只设一个主分类。没有独立教程的类目如实保留空缺，不为凑结构创建空文章。
+- 折腾文章使用 `setupCategory` 指定一个主分类：`windows`、`games`、`nas`、`soft-router`、`pt`。每类总篇设 `setupRole: overview`；单个流程、软件和具体问题的教程使用 `guide`（默认值）。标签不决定折腾分类，非折腾文章不填 `setupCategory`。
+- Media 文章使用 `mediaCategory` 指定一个主分类：`subtitles`（字幕）、`audio`（音频）、`diy`（蓝光与媒体封装）、`encode`（压制）。每类总篇设 `mediaRole: overview`；单个流程、软件和具体问题的教程使用 `guide`（默认值）。标签不决定 Media 分类，非 Media 文章不填 `mediaCategory`。
 - 当前站点语言为 `zh-CN`，时区为 `Asia/Singapore`；保持现有设置，时区需求变更时再一起调整。
 - 生产构建按发布时间及配置的提前量过滤文章；未来日期不会自行触发重新部署，需要后续构建才会更新线上内容。
 - 文章子目录会参与 URL；调整已发布文件名、目录或路由前检查已有链接，并处理必要的兼容跳转。

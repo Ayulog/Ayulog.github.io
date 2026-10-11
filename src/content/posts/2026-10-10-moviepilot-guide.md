@@ -16,7 +16,7 @@ tags:
 
 [MoviePilot](https://github.com/jxxghp/MoviePilot) 负责搜索、订阅、下发下载、整理文件和刷新媒体库。下载和做种仍由下载器负责，播放交给 [Emby](/posts/2026-10-10-emby-guide/)、[Jellyfin](/posts/2026-10-10-jellyfin-guide/) 或 [Plex](/posts/2026-10-10-plex-guide/)。
 
-这里记录 V3 的 Docker 部署、目录与订阅规则，再补插件、PostgreSQL 和企业微信配置。参考资料中的 V1 / V2 参数不能直接混用。软件入口与各篇关系见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+这里记录 V3 的 Docker 部署、目录与订阅规则，再补插件、PostgreSQL 和企业微信配置。参考资料中的 V1 / V2 参数不能直接混用。软件入口与各篇关系见 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 目录
 

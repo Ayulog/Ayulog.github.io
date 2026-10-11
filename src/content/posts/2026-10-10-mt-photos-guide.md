@@ -17,7 +17,7 @@ MT Photos 用来管理照片。先把原件、上传目录和应用数据分清�
 
 这篇从 [DebNAS 安装笔记](/posts/2026-10-09-debnas-installation-notes/)中拆出，保留原来的基础配置。需要先装好 Linux Docker Engine 和 Compose V2，步骤见 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。本例面向 amd64，其他架构按 [MT Photos 官方安装说明](https://mtmt.tech/docs/start/install/)选择镜像。
 
-其他媒体服务见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+其他媒体服务见 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 准备目录
 

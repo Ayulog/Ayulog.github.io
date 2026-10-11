@@ -5,6 +5,7 @@ title: 一键压制篇：用图形工具完成一次转码
 description: 从 HandBrake 与 ShanaEncoder 入手，记录预设、尺寸、帧率、音轨、字幕和短片试压的检查方法，再介绍 StaxRip 与 Simple x264 Launcher 等工具。
 author: Ayulog
 pubDatetime: "2026-10-10T12:00:00+08:00"
+modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 tags:
   - 视频压制
@@ -17,7 +18,7 @@ tags:
 
 先用一份**逐行、恒定帧率的 SDR 视频**练习。隔行电视源、可变帧率录屏、HDR 和 Dolby Vision 各有额外处理要求，不能直接套用下面的普通转码设置。蓝光原盘先确认节目和播放列表，相关步骤见[蓝光原盘 Remux](/posts/2026-10-10-blu-ray-remux/)。
 
-这是[压制系列](/posts/2026-10-09-encode-software/)的第一篇。需要自己写滤镜脚本时接着看 [VapourSynth 压制篇](/posts/2026-10-10-encode-vapoursynth/)，参数含义见[编码篇](/posts/2026-10-10-encode-codecs/)。软件与公开文档核查于 **2026 年 10 月 10 日**；本文按文档整理操作流程，没有把示例写成实测画质结论。
+本文从[压制总篇](/posts/2026-10-09-encode-software/)中的图形工具路线展开。需要自己写滤镜脚本时接着看 [VapourSynth 压制篇](/posts/2026-10-10-encode-vapoursynth/)，参数含义见[编码篇](/posts/2026-10-10-encode-codecs/)。软件与公开文档核查于 **2026 年 10 月 10 日**；本文按文档整理操作流程，没有把示例写成实测画质结论。
 
 ## 目录
 
@@ -106,7 +107,7 @@ FFmpeg 的选项与独立 x264／x265 命令行不是同一套写法。比如 `-
 
 [StaxRip](https://github.com/staxrip/staxrip)把输入、滤镜、视频编码、音频编码和封装组织为任务，适合想逐步接触脚本又希望保留图形界面的人。跟教程操作时，一起记录前端和所调用组件的版本，不能只写“使用 StaxRip”。
 
-[Simple x264/x265 Launcher](https://github.com/lordmulder/Simple-x264-Launcher/releases)可以接收 AviSynth／VapourSynth 脚本并管理编码任务。本次核查其最新正式发行仍为 **2024 年 7 月的 3.04**；旧环境包常把它、Python、VS 和编码器捆在一起，不能据此假设它能直接识别新安装的 VS。只需把 `.vpy` 送往编码器时，也可使用下一篇的 `vspipe` 命令。
+[Simple x264/x265 Launcher](https://github.com/lordmulder/Simple-x264-Launcher/releases)可以接收 AviSynth／VapourSynth 脚本并管理编码任务。本次核查其最新正式发行仍为 **2024 年 7 月的 3.04**；旧环境包常把它、Python、VS 和编码器捆在一起，不能据此假设它能直接识别新安装的 VS。只需把 `.vpy` 送往编码器时，也可使用[VapourSynth 教程中的 `vspipe` 命令](/posts/2026-10-10-encode-vapoursynth/#把画面交给编码器)。
 
 ### 其他保留工具
 
@@ -138,4 +139,5 @@ FFmpeg 的选项与独立 x264／x265 命令行不是同一套写法。比如 `-
 - [FFmpeg 文档](https://ffmpeg.org/documentation.html)：核对图形前端最终调用的命令。
 - [VapourSynth 压制篇](/posts/2026-10-10-encode-vapoursynth/)：环境搭建、最小脚本、裁边缩放与编码输出。
 - [编码篇](/posts/2026-10-10-encode-codecs/)：x264、x265、AV1 的选择与试压参数。
-- [学习篇](/posts/2026-10-10-encode-learning/)：系统教程、个人博客和社区入口。
+- [压制练习](/posts/2026-10-10-encode-learning/)：建立短片基线，做单项比较并按问题查文档。
+- [总篇的学习资料](/posts/2026-10-09-encode-software/#学习篇)：系统教程、个人博客和社区入口。

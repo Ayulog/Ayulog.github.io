@@ -18,7 +18,7 @@ Mihomo 负责代理和规则，MetaCubeXD 提供网页面板。把它们放在 N
 
 下面用 Linux Docker Engine、Compose V2 和 bridge 网络部署，适合 Debian、DebNAS。Docker 还没准备好时，先看 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。部署参考 windowBR 的 [《在 docker 中使用 mihomo》](https://windowbr.top/2024/11/02/mihomo-docker/)。
 
-订阅、密码、控制器密钥和 NAS 地址都要换成自己的值。偏好在网页里导入节点，可以看 [v2rayA](/posts/2026-10-10-v2raya-guide/)；其他软件收在 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+订阅、密码、控制器密钥和 NAS 地址都要换成自己的值。偏好在网页里导入节点，可以看 [v2rayA](/posts/2026-10-10-v2raya-guide/)；其他软件收在 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 ## 目录
 
@@ -81,7 +81,7 @@ mihomo/
 下载 [完整 config.yaml](/examples/mihomo/config.yaml)，保存为 `config/config.yaml`。下面就是同一份完整文件，已经包含监听、认证、DNS、订阅、策略组和规则，**不需要再拼接后面的片段**。
 
 ```yaml
-# 配置来源：按用户提供的 Mihomo 配置整理，参考 windowBR《在 docker 中使用 mihomo》：
+# 配置来源：按公开文档和示例整理，参考 windowBR《在 docker 中使用 mihomo》：
 # https://windowbr.top/2024/11/02/mihomo-docker/
 # 公开示例已将订阅名称、订阅链接、节点前缀、代理凭据和控制器密钥替换为占位符。
 
@@ -532,7 +532,7 @@ docker compose up -d
 
 ## 参考资料
 
-- windowBR：[《在 docker 中使用 mihomo》](https://windowbr.top/2024/11/02/mihomo-docker/)，2024 年 11 月 2 日。本文的完整配置根据用户提供的版本复用整理，访问日期为 2026 年 10 月 9 日；字段和行为仍以 Mihomo 官方文档为准。
+- windowBR：[《在 docker 中使用 mihomo》](https://windowbr.top/2024/11/02/mihomo-docker/)，2024 年 11 月 2 日。本文的完整配置按公开示例整理，访问日期为 2026 年 10 月 9 日；字段和行为仍以 Mihomo 官方文档为准。
 - [Mihomo 项目](https://github.com/MetaCubeX/mihomo)、[官方容器构建流程](https://github.com/MetaCubeX/mihomo/blob/Meta/.github/workflows/build.yml)与[Dockerfile](https://github.com/MetaCubeX/mihomo/blob/Meta/Dockerfile)：镜像与启动方式。
 - [全局配置](https://wiki.metacubex.one/config/general/)、[代理端口](https://wiki.metacubex.one/config/inbound/port/)：监听、认证、控制器与 CORS。
 - [代理集合](https://wiki.metacubex.one/config/proxy-providers/)、[集合文件格式](https://wiki.metacubex.one/config/proxy-providers/content/)、[代理组](https://wiki.metacubex.one/config/proxy-groups/)与[规则](https://wiki.metacubex.one/config/rules/)：订阅、健康检查、策略选择和匹配顺序。

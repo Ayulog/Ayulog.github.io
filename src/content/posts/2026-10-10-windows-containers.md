@@ -180,7 +180,7 @@ WSLc 和 Desktop 的上述网页端口可从 Windows 本机通过 `http://localh
 
 ## 相关笔记
 
-- [Windows 常用软件记录](/posts/2026-10-09-windows-software/)
+- [Windows 总篇](/posts/2026-10-09-windows-software/)
 - [Docker Compose 官方入门](https://docs.docker.com/compose/gettingstarted/)
 
 [microsoft-wsl-install]: https://learn.microsoft.com/windows/wsl/install

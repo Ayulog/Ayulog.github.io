@@ -1,8 +1,9 @@
 ---
-title: NAS 常用软件记录
-description: NAS 的系统工具、容器管理、网络服务、家庭影音与网盘软件清单，附项目入口和安装维护笔记。
+title: NAS 总篇：流程、软件与教程
+description: 按系统安装、容器维护、远程访问、影音入库和云盘照片梳理 NAS 流程，汇总软件选型、资料与独立教程。
 author: Ayulog
 pubDatetime: "2026-10-09T15:30:00+08:00"
+modDatetime: "2026-10-11T00:00:00+08:00"
 draft: false
 setupCategory: nas
 setupRole: overview
@@ -14,9 +15,22 @@ tags:
   - 家庭影音
 ---
 
-NAS 上用到的系统工具、容器和影音服务放在这里。安装、配置和排错各写一篇，这页留用途、项目入口和教程链接。
+NAS 类目的总入口。先按系统、网络、影音或文件管理找到流程，再选软件；每个软件的部署和单独流程的操作放在对应子篇。这里同时保留项目入口、选型时要分清的职责和教程索引。
 
-做种工具见 [PT 常用软件记录](/posts/2026-10-09-pt-software/)，路由系统见 [软路由常用软件记录](/posts/2026-10-10-soft-router-software/)。Windows 上的容器环境另见 [WSL 与 Docker](/posts/2026-10-10-windows-containers/)。
+做种工具见 [PT 总篇](/posts/2026-10-09-pt-software/)，路由系统见 [软路由总篇](/posts/2026-10-10-soft-router-software/)。Windows 上的容器环境另见 [WSL 与 Docker](/posts/2026-10-10-windows-containers/)。
+
+## 流程概览
+
+| 要完成的事         | 阅读顺序                                                                 | 流程子篇                                                                                              |
+| ------------------ | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| 从 Debian 建立 NAS | 系统与 SSH → 磁盘和共享 → 逐个部署应用 → 重启、备份与恢复验证            | [DebNAS 安装与验收](/posts/2026-10-09-debnas-installation-notes/)                                     |
+| 管理和更新容器     | 确认原部署入口 → 记录版本与挂载 → 备份 → 更新并验证 → 再清理旧镜像       | [Docker 应用维护](/posts/2026-10-10-docker-management/)                                               |
+| 从外部访问家中服务 | 确认公网与组网条件 → 选择访问方案 → 配置入口 → 从实际客户端验证          | [NAS 远程访问](/posts/2026-10-09-nas-remote-access/)                                                  |
+| 自动整理和播放影视 | 下载或云端文件 → 命名与目录映射 → 整理或 STRM 同步 → 媒体库 → 客户端播放 | [DebNAS 自动观影流程](/posts/2026-10-09-debnas-media-workflow/)                                       |
+| 将网盘接入本地应用 | 选择文件路径或 WebDAV → 挂载与权限 → 核对缓存、上传和挂载恢复            | [CloudDrive2](/posts/2026-10-10-cloud-storage-local-mount/) · [AList](/posts/2026-10-10-alist-guide/) |
+| 整理照片与观看直播 | 照片按原件、配置和上传目录分别规划；直播按列表、节目单、播放器接入       | [MT Photos](/posts/2026-10-10-mt-photos-guide/) · [IPTV 教程入口](#直播命名与刮削)                    |
+
+下面按这些用途收录全部子篇。容器管理面板、媒体库和网络入口都有可替代方案，不需要把软件表逐项装完。
 
 ## 系统与容器基础
 
@@ -36,7 +50,17 @@ NAS 上用到的系统工具、容器和影音服务放在这里。安装、配�
 | [1Panel](https://1panel.cn/)                                               | Linux 服务与应用管理面板                       | [直接安装与 Docker 部署](/posts/2026-10-10-1panel-guide/)   |
 | [QD / QD-Today](https://qd-today.github.io/qd/zh_CN/guide/deployment.html) | 用 HTTP 模板执行签到等定时任务                 | [qiandao 部署与任务配置](/posts/qiandao-docker-guide/)      |
 
-这些工具的职责有重叠，不必全装。同一个服务由哪个面板、哪份 Compose 管理，记清楚即可。选择与备份问题放在 [Docker 管理笔记](/posts/2026-10-10-docker-management/)。
+### 管理工具怎么选
+
+| 工具          | 适合怎样使用                                            | 需要记住的边界                                        |
+| ------------- | ------------------------------------------------------- | ----------------------------------------------------- |
+| Dockge        | 已经按 Compose 整理应用，希望在网页里编辑、部署和看日志 | 主要管理 Compose 项目，不以完整 Docker 资源管理为目标 |
+| Portainer CE  | 集中查看 Docker 资源，或管理多个环境                    | 能看到已有容器，不等于已接管其原始部署文件            |
+| Watchtower    | 维护已有部署，了解标签筛选和更新流程                    | 官方项目已停止维护；需先确认 API 兼容性               |
+| DockerCopilot | 通过简单界面手动更新、清理镜像和备份容器设置            | 设置备份不包含业务数据，也不代替原 Compose            |
+| 1Panel        | 通过应用模板和表单部署服务，同时管理服务器              | 官方原生安装与社区容器镜像是两种部署方式              |
+
+这些工具的职责有重叠，不必全装。同一个服务由哪个面板、哪份 Compose 管理，记清楚即可。迁移、备份与一次更新的操作见 [Docker 应用维护](/posts/2026-10-10-docker-management/)。
 
 QD 官方文档用 `qdtoday/qd`，现有教程保留的是 [`a76yyyy/qiandao`](https://hub.docker.com/r/a76yyyy/qiandao/tags)。两者的标签、参数和数据迁移要分别核对。
 
@@ -58,11 +82,11 @@ QD 官方文档用 `qdtoday/qd`，现有教程保留的是 [`a76yyyy/qiandao`](h
 
 两者的部署、RPC 连接和下载设置合在 [Aria2 与 AriaNg 教程](/posts/2026-10-10-aria2-guide/)里。
 
-qBittorrent 和 Transmission 的做种设置归在 [PT](/setup/pt/) 下。
+qBittorrent 和 Transmission 的做种设置归在 [PT 总篇](/posts/2026-10-09-pt-software/) 下。
 
 ## 路由器与家庭网络
 
-路由系统、插件和设备资料移到了 [软路由常用软件记录](/posts/2026-10-10-soft-router-software/)，配网教程也收在 [软路由](/setup/soft-router/) 下。
+路由系统、插件和设备资料移到了 [软路由总篇](/posts/2026-10-10-soft-router-software/)，配网教程也收在 [软路由总篇](/posts/2026-10-10-soft-router-software/) 下。
 
 ## 媒体库与自动化整理
 
@@ -94,7 +118,7 @@ CMS 上面的项目链接是文档仓库，另有 [CMSHelp 补充帮助](https:/
 
 ## 下载器与 PT 配套工具
 
-[PT 软件总篇](/posts/2026-10-09-pt-software/)集中收录 qBittorrent、Transmission、TrguiNG、IYUUPlus、PTtool、Vertex 与浏览器扩展。
+[PT 总篇](/posts/2026-10-09-pt-software/)集中收录 qBittorrent、Transmission、TrguiNG、IYUUPlus、PTtool、Vertex 与浏览器扩展。
 
 ## 云盘、照片与音乐
 
@@ -123,15 +147,15 @@ CMS 上面的项目链接是文档仓库，另有 [CMSHelp 补充帮助](https:/
 ## 直播、命名与刮削
 
 - [IPTV：Allinone 与频道整理](/posts/2026-10-10-iptv-guide/)：记录 M3U、EPG、播放器与服务端的关系。Allinone 当前完整授权参数尚未确认，文章中保留了部署前提。
+- [IPTVindex：直播源、播放器与节目单](/posts/2026-10-11-iptv-index/)：从 [IPTVindex](https://iptvindex.com/) 导航找到直播列表，导入 VLC 或电视播放器，再配置 EPG。
 - [影视资源命名](/posts/2026-10-10-media-resource-naming/)：读懂发布名，整理电影、剧集、字幕与多版本入库名称。
 - [TMDB 代理](/posts/2026-10-10-vercel-tmdb-proxy/)：Vercel 部署、API 与图片检查，以及媒体软件的地址设置。
-- [IPTVindex](https://iptvindex.com/)：播放器、直播源、节目单和资料的导航收藏。
 
 ## 播放器和下载配套
 
 手机、电视与桌面的 Emby 客户端入口放在 [Emby 客户端设置](/posts/2026-10-10-emby-guide/#各平台客户端怎么选)。Jellyfin、Plex 教程中也有官方客户端目录。电视端尤其需要试一下遥控器操作、字幕和音轨切换。
 
-下载交给 qBittorrent、Transmission 等工具，配置见 [PT 常用软件记录](/posts/2026-10-09-pt-software/)。原收藏的 [VERTEX](https://hub.docker.com/r/lswl/vertex) 用于 PT 场景的追剧、下载与任务管理；[PTtool](https://github.com/appotry/PTtool) 提供硬链接整理脚本与资料。硬链接要求同一文件系统，不能用来把本地文件“零空间上传”到网盘。
+下载交给 qBittorrent、Transmission 等工具，配置见 [PT 总篇](/posts/2026-10-09-pt-software/)。原收藏的 [VERTEX](https://hub.docker.com/r/lswl/vertex) 用于 PT 场景的追剧、下载与任务管理；[PTtool](https://github.com/appotry/PTtool) 提供硬链接整理脚本与资料。硬链接要求同一文件系统，不能用来把本地文件“零空间上传”到网盘。
 
 ## 服务器与常用网站
 
@@ -150,8 +174,7 @@ CMS 上面的项目链接是文档仓库，另有 [CMSHelp 补充帮助](https:/
 - [windowBR：在 Docker 中使用 Mihomo](https://windowbr.top/2024/11/02/mihomo-docker/)。
 - [kekylin：DebNAS 文档](https://kekylin.github.io/debnas-docs/)：Debian HomeNAS 的系统配置和配套服务。
 - [劲折腾的磕巴白菜](https://hi.keba.host/)：NAS、Emby、MoviePilot、网盘与 Compose 部署记录。
-- [《EMBY 搭建教程基于docker-compose，CMS + emby + 115+MOVIEPILOT v2+Qbittorrent》](https://www.nodeseek.com/post-616021-1)：NodeSeek 上收藏的组合方案。原文是 MoviePilot v2 背景，不能直接套入 V3；页面此前遇到站点验证，正文尚待完整核对。
 
 ## 之后想单独整理的内容
 
-尚未写成教程的软件先保留项目入口，后续补安装、配置和排错记录。
+CloudSaver、Music Tag Web V2、Audiobookshelf 等尚未写成子篇的软件，先保留项目文档入口；有独立教程后，再从对应软件条目进入。

@@ -5,6 +5,7 @@ title: VapourSynth 压制篇：环境、脚本与输出
 description: 按当前 Windows 安装方式搭建 VapourSynth，说明 Python、源滤镜与编辑器的分工，再用最小脚本完成导入、裁边、缩放、试压和封装检查。
 author: Ayulog
 pubDatetime: "2026-10-10T12:00:00+08:00"
+modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 tags:
   - 视频压制
@@ -263,4 +264,4 @@ sample.set_output()
 
 官方入口：[安装](https://www.vapoursynth.com/doc/installation.html)、[入门](https://www.vapoursynth.com/doc/gettingstarted.html)、[输出与 vspipe](https://www.vapoursynth.com/doc/output.html)、[裁切](https://www.vapoursynth.com/doc/functions/video/crop_cropabs.html)、[缩放与格式转换](https://www.vapoursynth.com/doc/functions/video/resize.html)。
 
-后续按画面问题查 [VCB-Studio 教程](https://guides.vcb-s.com/)、[FXXS](https://fxxs-encoder.github.io/)、[Encode Mystery](https://guide.geeking.moe/)与[学习篇](/posts/2026-10-10-encode-learning/)里的进阶资料。旧 AVS 流程可继续查 [AviSynth Wiki](http://avisynth.nl/index.php/Main_Page) 与 [AvsPmod](https://github.com/gispos/AvsPmod)，但 `.avs` 和 `.vpy` 的语法、插件接口不能混用。
+后续按画面问题查 [VCB-Studio 教程](https://guides.vcb-s.com/)、[FXXS](https://fxxs-encoder.github.io/)、[Encode Mystery](https://guide.geeking.moe/)与[总篇](/posts/2026-10-09-encode-software/#编码器与滤镜进阶)里的进阶资料。旧 AVS 流程可继续查 [AviSynth Wiki](http://avisynth.nl/index.php/Main_Page) 与 [AvsPmod](https://github.com/gispos/AvsPmod)，但 `.avs` 和 `.vpy` 的语法、插件接口不能混用。

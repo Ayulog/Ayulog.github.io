@@ -1,8 +1,8 @@
 ---
 setupCategory: windows
 setupRole: overview
-title: Windows 常用软件记录
-description: Windows 装机与日常软件清单，附下载入口、自启动、远程桌面和虚拟化设置笔记。
+title: Windows 总篇：流程、软件与教程
+description: 按装机、日常使用、自动启动、远程访问与容器环境整理 Windows 流程，汇总软件入口和独立教程。
 author: Ayulog
 pubDatetime: "2026-10-09T00:00:00+08:00"
 modDatetime: "2026-10-11T00:00:00+08:00"
@@ -13,12 +13,13 @@ tags:
   - 软件清单
 ---
 
-重装 Windows 时用来找软件的清单。这里只记用途和下载入口，具体设置放在单独的文章里。
+这篇是 Windows 类目的总入口：先按要做的事找流程，再选软件；程序自启动、远程桌面证书和容器环境各有独立教程。装机工具和日常软件保留在后面的清单中。
 
-游戏平台、Mod、修改器、串流和安卓模拟器收在 [游戏常用软件记录](/posts/2026-10-11-game-software/)。
+游戏平台、Mod、修改器、串流和安卓模拟器收在 [游戏总篇](/posts/2026-10-11-game-software/)。
 
 ## 目录
 
+- [流程概览](#流程概览)
 - [设置与使用笔记](#设置与使用笔记)
 - [系统安装与硬件检测](#系统安装与硬件检测)
 - [文件检索与预览](#文件检索与预览)
@@ -31,10 +32,26 @@ tags:
 - [安卓模拟器](#安卓模拟器)
 - [游戏平台与相关工具](#游戏平台与相关工具)
 
+## 流程概览
+
+| 要做的事                   | 阅读顺序                                                             | 对应教程                                               |
+| -------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
+| 准备或重装电脑             | 系统安装工具 → 硬件检测 → 文件、编辑和影音软件                       | 先按下方用途找软件；系统安装尚无独立子篇               |
+| 登录后自动运行应用         | 明确是否需要登录 → 选择启动文件夹、任务计划或服务 → 验证重启后的行为 | [程序自启动](/posts/2026-10-09-windows-app-startup/)   |
+| 远程访问桌面               | 确认被控端支持 RDP → 准备证书 → 绑定并从客户端验证                   | [RDP 配置 TLS](/posts/2026-10-09-windows-rdp-tls/)     |
+| 在 Windows 运行 Linux 容器 | 准备 WSL → 选择 Docker Desktop 或独立 Engine → 检查容器与数据位置    | [WSL 与 Docker](/posts/2026-10-10-windows-containers/) |
+
+这几条流程按需要使用，不是每次装机都要全部完成。游戏、Mod 和串流的入口单列在 [游戏总篇](/posts/2026-10-11-game-software/)。
+
 ## 设置与使用笔记
+
+### 自动化与远程访问
 
 - [程序自启动](/posts/2026-10-09-windows-app-startup/)：启动文件夹、任务计划和系统服务。
 - [远程桌面 TLS 证书](/posts/2026-10-09-windows-rdp-tls/)：导入、绑定、续期和客户端验证。
+
+### 开发与容器环境
+
 - [WSL 与 Docker](/posts/2026-10-10-windows-containers/)：在 Windows 上运行 Linux 容器。
 
 ## 系统安装与硬件检测
@@ -63,7 +80,7 @@ tags:
 - **[Neat Download Manager](https://www.neatdownloadmanager.com/index.php/en/)**：下载管理工具，支持分段下载、暂停续传、分类管理和浏览器扩展。
 - **[百度网盘](https://pan.baidu.com/download#win)**：用于云端文件存储、分享和上传下载，链接可直接进入客户端下载页面。
 - **[CloudDrive2](https://www.clouddrive2.com/)**：集中管理多个云盘，并将云盘挂载为本地磁盘，方便通过文件管理器或其他软件访问云端文件。
-- **[115-Desktop](https://github.com/Shimily-3/115-Desktop)**：基于 115 开放平台 API 的第三方桌面客户端，支持文件管理、上传下载、媒体播放和离线任务管理。 [使用说明](https://115-desktop.feishu.cn/wiki/SH0aw3Vmtiz3bBkody2c7E6Jnpf)（需飞书登录）。
+- **[115-Desktop](https://github.com/Shimily-3/115-Desktop)**：基于 115 开放平台 API 的第三方桌面客户端，支持文件管理、上传下载、媒体播放和离线任务管理。使用时以项目公开文档和当前版本说明为准。
 
 ## 聊天与通讯
 
@@ -110,4 +127,4 @@ tags:
 
 ## 游戏平台与相关工具
 
-Steam、Moonlight、Mod 网站和管理器等条目已移到 [游戏常用软件记录](/posts/2026-10-11-game-software/)，新篇也收录 Android 与 SteamOS 上的游戏工具。
+Steam、Moonlight、Mod 网站和管理器等条目已移到 [游戏总篇](/posts/2026-10-11-game-software/)，新篇也收录 Android 与 SteamOS 上的游戏工具。

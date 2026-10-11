@@ -22,7 +22,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "MoviePilot V3 配置说明",
-      path: "/posts/2026-10-09-debnas-media-workflow/#moviepilot-v3",
+      path: "/posts/2026-10-10-moviepilot-guide/",
     },
   },
   {
@@ -39,7 +39,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "qBittorrent 配置说明",
-      path: "/posts/2026-10-09-debnas-media-workflow/#qbittorrent",
+      path: "/posts/2026-10-10-qbittorrent-guide/",
     },
   },
   {
@@ -60,7 +60,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Transmission 配置说明",
-      path: "/posts/2026-10-09-debnas-media-workflow/#transmission",
+      path: "/posts/2026-10-10-transmission-guide/",
     },
   },
   {
@@ -80,7 +80,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "CMS 配置说明",
-      path: "/posts/2026-10-09-debnas-media-workflow/#cms",
+      path: "/posts/2026-10-10-cloud-media-sync/",
     },
   },
   {
@@ -94,7 +94,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Emby 配置说明",
-      path: "/posts/2026-10-09-debnas-media-workflow/#emby",
+      path: "/posts/2026-10-10-emby-guide/",
     },
   },
   {
@@ -107,7 +107,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Dockge 配置说明",
-      path: "/posts/2026-10-09-debnas-installation-notes/#dockge",
+      path: "/posts/2026-10-10-dockge-guide/",
     },
   },
   {
@@ -120,7 +120,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Portainer 配置说明",
-      path: "/posts/2026-10-09-debnas-installation-notes/#portainer",
+      path: "/posts/2026-10-10-portainer-guide/",
     },
   },
   {
@@ -133,7 +133,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "MT Photos 配置说明",
-      path: "/posts/2026-10-09-debnas-installation-notes/#mt-photos",
+      path: "/posts/2026-10-10-mt-photos-guide/",
     },
   },
   {
@@ -146,7 +146,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Lucky 配置说明",
-      path: "/posts/2026-10-09-debnas-installation-notes/#lucky",
+      path: "/posts/2026-10-10-lucky-guide/",
     },
   },
   {
@@ -163,7 +163,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Mihomo 与 MetaCubeXD 配置说明",
-      path: "/posts/2026-10-09-debnas-installation-notes/#mihomo-与-metacubexd",
+      path: "/posts/2026-10-09-mihomo-docker/",
     },
   },
 ];

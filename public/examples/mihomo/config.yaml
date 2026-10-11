@@ -1,4 +1,4 @@
-# 配置来源：按用户提供的 Mihomo 配置整理，参考 windowBR《在 docker 中使用 mihomo》：
+# 配置来源：按公开文档和示例整理，参考 windowBR《在 docker 中使用 mihomo》：
 # https://windowbr.top/2024/11/02/mihomo-docker/
 # 公开示例已将订阅名称、订阅链接、节点前缀、代理凭据和控制器密钥替换为占位符。
 

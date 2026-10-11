@@ -16,7 +16,7 @@ tags:
 
 DebNAS 的系统、磁盘和 Docker 准备好以后，就可以接下载、整理和播放。这篇记录三种接法：下载后留在本地 HDD；直接转存或离线到 115；先下载到本地，再由 MoviePilot V3 整理到网盘。后两条通过 CMS 生成 STRM，最后汇入 Emby。
 
-系统基础见 [DebNAS 安装记录](/posts/2026-10-09-debnas-installation-notes/)，软件入口见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
+系统基础见 [DebNAS 安装记录](/posts/2026-10-09-debnas-installation-notes/)，软件入口见 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)。
 
 下面的共享媒体目录使用 `/path/to/...` 占位符，配置目录使用相对路径。部署前替换路径和凭据，同一份媒体在各容器里的路径保持一致。
 
@@ -691,7 +691,6 @@ MoviePilot 的配置和浏览器数据、下载器任务状态、CMS 配置、Em
 ### 网络与组合方案
 
 - [Lucky 项目](https://github.com/gdy666/lucky) 与 [官方网站](https://lucky666.cn/)、[ddns-go](https://github.com/jeessy2/ddns-go)、[Tailscale 连接类型说明](https://tailscale.com/kb/1257/connection-types)、[ZeroTier 文档](https://docs.zerotier.com/what/)。
-- NodeSeek：[《EMBY 搭建教程基于docker-compose，CMS + emby + 115+MOVIEPILOT v2+Qbittorrent》](https://www.nodeseek.com/post-616021-1)。标题与自动化观影主题来自收藏记录，页面存在访问验证，未据此确认具体配置；其中 MoviePilot V2 与旧版 CMS 的联动不能直接套到本文的 V3 方案。
 - [劲折腾的磕巴白菜](https://hi.keba.host/)：NAS、Emby、MoviePilot 与 Compose 相关实践文章，后续具体部署时再按主题对照。
 
 系统安装和维护可回到安装篇查看，媒体链路按三条路线分别验证。将应用内目录与本文映射对应后，再逐步加入订阅、增量同步与外网播放。

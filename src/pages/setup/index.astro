@@ -12,7 +12,8 @@ import { getPostUrl } from "@/utils/getPostPaths";
 import config from "@/config";
 
 const locale = Astro.currentLocale ?? config.site.lang;
-const description = "常用软件留一份清单，安装、设置和遇到的问题另写成篇。";
+const description =
+  "每类一篇总篇，汇总流程、软件与教程入口；子篇记录单个流程或软件的具体操作。";
 const posts = getSortedPosts(await getCollection("posts"));
 const categories = setupCategories.map(category => {
   const articles = posts.filter(
@@ -67,14 +68,14 @@ const categories = setupCategories.map(category => {
                   )}
                   class="text-accent mt-1 inline-block font-medium hover:underline"
                 >
-                  常用软件记录
+                  {category.overview.data.title}
                 </a>
               </div>
             )}
             {category.guides.length > 0 ? (
               <>
                 <p class="text-muted-foreground mt-5 text-xs">
-                  教程与笔记 · {category.guides.length} 篇
+                  子篇 · {category.guides.length} 篇
                 </p>
                 <ul class="mt-2 space-y-2">
                   {category.guides.slice(0, 4).map(post => (
@@ -97,7 +98,7 @@ const categories = setupCategories.map(category => {
               </>
             ) : (
               <p class="text-muted-foreground mt-5 text-sm">
-                教程与笔记陆续补充。
+                该类目暂无子篇，可先查看总篇中的流程与软件。
               </p>
             )}
           </section>

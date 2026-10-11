@@ -1,10 +1,11 @@
 ---
 setupCategory: games
 setupRole: overview
-title: 游戏常用软件记录
-description: 游戏平台、Mod 资源与管理器、修改器、串流、Android 和 Steam Deck 工具清单。
+title: 游戏总篇：流程、软件与教程
+description: 按游戏平台、Mod、串流、Android 和 Steam Deck 的使用顺序整理软件与资料，并记录独立教程的整理状态。
 author: Ayulog
 pubDatetime: "2026-10-11T00:00:00+08:00"
+modDatetime: "2026-10-11T00:00:00+08:00"
 draft: false
 tags:
   - 游戏
@@ -15,16 +16,34 @@ tags:
   - 软件清单
 ---
 
-游戏相关的软件和资源入口集中放在这里，按用途查找。桌面软件和系统设置见 [Windows 常用软件记录](/posts/2026-10-09-windows-software/)。
+游戏类目的总入口，先按游戏平台、Mod、串流或设备找到要走的流程，再看对应软件和项目说明。桌面软件和系统设置见 [Windows 总篇](/posts/2026-10-09-windows-software/)。
 
 ## 目录
 
+- [流程概览](#流程概览)
+- [独立教程](#独立教程)
 - [游戏平台与资源](#游戏平台与资源)
 - [Mod 资源与管理](#mod-资源与管理)
 - [修改器](#修改器)
 - [串流与跨平台运行](#串流与跨平台运行)
 - [Steam Deck 与 SteamOS](#steam-deck-与-steamos)
 - [安卓模拟器](#安卓模拟器)
+
+## 流程概览
+
+| 使用场景                 | 阅读顺序                                                          | 软件与资料                                      |
+| ------------------------ | ----------------------------------------------------------------- | ----------------------------------------------- |
+| 在电脑上安装和管理游戏   | 确认游戏平台 → 安装客户端 → 管理对应游戏库                        | [游戏平台与资源](#游戏平台与资源)               |
+| 给游戏安装 Mod           | 找具体游戏的 Mod 页面 → 核对版本、加载器和前置依赖 → 选择管理方式 | [Mod 资源与管理](#mod-资源与管理)               |
+| 从另一台设备玩 PC 游戏   | 区分远程串流与设备本机运行 → 按主机、客户端和游戏核对支持范围     | [串流与跨平台运行](#串流与跨平台运行)           |
+| 在 Steam Deck 上扩展功能 | 先核对 SteamOS 与插件前提 → 按项目说明安装和配置                  | [Steam Deck 与 SteamOS](#steam-deck-与-steamos) |
+| 在电脑上运行安卓游戏     | 先确认目标游戏与运行环境 → 选择平台或模拟器 → 查看对应设置说明    | [安卓模拟器](#安卓模拟器)                       |
+
+## 独立教程
+
+游戏类目目前还没有独立子篇。下方先保留软件入口和项目文档；Mod 安装、串流配置、Steam Deck 插件等内容写成教程后，会按单个流程或软件从这里进入。
+
+目前可直接查阅的操作资料包括 [SMAPI 玩家指南](https://stardewvalleywiki.com/Modding:Player_Guide/Getting_Started)、[GameNative 兼容性记录](https://gamenative.app/compatibility)和 [DeckyClash 项目说明](https://github.com/chenx-dust/DeckyClash/tree/main)。这些是外部资料，尚未整理为本站子篇。
 
 ## 游戏平台与资源
 

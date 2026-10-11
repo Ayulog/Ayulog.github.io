@@ -14,7 +14,7 @@ tags:
 
 DockerCopilot 可以在网页里手动更新容器、清理镜像和备份容器设置。[当前官方 README][copilot-readme]使用 bridge 网络、`12712` 端口与 `0nlylty/dockercopilot:latest`；镜像账户名开头是数字 `0`。
 
-返回 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
+返回 [NAS 总篇](/posts/2026-10-09-nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/2026-10-10-docker-management/)。
 
 ## 开始之前
 

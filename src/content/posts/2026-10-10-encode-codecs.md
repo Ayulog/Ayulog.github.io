@@ -5,6 +5,7 @@ title: 编码篇：x264、x265 与 AV1
 description: 从 CRF、预设、两遍编码和播放兼容性入手，用 FFmpeg 对比 x264、x265 与 SVT-AV1 的短片试压，记录官方文档、第三方构建和参数版本差异。
 author: Ayulog
 pubDatetime: "2026-10-10T12:00:00+08:00"
+modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 tags:
   - Encode
@@ -17,7 +18,7 @@ tags:
 
 画面处理完成后，编码器负责把视频帧压成可以保存和播放的码流。这里先把影响试压的几组设置分开，再用同一段素材比较 x264、x265 和 SVT-AV1。
 
-软件入口见[压制常用软件与资料](/posts/2026-10-09-encode-software/)，需要先处理画面时看 [VapourSynth 压制篇](/posts/2026-10-10-encode-vapoursynth/)，系统教程和参数解释收在[学习篇](/posts/2026-10-10-encode-learning/)。
+软件入口见[压制总篇：流程、软件与教程](/posts/2026-10-09-encode-software/)，需要先处理画面时看 [VapourSynth 压制篇](/posts/2026-10-10-encode-vapoursynth/)，系统教程和参数解释收在[压制总篇的学习资料](/posts/2026-10-09-encode-software/#学习篇)。
 
 > 资料核查日期：2026-10-10；参数说明与测试方法于 2026-10-11 补充核对。下面的命令依据官方文档核对，是短片试压的起点；尚未进行实际编码测试。
 
