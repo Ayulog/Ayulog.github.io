@@ -4,6 +4,7 @@ description: 以通用 Compose 示例串起本地入库、115 云端入库、本
 author: Ayulog
 pubDatetime: "2026-10-09T18:00:00+08:00"
 draft: false
+setupCategory: nas
 tags:
   - Debian
   - DebNAS
@@ -13,11 +14,11 @@ tags:
   - 自动观影
 ---
 
-这篇接着 [DebNAS 安装及折腾记录](/posts/2026-10-09-debnas-installation-notes/) 往下写，把已经搭好的系统、磁盘、Docker 和远程访问环境，串成找片、下载、整理、入库与播放的流程。工具入口仍集中保留在 [NAS 常用软件及网站记录](/posts/2026-10-09-nas-software-websites/) 中。
+DebNAS 的系统、磁盘和 Docker 准备好以后，就可以接下载、整理和播放。这篇记录三种接法：下载后留在本地 HDD；直接转存或离线到 115；先下载到本地，再由 MoviePilot V3 整理到网盘。后两条通过 CMS 生成 STRM，最后汇入 Emby。
 
-媒体处理分为三条路线：本地下载后留在 HDD；直接转存或离线到 115；先下载到本地，再由 MoviePilot V3 整理到网盘。后两条路线通过 CMS 生成 STRM，最终和本地文件一起汇入 Emby。
+系统基础见 [DebNAS 安装记录](/posts/2026-10-09-debnas-installation-notes/)，软件入口见 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
 
-下文以官方镜像、上游默认端口和通用目录示例说明接法。配置目录使用相对路径，共享媒体目录使用 `/path/to/...` 占位符；同一目录在各容器中的映射保持一致。三条路线可按需求选用，先替换路径、填写凭据，再用少量文件验证整理与播放。
+下面的共享媒体目录使用 `/path/to/...` 占位符，配置目录使用相对路径。部署前替换路径和凭据，同一份媒体在各容器里的路径保持一致。
 
 ## 目录
 

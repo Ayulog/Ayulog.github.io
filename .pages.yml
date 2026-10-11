@@ -61,6 +61,60 @@ content:
         list: true
         description: 例如 Docker、生活、GitHub。
 
+      - name: setupCategory
+        label: 折腾分类
+        type: select
+        description: 折腾文章选择一个主要分类；其他文章留空。
+        options:
+          values:
+            - value: windows
+              label: Windows
+            - value: games
+              label: 游戏
+            - value: nas
+              label: NAS
+            - value: soft-router
+              label: 软路由
+            - value: pt
+              label: PT
+
+      - name: setupRole
+        label: 折腾文章类型
+        type: select
+        default: guide
+        options:
+          values:
+            - value: overview
+              label: 总篇（常用软件记录）
+            - value: guide
+              label: 子篇（教程与笔记）
+
+      - name: mediaCategory
+        label: Media 分类
+        type: select
+        description: Media 文章选择一个主要分类；其他文章留空。
+        options:
+          values:
+            - value: subtitles
+              label: 字幕
+            - value: audio
+              label: 音频
+            - value: diy
+              label: DIY
+            - value: encode
+              label: 压制
+
+      - name: mediaRole
+        label: Media 文章类型
+        type: select
+        default: guide
+        options:
+          values:
+            - value: overview
+              label: 总篇（常用软件与资料）
+            - value: guide
+              label: 子篇（教程与笔记）
+
       - name: featured
         label: 首页精选
         type: boolean
@@ -69,7 +123,7 @@ content:
       - name: draft
         label: 草稿
         type: boolean
-        default: false
+        default: true
         description: 打开后文章不会作为正式文章发布。
 
       - name: ogImage

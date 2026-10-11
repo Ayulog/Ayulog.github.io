@@ -4,6 +4,7 @@ import { ClientRouter } from "astro:transitions";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { resolveDefaultOgImagePath } from "@/utils/resolveDefaultOgImagePath";
 import { getAssetPath } from "@/utils/withBase";
+import { isLocalPreview } from "@/utils/postFilter";
 import config from "@/config";
 import "@/styles/global.css";
 
@@ -119,6 +120,22 @@ const rssHref = getRelativeLocaleUrl(
   <body
     class="bg-background font-app text-foreground selection:bg-accent/75 selection:text-accent-foreground flex min-h-svh flex-col"
   >
+    {
+      isLocalPreview && (
+        <aside class="border-border bg-muted/50 border-b px-4 py-2 text-center text-sm">
+          本地全量预览 · 包含草稿
+          <a
+            href={getRelativeLocaleUrl(
+              Astro.currentLocale ?? site.lang,
+              "archives"
+            )}
+            class="text-accent ms-3 underline underline-offset-4"
+          >
+            查看全部文章
+          </a>
+        </aside>
+      )
+    }
     <slot />
     <script>
       import "@/scripts/theme";

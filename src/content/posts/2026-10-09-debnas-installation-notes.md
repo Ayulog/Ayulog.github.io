@@ -1,4 +1,6 @@
 ---
+setupCategory: nas
+setupRole: guide
 title: DebNAS 安装及折腾记录
 description: 以 Debian 与 DebNAS 为基础，整理系统安装、通用目录规划、Docker Compose 示例、云盘挂载、备份恢复与故障排查方法。
 author: Ayulog
@@ -12,11 +14,9 @@ tags:
   - 运维
 ---
 
-前面在 [NAS 常用软件及网站记录](/posts/2026-10-09-nas-software-websites/) 里收集了不少工具，这篇把系统这一层补上：从安装 Debian、运行 DebNAS 开始，再逐步加入磁盘共享、容器、云盘挂载与备份。
+这篇记录 Debian / DebNAS 的系统准备、磁盘共享、备份和故障排查。应用入口放在 [NAS 常用软件记录](/posts/2026-10-09-nas-software-websites/)。
 
-选 Debian 做 NAS，可以按用途安排存储、应用和维护方式。[DebNAS](https://kekylin.github.io/debnas-docs/) 将不少基础操作整理成了交互脚本，适合作为搭建环境的入口。
-
-本文采用**通用示例**：服务端口优先沿用官方安装示例，应用数据使用相对目录、Docker 命名卷或 `/path/to/...` 占位路径。它们不表示某台机器已经部署的状态，也不是 DebNAS 统一规定的目录结构。安装入口和配套服务文档按 **2026 年 10 月 9 日**核对，具体支持范围仍以各项目当前文档为准。
+示例中的 `/path/to/...` 需要换成实际路径，`./config` 等相对路径以 Compose 文件所在目录为准。系统支持范围与安装入口核对于 **2026 年 10 月 9 日**，这些配置不代表某台设备的部署状态。
 
 ## 目录
 
@@ -232,6 +232,8 @@ Docker 日志轮转可在 `/etc/docker/daemon.json` 中配置。下面是容量�
 
 ### Dockge
 
+详细操作见 [Dockge 部署与管理](/posts/2026-10-10-dockge-guide/)。
+
 采用 [Dockge 官方 Compose](https://github.com/louislam/dockge/blob/master/compose.yaml) 的 `5001` 端口、`./data` 和 `/opt/stacks`。后者是上游示例目录，**绑定挂载左右两侧必须为同一个绝对路径**，并与 `DOCKGE_STACKS_DIR` 一致。
 
 [下载 Dockge Compose](/examples/debnas/dockge/compose.yaml)
@@ -255,6 +257,8 @@ services:
 访问 `http://NAS_IP:5001`，完成账户初始化。Dockge 和下面的 Portainer 挂载 Docker socket，用于管理 Docker；给该挂载加 `:ro` 不等于把 Docker API 变成只读。
 
 ### Portainer
+
+详细操作见 [Portainer CE 部署与管理](/posts/2026-10-10-portainer-guide/)。
 
 采用 [Portainer CE 官方安装文档](https://docs.portainer.io/start/install-ce/server/docker/linux) 的 `lts` 镜像和 HTTPS `9443` 端口，使用命名卷保存 `/data`。Edge Agents 需要的 `8000` 可按用途加入；基础示例不启用旧版 HTTP `9000`。
 
@@ -280,6 +284,8 @@ volumes:
 
 ### MT Photos
 
+详细操作见 [MT Photos 图库设置](/posts/2026-10-10-mt-photos-guide/)。
+
 参考 [MT Photos 官方安装说明](https://mtmt.tech/docs/start/install/)，保留 `8063`、`/config` 和 `/upload`；已有照片用 `/path/to/photos:/photos` 举例。`/photos` 是自选图库目录，并非系统必需目录。
 
 [下载 MT Photos Compose](/examples/debnas/mtphotos/compose.yaml)
@@ -304,6 +310,8 @@ services:
 
 ### Lucky
 
+详细操作见 [Lucky 的 DDNS 与反向代理](/posts/2026-10-10-lucky-guide/)。
+
 参考 [Lucky 官方安装说明](https://lucky666.cn/docs/install)，Linux 使用推荐的 host 网络，配置保存到 `./config:/app/conf`。初始管理入口通常为 `http://NAS_IP:16601`，代理监听、证书和 DDNS 规则需在自己的实例中设置。
 
 [下载 Lucky Compose](/examples/debnas/lucky/compose.yaml)
@@ -323,6 +331,8 @@ host 模式直接使用宿主机网络，不再写 `ports`；后续规则中启�
 
 ### Mihomo 与 MetaCubeXD
 
+详细操作见 [Mihomo 配置](/posts/2026-10-09-mihomo-docker/)。
+
 Mihomo 示例采用普通 bridge 网络下的显式代理，MetaCubeXD 使用官方独立面板镜像。对应入口为代理 `7890`、控制器 `9090`、面板 `8080`。这是用于说明连接关系的端口组合；Mihomo 监听端口由应用配置决定，并不存在必须沿用的端口值。
 
 [下载 Mihomo 与 MetaCubeXD Compose](/examples/debnas/mihomo/compose.yaml) · [下载应用配置模板](/examples/debnas/mihomo/config.example.yaml)
@@ -331,7 +341,7 @@ Mihomo 示例采用普通 bridge 网络下的显式代理，MetaCubeXD 使用官
 # Basic explicit-proxy example; prepare ./config/config.yaml before starting.
 services:
   mihomo:
-    image: ghcr.io/metacubex/mihomo:latest
+    image: docker.io/metacubex/mihomo:latest
     restart: unless-stopped
     ports:
       - 7890:7890
@@ -456,7 +466,7 @@ After=local-fs.target
 
 ## 运行几天后整机失联
 
-遇到 LAN、SSH 与网页一起无法访问时，先区分网络、服务、系统和供电故障。下面是排查思路，并不表示这些现象已经在当前设备上出现。
+遇到 LAN、SSH 与网页一起无法访问时，先区分网络、服务、系统和供电故障。按下面的现象缩小范围，再查看对应日志。
 
 | 观察                         | 下一步                             |
 | ---------------------------- | ---------------------------------- |

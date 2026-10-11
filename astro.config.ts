@@ -17,11 +17,16 @@ import {
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/utils/transformers/fileName";
+import { unpublishedPostLinks } from "./src/utils/transformers/unpublishedPostLinks";
 import config from "./astro-paper.config";
 
 export default defineConfig({
   site: config.site.url,
   integrations: [
+    unpublishedPostLinks({
+      postsDirectory: new URL("./src/content/posts/", import.meta.url),
+      scheduledPostMargin: config.posts?.scheduledPostMargin ?? 15 * 60 * 1000,
+    }),
     mdx(),
     sitemap({
       filter: page =>

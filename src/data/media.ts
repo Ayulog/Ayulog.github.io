@@ -1,47 +1,37 @@
+export const mediaCategorySlugs = [
+  "subtitles",
+  "audio",
+  "diy",
+  "encode",
+] as const;
+
+export type MediaCategorySlug = (typeof mediaCategorySlugs)[number];
+
 export type MediaCategory = {
-  slug: string;
+  slug: MediaCategorySlug;
   label: string;
   description: string;
-  tags: readonly string[];
 };
 
 export const mediaCategories: readonly MediaCategory[] = [
   {
     slug: "subtitles",
     label: "字幕",
-    description: "字幕制作、翻译与整理。",
-    tags: ["字幕", "subtitles"],
+    description: "字幕编辑、识别、翻译、时间轴与字体。",
   },
   {
     slug: "audio",
     label: "音频",
-    description: "声音、音乐与音频处理。",
-    tags: ["音频", "audio"],
+    description: "音轨提取、转换、编码与处理。",
   },
   {
     slug: "diy",
     label: "DIY",
-    description: "动手制作，记录想法与过程。",
-    tags: ["DIY"],
+    description: "蓝光分流、封装、章节与 HDR 元数据处理。",
   },
   {
     slug: "encode",
-    label: "Encode",
-    description: "视频编码、压制与画质笔记。",
-    tags: ["Encode"],
-  },
-  {
-    slug: "other",
-    label: "其他",
-    description: "其他与媒体有关的小事。",
-    tags: ["其他", "other"],
+    label: "压制",
+    description: "编码器、滤镜、画质处理与学习资料。",
   },
 ];
-
-export function matchesMediaCategory(
-  tags: readonly string[],
-  category: MediaCategory
-) {
-  const categoryTags = category.tags.map(tag => tag.toLowerCase());
-  return tags.some(tag => categoryTags.includes(tag.trim().toLowerCase()));
-}

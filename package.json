@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "dev:all": "astro dev --mode local-preview",
     "build": "astro check && astro build && node scripts/clean-pagefind.mjs && pagefind --site dist && node scripts/sync-pagefind.mjs",
     "preview": "astro preview",
     "sync": "astro sync",
