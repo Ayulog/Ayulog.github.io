@@ -1,6 +1,6 @@
 ---
 title: TMDB 代理：Vercel 部署与媒体软件设置
-description: 使用 imaliang/tmdb-proxy 在 Vercel 部署个人 TMDB 反向代理，整理自定义域名、DNS 与 HTTPS、API 和图片验证，以及 MoviePilot、Emby 的接入与排错方法。
+description: 部署 tmdb-proxy 到 Vercel，绑好域名、验证 API 与图片，再接入 MoviePilot、Emby。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
 draft: false
@@ -13,21 +13,9 @@ tags:
   - Emby
 ---
 
-影片命名没有问题，海报和简介仍然读不出来时，可以分别检查 TMDB API 与图片服务。确实是连接问题，而且应用支持自定义 TMDB 地址，再考虑部署反向代理。
+影片命名没有问题，海报和简介却仍然读不出来时，先分别检查 TMDB API 与图片服务。确认是连接问题，应用又支持自定义 TMDB 地址，再考虑部署反向代理。
 
-[imaliang/tmdb-proxy](https://github.com/imaliang/tmdb-proxy) 可部署在 Vercel，下面记录域名、DNS、API 与图片验证，以及 MoviePilot 和 Emby 插件的接法。其他家庭影音工具见 [NAS 服务清单](/posts/nas-software-websites/)。
-
-## 目录
-
-- [这个代理解决什么问题](#这个代理解决什么问题)
-- [部署前准备](#部署前准备)
-- [把项目部署到 Vercel](#把项目部署到-vercel)
-- [绑定域名与配置 DNS](#绑定域名与配置-dns)
-- [分别验证 API 和图片](#分别验证-api-和图片)
-- [接入 MoviePilot 与 Emby](#接入-moviepilot-与-emby)
-- [常见问题](#常见问题)
-- [日常维护与恢复](#日常维护与恢复)
-- [参考资料](#参考资料)
+[imaliang/tmdb-proxy](https://github.com/imaliang/tmdb-proxy) 可以部署到自己的 Vercel 账号，再绑定域名。部署后先验证 API，再验证图片，两项都通过才改 MoviePilot 和 Emby 插件的 TMDB 地址；其他家庭影音工具见 [NAS 服务清单](/posts/nas-software-websites/)。
 
 ## 这个代理解决什么问题
 
@@ -66,7 +54,7 @@ Vercel 的 Hobby 计划面向个人、非商业用途，并有资源额度和使
 - `/t/p/` 开头的图片请求通过 Vercel rewrite 转发给 `image.tmdb.org`。
 - 其他路径交给 `api/tmdb.js`，函数向 `api.themoviedb.org` 发出 GET 请求，并转发传入的 `Authorization` 请求头。
 
-API 函数还带有进程内缓存。因此，打开首页跳到 GitHub 是预期行为；它既不是故障，也不能证明 API 和图片都正常。
+API 函数还带有进程内缓存。因此，打开首页跳到 GitHub 是预期行为，与 API、图片是否正常无关。
 
 ## 部署前准备
 
@@ -74,11 +62,11 @@ API 函数还带有进程内缓存。因此，打开首页跳到 GitHub 是预�
 
 1. **GitHub 账号**：用于保存自己的项目副本。
 2. **Vercel 账号**：可以按平台提示关联 GitHub，选择适合个人用途的计划。
-3. **可以管理 DNS 的域名**：本文使用 `tmdb.example.com` 演示，实际操作时换成自己的子域名。
+3. **可以管理 DNS 的域名**：这里用 `tmdb.example.com` 演示，实际操作时换成自己的子域名。
 4. **支持替代 TMDB 地址的应用**：例如 MoviePilot，或者具备相应功能且版本兼容的 Emby 插件。
 5. **用于测试的 TMDB 凭据**：在 TMDB 账号的 API 设置中申请或查看；下文使用 API Read Access Token。
 
-先确认应用提供的是“TMDB API 域名”“图片域名”或类似设置。`HTTP_PROXY`、`HTTPS_PROXY`、SOCKS 代理地址是另一类配置，不能直接填入本文的反向代理域名。
+先确认应用提供的是“TMDB API 域名”“图片域名”或类似设置。`HTTP_PROXY`、`HTTPS_PROXY`、SOCKS 代理地址是另一类配置，不能直接填这里的反向代理域名。
 
 ## 把项目部署到 Vercel
 
@@ -110,7 +98,7 @@ tmdb-proxy/
 └── vercel.json
 ```
 
-**不要只复制 `vercel.json`。** 当前项目的 API 转发依赖函数文件以及 `package.json` 中的依赖；缺少它们，图片与 API 可能出现不同的结果。
+**复制整个仓库，而不是只拿 `vercel.json`。** 当前项目的 API 转发依赖函数文件以及 `package.json` 中的依赖；缺少它们，图片与 API 可能出现不同的结果。
 
 当前代码没有要求在 Vercel 环境变量里预设 `TMDB_API_KEY`。凭据由客户端随请求传入，后面的测试命令也是如此；不需要把自己的 Key 写进公开仓库。
 
@@ -132,7 +120,7 @@ tmdb.example.com
 | `A`               | Vercel 给出的 IPv4 地址 | 不能把别名域名填进 A 记录的值              |
 | `TXT`             | Vercel 给出的验证文本   | 仅在要求验证域名归属时添加                 |
 
-**以自己项目当前显示的值为准，不照抄教程里的固定 IP 或 CNAME。** Vercel 可能为项目提供特定的记录值。
+**照自己项目当前显示的记录填写，不照抄教程里的固定 IP 或 CNAME。** Vercel 可能为项目提供特定的记录值。
 
 使用 Cloudflare 管理 DNS 时，初次接入可以先选 **DNS only（灰云）**，让请求直接到 Vercel，减少排查环节。检查同一个子域名上是否存在冲突的 A、AAAA 或 CNAME 记录；只处理这个子域名，不改动其他服务的解析。
 
@@ -191,7 +179,7 @@ curl --fail --show-error --location \
   'https://tmdb.example.com/t/p/w500/REPLACE_WITH_ACTUAL_POSTER_FILENAME.jpg'
 ```
 
-打开下载的文件，应能看到海报。这里的文件名是占位符，必须换成 API 返回的实际值；仅保存了一个名为 `.jpg` 的文件，还不能说明收到的内容一定是图片。
+打开下载的文件，应能看到海报。这里的文件名是占位符，必须换成 API 返回的实际值，再打开确认内容。
 
 API 和图片两项都通过之后，再配置媒体应用。
 
@@ -201,7 +189,7 @@ API 和图片两项都通过之后，再配置媒体应用。
 
 MoviePilot 当前配置说明将 TMDB 设置放在 **设定 → 系统 → 进阶设置**。API 与图片需要分别设置：
 
-| 配置项              | 本文示例           |
+| 配置项              | 示例值             |
 | ------------------- | ------------------ |
 | `TMDB_API_DOMAIN`   | `tmdb.example.com` |
 | `TMDB_IMAGE_DOMAIN` | `tmdb.example.com` |
@@ -220,13 +208,13 @@ StrmAssistant（神医助手）提供 **替代 TMDB 配置**功能，可用来�
 
 操作前先查看[插件官方说明](https://github.com/sjtuross/StrmAssistant/wiki/替代-TMDB-配置)，并核对当前插件分支支持的 Emby 与 MovieDb 插件版本。旧教程使用的插件文件不一定适合最新 Emby。
 
-安装兼容版本后，在 **替代 TMDB 配置**中填写自己的代理地址。官方页面示例使用包含协议的完整地址，例如 `https://tmdb.example.com`，不要直接照搬 MoviePilot 的裸域名格式；实际字段仍以所安装版本的说明为准。TMDB 凭据需要填写时，使用自己的有效凭据。
+安装兼容版本后，在 **替代 TMDB 配置**中填写自己的代理地址。官方页面示例使用包含协议的完整地址，例如 `https://tmdb.example.com`，不要直接照搬 MoviePilot 的裸域名格式；字段名和格式参考所安装版本的说明。TMDB 凭据需要填写时，使用自己的有效凭据。
 
 保存后，选择**一部测试影片**刷新元数据，确认标题、简介和海报都能获取，再决定是否扩大刷新范围。已有手工修改的简介、图片或本地 NFO 时，先保留备份；“替换所有元数据”可能覆盖人工整理结果。
 
 ### 应用没有自定义 TMDB 地址怎么办
 
-先查找该应用当前支持的插件或网络代理方案。不能仅凭它使用 TMDB，就认定它支持本文的域名替换方法。
+先查找该应用当前支持的插件或网络代理方案；它能不能换 TMDB 域名，要看应用自己的设置项。
 
 尤其不要把 `api.themoviedb.org` 的 hosts 记录直接指向 Vercel 的 IP：hosts 只改变域名解析，HTTPS 请求中的域名、证书校验以及 Vercel 的站点路由不会因此变成 `tmdb.example.com`。Docker 的 `extra_hosts` 也不能完成这种 URL 替换。
 

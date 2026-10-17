@@ -1,6 +1,6 @@
 ---
 title: v2rayA：Docker 部署与应用代理设置
-description: v2rayA 的 Docker Compose 部署、订阅导入、规则代理端口、应用接入和排错记录。
+description: 用 Docker 部署 v2rayA，导入订阅、选好分流端口，再让局域网应用连上代理并验证请求。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
 draft: false
@@ -12,15 +12,13 @@ tags:
   - 网络
 ---
 
-v2rayA 自带网页管理界面，导入订阅后就能选节点、调分流，不需要另外装控制面板。这篇使用 `v2.5.10`；偏好直接改 YAML 的话，可以看 [Mihomo](/posts/mihomo-docker/)。两者的配置格式不同。
+v2rayA 自带网页管理界面，导入订阅后就能选节点、调分流，不用再装控制面板。这里的步骤针对 `v2.5.10`；偏好直接改 YAML 的话，可以看 [Mihomo](/posts/mihomo-docker/)，两者的配置格式不同。
 
-需要先有 Linux Docker Engine 和 Compose V2，安装步骤见 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。这里用 bridge 网络，应用主动连接代理端口，透明代理保持关闭；不需要 `privileged: true`、host 网络或宿主机内核模块挂载。
+开始前要有 Linux Docker Engine 和 Compose V2，安装步骤见 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。部署用 bridge 网络，应用主动连接代理端口，透明代理保持关闭，也不需要 `privileged: true`、host 网络或宿主机内核模块挂载。其他 NAS 服务收在 [NAS 服务清单](/posts/nas-software-websites/)。
 
-返回 [NAS 服务清单](/posts/nas-software-websites/)。
+## 四个端口的用途与区别
 
-## 先认清四个端口
-
-下面是 v2rayA 的默认端口，调整过设置时以实际值为准：
+下面是 v2rayA 的默认端口，改过设置时按自己的端口替换：
 
 | 端口    | 用途             | 请求如何处理                       |
 | ------- | ---------------- | ---------------------------------- |
@@ -75,7 +73,7 @@ docker compose logs --tail=100 v2raya
 
 端口已占用时，修改映射中间的宿主端口，例如将 `NAS_LAN_IP:2017:2017` 改为 `NAS_LAN_IP:12017:2017`，然后用 `12017` 打开网页。若在 v2rayA 内改了实际监听端口，则还要同步最右侧的容器端口。
 
-## 首次设置与端口分享
+## 首次登录与局域网端口分享
 
 浏览器打开 `http://NAS_IP:2017`，按新版界面完成以下操作；这里的 `NAS_IP` 就是刚才绑定的局域网地址：
 
@@ -88,7 +86,7 @@ docker compose logs --tail=100 v2raya
 
 默认的 HTTP / SOCKS 代理端口没有密码，**网页管理密码不等于代理认证**。以上端口只提供给可信局域网设备，不要在路由器上转发到公网；如果需要代理认证，应按官方入站说明添加带认证的自定义入站，并关闭不用的无密码端口，再同步 Compose 映射。
 
-## 让应用连接并验证
+## 让应用连接代理并验证
 
 应用支持 HTTP 代理时，可以按目标选择下面的地址：
 
@@ -118,13 +116,13 @@ curl --proxy http://NAS_IP:20172 --head https://example.com
 curl --proxy socks5h://NAS_IP:20170 --head https://example.com
 ```
 
-Windows PowerShell 将 `curl` 换成 `curl.exe`。检查目标网站的最终响应，并结合 v2rayA 的日志核对连接；HTTP CONNECT 的成功响应不能单独证明目标请求成功。规则端口可能按规则直连，SOCKS5 端口则交给 `proxy` 组；本例只发布 TCP 端口，不把这些测试当作 UDP 已可用的证明。
+Windows PowerShell 将 `curl` 换成 `curl.exe`。检查目标网站的最终响应，并结合 v2rayA 的日志核对连接；HTTP CONNECT 返回成功时，目标网站的响应还没到。规则端口可能按规则直连，SOCKS5 端口则交给 `proxy` 组；本例只发布 TCP 端口，这些测试也覆盖不到 UDP。
 
-给 MoviePilot 等应用设置代理，只影响该应用实际交给代理的请求。下载器是否使用代理还要看下载器自身的设置，不能仅凭部署了 v2rayA 就判断 PT、BT 或所有下载流量的出口。
+给 MoviePilot 等应用设置代理，只影响该应用实际交给代理的请求。下载器是否使用代理，取决于下载器自己的设置。
 
 ## Docker 拉取镜像、排错与备份
 
-绿联等 NAS 如果在 Docker 设置中提供“HTTP 代理”，可以按系统版本填写 `http://NAS_IP:20171` 或规则端口 `20172`；这是 **Docker 拉取镜像的代理**，与给业务容器设置 `HTTP_PROXY` 分开配置。Linux Docker Engine 的具体设置仍以 [Docker daemon 代理文档](https://docs.docker.com/engine/daemon/proxy/)为准。代理容器必须先能正常启动，避免用尚未启动的 v2rayA 下载自身镜像。
+绿联等 NAS 如果在 Docker 设置中提供“HTTP 代理”，可以按系统版本填写 `http://NAS_IP:20171` 或规则端口 `20172`；这是 **Docker 拉取镜像的代理**，与给业务容器设置 `HTTP_PROXY` 分开配置。Linux Docker Engine 的具体设置见 [Docker daemon 代理文档](https://docs.docker.com/engine/daemon/proxy/)。代理容器必须先能正常启动，避免用尚未启动的 v2rayA 下载自身镜像。
 
 - **网页打不开**：检查容器日志、`2017` 的宿主映射，以及绑定的地址是否确实属于 NAS。
 - **网页正常，应用连不上代理**：先看是否开启“允许局域网的连接”，再核对端口映射、NAS 防火墙和应用填写的地址。

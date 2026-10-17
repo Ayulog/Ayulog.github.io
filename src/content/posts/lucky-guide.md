@@ -1,6 +1,6 @@
 ---
 title: Lucky：DDNS、证书与反向代理
-description: Lucky 的 Docker 部署，以及公网 IPv4、IPv6 下的 DDNS、HTTPS 证书和 Web 反向代理配置。
+description: 有公网 IPv4 或 IPv6 时，用 Lucky 做 DDNS、申请证书并反向代理内网 Web 服务。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
 draft: false
@@ -13,9 +13,9 @@ tags:
   - 远程访问
 ---
 
-Lucky 把 DDNS、证书和反向代理放在一个界面里。有公网入口时，可以用它给照片或媒体服务配一个 HTTPS 地址。没有公网入口时，先看 [NAS 远程访问](/posts/nas-remote-access/)，DDNS 本身不能打通连接。
+Lucky 把 DDNS、证书和反向代理放在同一个界面里。有公网入口时，可以用它给照片或媒体服务配一个 HTTPS 地址；没有公网入口的话，先看 [NAS 远程访问](/posts/nas-remote-access/)，DDNS 本身不能打通连接。
 
-下面沿用 Linux Docker Engine 和 Compose V2 的部署方式。还没有 Docker 的话，先看 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。其他工具收在 [NAS 服务清单](/posts/nas-software-websites/)。
+部署使用 Linux Docker Engine 和 Compose V2；还没有 Docker 的话，先看 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。其他工具收在 [NAS 服务清单](/posts/nas-software-websites/)。
 
 ## Docker 部署
 
@@ -34,7 +34,7 @@ services:
 
 配置保存在项目下的 `config/`。旧教程中的 `/goodluck` 不适用于这里的镜像；迁移前先导出旧配置，按当前路径放好。
 
-本例用 host 网络，直接占用 Linux 宿主机端口，不能靠 Compose 的 `ports:` 限制监听。启动前在路由器和设备防火墙中确认管理端口 `16601` 只允许可信内网或私有组网访问，IPv4 和 IPv6 都要检查。这组网络功能不需要 Docker socket。
+本例用 host 网络，端口直接开在 Linux 宿主机上，Compose 的 `ports:` 不再限制监听范围。启动前在路由器和设备防火墙中确认管理端口 `16601` 只允许可信内网或私有组网访问，IPv4 和 IPv6 都要检查。这组网络功能不需要 Docker socket。
 
 在项目目录启动：
 
@@ -52,7 +52,7 @@ docker compose logs --tail=100 lucky
 
 - NAS 的固定局域网地址记为 `NAS_IP`，Lucky 也运行在这台 NAS 上。
 - 照片应用已经能通过 `http://NAS_IP:2342` 在内网访问，并已配置登录认证。
-- 对外使用自己的域名，本文用 `photos.example.com` 占位。
+- 对外使用自己的域名，示例用 `photos.example.com` 占位。
 - 选择 TCP `18443` 作为对外 HTTPS 端口，并确认未被占用、运营商允许入站。
 
 这些地址和端口只是示例，实际填写前换成自己的配置。

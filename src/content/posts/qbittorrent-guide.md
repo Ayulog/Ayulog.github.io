@@ -1,6 +1,6 @@
 ---
 title: qBittorrent 安装与设置
-description: 记录 qBittorrent 的 Docker、Windows、macOS 和 Debian 安装，配置下载路径、Web UI、端口、限速、做种与 MoviePilot 整理。
+description: 在 NAS、Windows、macOS 和 Debian 上装 qBittorrent，设置路径、端口与做种。
 author: Ayulog
 pubDatetime: "2026-10-10T14:15:00+08:00"
 draft: false
@@ -13,13 +13,13 @@ tags:
   - 教程
 ---
 
-qBittorrent 用来下载、校验和做种。这里分别记录 NAS 的 Docker 部署、Windows / macOS 安装，以及 Debian 上的无桌面服务。使用哪一种，文件就由哪台后端保存，浏览器只是管理入口。
+qBittorrent 负责下载、校验和做种。装在哪台机器上，文件就由那台后端保存，浏览器只是管理入口：NAS 上用 Docker 部署，Windows / macOS 装桌面版，Debian 上跑无桌面的 nox 服务。
 
-## 目录和权限
+## 目录、挂载路径与权限
 
 单独建立项目目录，例如 `stacks/qbittorrent/`，将下文的 `compose.yaml` 与 `.env` 放在里面。`./config` 保存这个下载器的配置，下载文件另放在 NAS 数据盘。
 
-本文把 NAS 数据根目录映射到容器的 `/data`，供下载器和 MoviePilot 共用：
+下面把 NAS 数据根目录映射到容器的 `/data`，供下载器和 MoviePilot 共用：
 
 ```text
 /path/to/data/
@@ -94,17 +94,17 @@ docker compose logs --tail=100 qbittorrent
 | 未完成任务目录            | `/data/downloads/incomplete/qbittorrent` |
 | MoviePilot 的本地媒体目标 | `/data/library` 下的电影或剧集目录       |
 
-先添加一个有权下载的 Linux 发行版种子，确认文件出现在 NAS 的对应目录，完成后能校验并保持做种。分类需要自动化接管时，按 MoviePilot 中约定的分类和保存目录设置；手工任务不一定会被自动整理。
+先添加一个有权下载的 Linux 发行版种子，确认文件出现在 NAS 的对应目录，完成后能校验并保持做种。分类需要自动化接管时，按 MoviePilot 中约定的分类和保存目录设置；手工任务可能不会被自动整理。
 
 需要长期做种时，保留下载目录的文件名和层级。确实需要移动文件，先暂停任务，使用 **设置位置** 指向新目录，再执行 **强制重新校验**，核对完整性后恢复；不要直接删除 `.fastresume` 文件来处理路径错误。
 
-公网 BT 可根据网络环境使用 DHT、PeX 和本地发现；PT 按站点要求配置，不要向私有种子随意追加公共 Tracker，也不要公开含 Passkey 的地址。协议加密不等于匿名。
+公网 BT 可根据网络环境使用 DHT、PeX 和本地发现；PT 按站点要求配置，不要向私有种子随意追加公共 Tracker，也不要公开含 Passkey 的地址。协议加密只解决链路，匿名性另算。
 
 ## 限速、队列与 RSS
 
-先用默认设置跑通任务，再根据带宽、硬盘负载和连接情况调整。上传上限可从实测可用上行的约 70%—80% 试起，为其他设备留出余量；这只是起点，不能保证适合所有线路。注意客户端的 `kB/s`、`KiB/s` 与套餐的 `Mbps` 单位不同。
+先用默认设置跑通任务，再根据带宽、硬盘负载和连接情况调整。上传上限可从实测可用上行的约 70%—80% 试起，为其他设备留出余量；这只是起点，最终值按线路和上行实测调整。注意客户端的 `kB/s`、`KiB/s` 与套餐的 `Mbps` 单位不同。
 
-可从以下范围试起：全局连接数 300—800、每任务 50—100、全局上传槽 20—50、每任务上传槽 4—8、活跃下载 3—5 个。低功耗 NAS 或机械盘先取较低值；网页卡顿、丢包或磁盘持续繁忙时，优先降低上传、并发和连接数。增加连接数不能让无人做种的资源获得数据。
+可从以下范围试起：全局连接数 300—800、每任务 50—100、全局上传槽 20—50、每任务上传槽 4—8、活跃下载 3—5 个。低功耗 NAS 或机械盘先取较低值；网页卡顿、丢包或磁盘持续繁忙时，优先降低上传、并发和连接数。无人做种的资源不会因为连接数增加而有数据。
 
 需要分时限速时配置备用速度和计划表。RSS 自动下载先建立分类、目录、大小和关键词过滤规则，再启用自动添加。桌面版搜索功能可能需要 Python 与搜索插件，只使用可信来源的插件。
 
@@ -122,7 +122,7 @@ sudo install -d -o qbittorrent -g qbittorrent /srv/downloads/{incomplete,complet
 sudo -u qbittorrent qbittorrent-nox --profile=/var/lib/qbittorrent
 ```
 
-仓库实际安装的版本以包管理器结果为准。前台首次运行时查看 Web UI 初始化信息，完成初步设置后正常停止这一实例，再配置服务，避免两套进程争用端口和配置。
+安装后的版本看包管理器输出。前台首次运行时查看 Web UI 初始化信息，完成初步设置后正常停止这一实例，再配置服务，避免两套进程争用端口和配置。
 
 创建 `/etc/systemd/system/qbittorrent-nox.service`：
 
@@ -172,7 +172,7 @@ docker compose up -d
 
 只做备份时用 `docker compose start` 恢复。更新后检查登录、任务列表、实际版本与一次校验。迁移路径和删除数据的区别见[下载目录与做种常识](/posts/nas-downloader/#更新备份与迁移)。
 
-## 常见问题
+## 排错：现象与检查位置
 
 | 现象              | 检查位置                                                      |
 | ----------------- | ------------------------------------------------------------- |

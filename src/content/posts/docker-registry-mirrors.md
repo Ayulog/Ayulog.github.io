@@ -1,6 +1,6 @@
 ---
 title: Docker 镜像加速源教程
-description: 整理 Docker Hub 镜像加速、仓库前缀拉取、Docker 服务代理与离线导入的方法，涵盖 Debian、DebNAS、绿联、极空间、飞牛和 Docker Desktop，并说明配置备份、验证与恢复。
+description: 镜像拉取超时时，按仓库类型选择加速器、镜像名前缀、daemon 代理或离线导入，并验证配置是否生效。
 author: Ayulog
 pubDatetime: "2026-10-10T08:00:00+08:00"
 draft: false
@@ -13,24 +13,11 @@ tags:
   - 网络
 ---
 
-镜像拉取超时，先看镜像来自 Docker Hub、GHCR 还是其他仓库。Docker Hub 加速器、仓库前缀和 Docker 服务代理解决的问题不同，不能互相代替；完全离线的机器还可以用 `docker save` / `docker load`。
+镜像拉取超时，先确认镜像来自 Docker Hub、GHCR 还是其他仓库，再决定改哪一层配置。Docker Hub 加速器、仓库前缀和 Docker 服务代理解决的不是同一个问题；完全离线的机器可以用 `docker save` / `docker load`。
 
-命令以 Debian / DebNAS 的 Docker Engine 为主，另列品牌 NAS 和 Docker Desktop 的设置入口。资料核对日期为 **2026 年 10 月 10 日**，未在各品牌 NAS 上逐一实测。公共源是否可用要以实际拉取结果为准。
+命令以 Debian / DebNAS 的 Docker Engine 为主，另列品牌 NAS 和 Docker Desktop 的设置入口。资料核对日期为 **2026 年 10 月 10 日**，品牌 NAS 与公共源未逐一实测；实际可用性以拉取结果为准。
 
-## 目录
-
-- [先选一种解决办法](#先选一种解决办法)
-- [镜像加速源从哪里找](#镜像加速源从哪里找)
-- [方法一：配置 Docker Hub 镜像加速](#方法一配置-docker-hub-镜像加速)
-- [方法二：给镜像名称加上仓库前缀](#方法二给镜像名称加上仓库前缀)
-- [方法三：给 Docker 服务配置代理](#方法三给-docker-服务配置代理)
-- [方法四：离线导入镜像](#方法四离线导入镜像)
-- [怎样确认配置有效](#怎样确认配置有效)
-- [常见问题](#常见问题)
-- [撤销修改与恢复](#撤销修改与恢复)
-- [参考资料](#参考资料)
-
-## 先选一种解决办法
+## 按问题选方法
 
 | 遇到的情况                                    | 优先考虑                      | 改在哪里                                    |
 | --------------------------------------------- | ----------------------------- | ------------------------------------------- |
@@ -60,18 +47,18 @@ Docker 的 `registry-mirrors` 用于 **Docker Hub**，不会把 `ghcr.io`、`qua
 
 ## 镜像加速源从哪里找
 
-我更倾向于保存维护者的说明入口，再按它当前公布的地址使用。公共加速服务可能有地域限制、仓库白名单、拉取频率限制，也可能清理缓存或停止维护。
+更稳妥的做法是保存维护者的说明入口，再按它当前公布的地址使用。公共加速服务可能有地域限制、仓库白名单、拉取频率限制，也可能清理缓存或停止维护。
 
 | 来源                                                                            | 地址或使用形式                                                                                | 使用前看什么                             |
 | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | [DaoCloud public-image-mirror](https://github.com/DaoCloud/public-image-mirror) | Docker Hub 加速地址为 `https://docker.m.daocloud.io`；也支持 `m.daocloud.io/源仓库/镜像` 形式 | 支持的源仓库、白名单、限流与缓存说明     |
 | [磕巴白菜的镜像加速教程](https://hi.keba.host/archives/Docker)                  | 原文列出自建地址 `https://docker.keba3366.top` 及其他社区源                                   | 原文更新、服务公告与实际网络下的拉取结果 |
 
-这两个入口用于查找配置方法，并不表示任何地址都能在所有网络下长期使用。下面用 DaoCloud 文档中的地址演示；如果它在你的网络或目标仓库上不可用，按服务说明换源，或者使用后面的代理、离线方案。
+这两个入口用于查找配置方法；地址能否长期使用，取决于服务公告和当前网络。下面用 DaoCloud 文档中的地址演示；如果它在你的网络或目标仓库上不可用，按服务说明换源，或者使用后面的代理、离线方案。
 
 ### Docker 镜像加速源列表
 
-下面收录 11 个可尝试的镜像加速地址，已统一补齐 `https://`，可按需复制到加速器设置中。公共源的可用性会随网络、地区和服务策略变化；本文未逐一完成镜像拉取测试，请先选一个，按[后文方法](#怎样确认配置有效)验证。
+下面收录 11 个可尝试的镜像加速地址，已统一补齐 `https://`，可按需复制到加速器设置中。公共源的可用性会随网络、地区和服务策略变化；先选一个，按[后文方法](#怎样确认配置有效)验证。
 
 ```text
 https://docker.1ms.run
@@ -93,10 +80,10 @@ https://docker.jijiai.cn
 
 选择时还要注意几件事：
 
-- **Docker Hub 加速器地址和普通 Registry 地址不能随意混填。** 能打开网页、能列出镜像，不代表支持 `registry-mirrors` 的使用方式。
+- **Docker Hub 加速器地址和普通 Registry 地址不能随意混填。** 能打开网页、能列出镜像，仍要先确认它支持 `registry-mirrors`。
 - **缓存不一定立刻更新。** DaoCloud 文档明确说明可变标签可能先返回旧数据并在后台同步；需要复现时记录明确版本，进一步固定时使用从可信上游核对的 digest。
 - **公共源优先用于公开镜像。** 私有镜像和登录凭据按仓库及服务商文档处理，不把自己的 Docker Hub 密码交给不明镜像网站。
-- **`/v2/` 返回 401 不一定是坏了。** Registry 的正常流程可能先返回认证挑战；这既不等于账号错误，也不能证明某个镜像已经可以下载。
+- **`/v2/` 返回 401 可能只是认证挑战。** Registry 的正常流程会先要求认证；这个状态码既说明不了账号错误，也说明不了某个镜像可以下载。
 
 ## 方法一：配置 Docker Hub 镜像加速
 
@@ -125,7 +112,7 @@ https://docker.jijiai.cn
 
 保存时若提示重启 Docker，先安排好正在运行的任务；重启可能中断容器。完成后查看镜像任务的实际日志，而不只看界面是否显示“保存成功”。
 
-如果界面只有“自定义仓库”“自定义镜像”，先核对该字段接受什么内容：可能是完整镜像引用，也可能是仓库服务器地址，不能仅凭名称认定它会配置全局加速。对应操作可参考文末的品牌教程截图，当前设备界面仍以厂商说明为准。
+如果界面只有“自定义仓库”“自定义镜像”，先核对该字段接受什么内容：可能是完整镜像引用，也可能是仓库服务器地址；字段名称不说明它会配置全局加速。对应操作可参考文末的品牌教程截图，当前设备界面以厂商说明为准。
 
 NAS 厂商可能管理或自动生成 Docker 配置。不要将普通 Debian 的文件路径、服务名直接套到所有 NAS 上；通过面板配置的项目，也避免再用 SSH 写另一份相互覆盖的设置。
 
@@ -173,7 +160,7 @@ fi
 sudo dockerd --validate --config-file=/etc/docker/daemon.json
 ```
 
-这个命令只校验配置，不启动第二个 daemon。校验成功不代表镜像站可用，也不能代替对 systemd 启动参数冲突的检查。旧版如果没有这个选项，先按对应版本文档检查，不要去掉 `--validate` 直接运行上面的命令。
+这个命令只校验配置，不启动第二个 daemon。校验只检查配置格式；镜像站是否可用、启动参数是否冲突，要另外检查。旧版如果没有这个选项，先按对应版本文档检查，不要去掉 `--validate` 直接运行上面的命令。
 
 确认已有服务允许短时中断后，再重启并核对：
 
@@ -262,7 +249,7 @@ docker tag m.daocloud.io/docker.io/library/alpine:3.22 docker.io/library/alpine:
 服务代理：Docker daemon → HTTP 代理 → 目标镜像仓库
 ```
 
-**在终端里 `export https_proxy=...`，不代表已经启动的 Docker 服务会继承它。** 给业务容器添加 `HTTP_PROXY`，或修改客户端 `~/.docker/config.json` 的容器代理配置，也不是给 daemon 配置拉取代理。
+**在终端里 `export https_proxy=...` 只对当前 shell 生效，systemd 管理的 Docker 服务不会自动继承它。** 给业务容器添加 `HTTP_PROXY`，或修改客户端 `~/.docker/config.json` 的容器代理配置，也不是给 daemon 配置拉取代理。
 
 ### Docker Engine 23.0 及以上
 
@@ -339,14 +326,14 @@ docker run --rm --pull=never docker.io/library/alpine:3.22 cat /etc/alpine-relea
 
 如果采用前缀拉取，把上面各处镜像名都换成实际使用的带前缀名称，或者先添加本地标签。不要拉取了一个名称，却用另一个名称测试。
 
-`Image is up to date` 不代表刚重新下载了所有层；本地已有内容时会复用缓存。加速失败后，Docker 也可能继续尝试上游，所以成功拉取本身不能完全证明流量经过某个镜像站。需要确认实际路径时，结合 Docker 日志、自己控制的代理访问记录或镜像服务日志判断，不必为了测试清空现有镜像。
+`Image is up to date` 说明本地已有可用层，并没有重新下载；本地已有内容时会复用缓存。加速失败后，Docker 也可能继续尝试上游，成功拉取也可能走上游直连。需要确认实际路径时，结合 Docker 日志、自己控制的代理访问记录或镜像服务日志判断，不必为了测试清空现有镜像。
 
 ## 常见问题
 
 | 现象                                                        | 优先检查                                                                                                                            |
 | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `unknown flag: --registry-mirror`                           | 这是 `dockerd` 的参数，不是 `docker pull` 的参数；使用 daemon 配置或服务支持的镜像名前缀                                            |
-| `i/o timeout`、`TLS handshake timeout`                      | NAS 的 DNS、时间、网络出口、代理可达性与服务状态；浏览器能打开网页不等于 daemon 能下载                                              |
+| `i/o timeout`、`TLS handshake timeout`                      | NAS 的 DNS、时间、网络出口、代理可达性与服务状态；浏览器能打开网页，daemon 未必能下载                                               |
 | `/v2/` 返回 401                                             | 先看是否是正常认证挑战；继续用 Docker 客户端测试具体镜像，不仅凭这一个状态码判断                                                    |
 | 拉取时报 `unauthorized`、`denied` 或 403                    | 镜像是否公开、路径是否写对、服务是否有限制；需要认证时按官方方式登录对应仓库                                                        |
 | `toomanyrequests` 或 429                                    | 上游或加速服务限流；查看该服务公告，等待后再试，不要持续高频重试                                                                    |
@@ -389,12 +376,12 @@ fi
 ## 参考资料
 
 - [绿联官方：Docker 如何配置镜像加速器、镜像源和镜像代理？][ugreen-docker-mirrors]：UGOS Pro 的适用版本、操作入口、加速器设置与镜像下载步骤。
-- 磕巴白菜：[Docker 镜像加速源教程](https://hi.keba.host/archives/Docker)、[极空间 DockerHub 镜像无法下载的多种解决方案](https://hi.keba.host/archives/ji-kong-jian-dockerhubjing-xiang-wu-fa-xia-zai-de-duo-zhong-jie-jue-fang-an)、[飞牛 DockerHub 镜像无法下载的多种解决方案](https://hi.keba.host/archives/fei-niu-dockerhubjing-xiang-wu-fa-xia-zai-de-duo-zhong-jie-jue-fang-an)：本文的 NAS 场景与方案整理参考，界面截图请查看原文。
+- 磕巴白菜：[Docker 镜像加速源教程](https://hi.keba.host/archives/Docker)、[极空间 DockerHub 镜像无法下载的多种解决方案](https://hi.keba.host/archives/ji-kong-jian-dockerhubjing-xiang-wu-fa-xia-zai-de-duo-zhong-jie-jue-fang-an)、[飞牛 DockerHub 镜像无法下载的多种解决方案](https://hi.keba.host/archives/fei-niu-dockerhubjing-xiang-wu-fa-xia-zai-de-duo-zhong-jie-jue-fang-an)：NAS 场景与方案整理的参考，界面截图请查看原文。
 - [Docker Hub 镜像缓存](https://docs.docker.com/docker-hub/image-library/mirror/)：镜像加速的适用范围与 daemon 配置。
 - [Docker daemon 配置](https://docs.docker.com/engine/daemon/)、[dockerd 命令参考](https://docs.docker.com/reference/cli/dockerd/)：配置文件位置、启动参数与校验选项。
 - [Docker daemon 代理](https://docs.docker.com/engine/daemon/proxy/)、[Docker 客户端代理](https://docs.docker.com/engine/cli/proxy/)、[Docker Desktop 设置](https://docs.docker.com/desktop/settings-and-maintenance/settings/)：服务、容器与 Desktop 代理的区别。
 - [docker image pull](https://docs.docker.com/reference/cli/docker/image/pull/)、[docker image save](https://docs.docker.com/reference/cli/docker/image/save/)、[docker image load](https://docs.docker.com/reference/cli/docker/image/load/)：拉取参数、镜像导出与导入。
-- [DaoCloud public-image-mirror](https://github.com/DaoCloud/public-image-mirror)：本篇演示使用的加速地址、前缀规则与服务限制。
+- [DaoCloud public-image-mirror](https://github.com/DaoCloud/public-image-mirror)：文中演示使用的加速地址、前缀规则与服务限制。
 
 系统安装与维护见 [DebNAS 安装及折腾记录](/posts/debnas-installation-notes/)，应用部署文件集中在 [Compose 存档](/setup/compose/)。
 

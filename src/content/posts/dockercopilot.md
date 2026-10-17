@@ -1,6 +1,6 @@
 ---
 title: DockerCopilot：容器更新与配置备份
-description: DockerCopilot 的 Compose 安装、登录、手动更新和备份恢复，区分容器配置与业务数据。
+description: 用一个网页界面手动更新容器、备份创建参数；含安装、登录与恢复步骤。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
 draft: false
@@ -11,15 +11,15 @@ tags:
   - DockerCopilot
 ---
 
-DockerCopilot 可以在网页里手动更新容器、清理镜像和备份容器设置。[当前官方 README][copilot-readme]使用 bridge 网络、`12712` 端口与 `0nlylty/dockercopilot:latest`；镜像账户名开头是数字 `0`。
+DockerCopilot 在网页里手动更新容器、清理镜像，并备份容器设置。[当前官方 README][copilot-readme]使用 bridge 网络、`12712` 端口与 `0nlylty/dockercopilot:latest`；镜像账户名开头是数字 `0`。
 
-返回 [NAS 服务清单](/posts/nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/docker-management/)。
+文中的 `NAS_IP` 换成设备地址，管理页面放在可信局域网或私有组网内。返回 [NAS 服务清单](/posts/nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/docker-management/)。
 
 ## 开始之前
 
 需要 Linux Docker Engine 和 Compose V2。还没装好时，先看 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。每个工具放在独立目录中，下面的命令都在它自己的 Compose 项目目录执行。
 
-文中的 `NAS_IP` 换成设备地址。管理页面只放在可信局域网或私有组网内；挂载 `/var/run/docker.sock` 后，工具就能操作宿主机 Docker，追加 `:ro` 也不会把 Docker API 变成只读。
+挂载 `/var/run/docker.sock` 后，工具就能操作宿主机 Docker，追加 `:ro` 也不会把 Docker API 变成只读。
 
 ## 部署与登录
 
@@ -66,11 +66,11 @@ docker compose logs --tail=100 dockercopilot
 
 ## 更新与清理
 
-按[当前更新实现][copilot-update]，DockerCopilot 拉取目标镜像，停止并重命名旧容器，沿用创建参数启动新容器，再按选项决定是否删除旧容器。因此更新会中断服务，界面提示成功也不代表应用已完成健康检查。
+按[当前更新实现][copilot-update]，DockerCopilot 拉取目标镜像，停止并重命名旧容器，沿用创建参数启动新容器，再按选项决定是否删除旧容器。因此更新会中断服务；界面提示成功时，健康检查仍要自己看日志和页面。
 
-更新前记下当前镜像，备份容器设置和业务数据。更新后先检查应用能否正常使用，稳定后再清理。指定的 tag 必须是镜像仓库中实际存在的标签，不能直接拿应用页面的版本号填写。
+更新前记下当前镜像，备份容器设置和业务数据。更新后先检查应用能否正常使用，稳定后再清理。指定的 tag 必须是镜像仓库中实际存在的标签，应用页面显示的版本号不一定就是 tag。
 
-**保留旧容器不等于保留旧数据。** 新旧容器可能挂载同一数据库目录，不要同时启动它们写同一份数据。由 Compose 管理的服务，变更镜像后也要更新原文件；多服务项目优先通过原 Compose 一起维护。
+**旧容器和新容器可能指向同一份数据。** 它们挂载同一个数据库目录时，不要同时启动两边写这份数据。由 Compose 管理的服务，变更镜像后也要更新原文件；多服务项目优先通过原 Compose 一起维护。
 
 清理时区分无 tag 镜像和未使用镜像。后者可能包含尚未创建容器的恢复版本，先核对用途再删除；不要顺手清理业务目录或 Docker 卷。
 
@@ -84,7 +84,7 @@ docker compose logs --tail=100 dockercopilot
 
 1. 还原业务目录和卷，核对路径、权限、网络与镜像架构。
 2. 处理同名容器和端口冲突，先保留仍需恢复的旧实例。
-3. 执行恢复，逐个查看结果；“恢复完成”不代表全部成功。
+3. 执行恢复，逐个查看结果；界面上的“恢复完成”只是遍历结束。
 4. 检查参数后启动容器，验证日志、页面和数据。
 
 先在独立测试环境中练习整份恢复。备份中的 `latest` 是可变标签，重新拉取不保证得到备份当天的镜像。

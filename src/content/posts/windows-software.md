@@ -1,6 +1,6 @@
 ---
 title: Windows 软件清单
-description: 装机工具、日常软件与系统设置的索引，按用途分组。
+description: Windows 装机工具与日常软件清单，按用途分组，附自启动、远程桌面和容器环境的笔记。
 author: Ayulog
 pubDatetime: "2026-10-09T00:00:00+08:00"
 modDatetime: "2026-10-11T00:00:00+08:00"
@@ -12,46 +12,9 @@ tags:
   - 软件清单
 ---
 
-装机工具和日常软件汇总在这里，按用途分组。程序自启动、远程桌面证书和容器环境另有三篇记录：[设置程序开机自启动](/posts/windows-app-startup/)、[为 RDP 配置 TLS](/posts/windows-rdp-tls/)、[Windows 容器](/posts/windows-containers/)。
+装系统、装软件时用得上的工具列在下面，按用途分组。程序自启动、远程桌面证书和容器环境另有三篇记录：[设置程序开机自启动](/posts/windows-app-startup/)、[为 RDP 配置 TLS](/posts/windows-rdp-tls/)、[Windows 容器](/posts/windows-containers/)。
 
 游戏平台、Mod、修改器、串流和安卓模拟器单独整理在 [游戏平台与工具](/posts/game-software/)。
-
-## 目录
-
-- [流程概览](#流程概览)
-- [设置与使用笔记](#设置与使用笔记)
-- [系统安装与硬件检测](#系统安装与硬件检测)
-- [文件检索与预览](#文件检索与预览)
-- [写作、编辑与开发](#写作编辑与开发)
-- [下载与云盘](#下载与云盘)
-- [聊天与通讯](#聊天与通讯)
-- [影音播放与音乐](#影音播放与音乐)
-- [录屏与直播](#录屏与直播)
-- [远程控制与组网](#远程控制与组网)
-- [安卓模拟器](#安卓模拟器)
-- [游戏平台与相关工具](#游戏平台与相关工具)
-
-## 流程概览
-
-| 要做的事                   | 阅读顺序                                                             | 对应教程                                               |
-| -------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
-| 准备或重装电脑             | 系统安装工具 → 硬件检测 → 文件、编辑和影音软件                       | 先按下方用途找软件；系统安装尚无独立文章               |
-| 登录后自动运行应用         | 明确是否需要登录 → 选择启动文件夹、任务计划或服务 → 验证重启后的行为 | [程序自启动](/posts/windows-app-startup/)   |
-| 远程访问桌面               | 确认被控端支持 RDP → 准备证书 → 绑定并从客户端验证                   | [RDP 配置 TLS](/posts/windows-rdp-tls/)     |
-| 在 Windows 运行 Linux 容器 | 准备 WSL → 选择 Docker Desktop 或独立 Engine → 检查容器与数据位置    | [WSL 与 Docker](/posts/windows-containers/) |
-
-这几条流程按需要使用，不是每次装机都要全部完成。游戏、Mod 和串流的入口单列在 [游戏平台与工具清单](/posts/game-software/)。
-
-## 设置与使用笔记
-
-### 自动化与远程访问
-
-- [程序自启动](/posts/windows-app-startup/)：启动文件夹、任务计划和系统服务。
-- [远程桌面 TLS 证书](/posts/windows-rdp-tls/)：导入、绑定、续期和客户端验证。
-
-### 开发与容器环境
-
-- [WSL 与 Docker](/posts/windows-containers/)：在 Windows 上运行 Linux 容器。
 
 ## 系统安装与硬件检测
 
@@ -79,7 +42,7 @@ tags:
 - **[Neat Download Manager](https://www.neatdownloadmanager.com/index.php/en/)**：下载管理工具，支持分段下载、暂停续传、分类管理和浏览器扩展。
 - **[百度网盘](https://pan.baidu.com/download#win)**：用于云端文件存储、分享和上传下载，链接可直接进入客户端下载页面。
 - **[CloudDrive2](https://www.clouddrive2.com/)**：集中管理多个云盘，并将云盘挂载为本地磁盘，方便通过文件管理器或其他软件访问云端文件。
-- **[115-Desktop](https://github.com/Shimily-3/115-Desktop)**：基于 115 开放平台 API 的第三方桌面客户端，支持文件管理、上传下载、媒体播放和离线任务管理。使用时以项目公开文档和当前版本说明为准。
+- **[115-Desktop](https://github.com/Shimily-3/115-Desktop)**：基于 115 开放平台 API 的第三方桌面客户端，支持文件管理、上传下载、媒体播放和离线任务管理。
 
 ## 聊天与通讯
 
@@ -101,7 +64,7 @@ tags:
 - **[Listen 1](https://listen1.github.io/listen1/)**：聚合多个音乐平台的搜索、播放和歌单管理功能，提供桌面版与浏览器扩展。
 - **[LX Music（洛雪音乐助手）](https://github.com/lyswhut/lx-music-desktop)**：跨平台音乐软件，支持播放列表和数据同步；在线音频播放取决于所配置的自定义源。
 - **[Any Listen](https://github.com/any-listen/any-listen)**：私人音乐播放工具，支持本地和 WebDAV 歌曲，提供桌面客户端，也可以自行部署 Web 版。
-- **[Spotify Geek](https://spotigeek.com/news/)**：提供 Spotify 相关新闻和使用指南的第三方网站，作为音乐相关资讯入口收藏，并非 Spotify 官方客户端。
+- **[Spotify Geek](https://spotigeek.com/news/)**：提供 Spotify 相关新闻和使用指南的第三方网站，适合作为音乐资讯入口收藏，Spotify 客户端另有官方版本。
 
 ## 录屏与直播
 
@@ -126,4 +89,4 @@ tags:
 
 ## 游戏平台与相关工具
 
-Steam、Moonlight、Mod 网站和管理器等条目已移到 [游戏平台与工具清单](/posts/game-software/)，新篇也收录 Android 与 SteamOS 上的游戏工具。
+Steam、Moonlight、Mod 网站和管理器等条目已移到 [游戏平台与工具清单](/posts/game-software/)，那边也收录 Android 与 SteamOS 上的游戏工具。

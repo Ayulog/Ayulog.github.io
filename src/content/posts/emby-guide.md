@@ -1,6 +1,6 @@
 ---
 title: Emby：Docker 部署、媒体库与客户端设置
-description: 在 NAS 上用 Docker Compose 部署 Emby，整理媒体库、刮削、API 与硬件转码设置，接入 MoviePilot 和 CMS，并按 Android、Apple、Windows 平台选择客户端、验证播放与远程访问。
+description: 用 Docker 部署 Emby，设置媒体库、刮削、硬件转码与客户端，并接入 MoviePilot 和 CMS。
 author: Ayulog
 pubDatetime: "2026-10-10T13:00:00+08:00"
 draft: false
@@ -13,23 +13,9 @@ tags:
   - 教程
 ---
 
-Emby 把 NAS 上的电影和剧集整理成海报墙，保存用户、观看记录和播放进度。这里使用 LinuxServer 的 Docker 镜像，记录目录权限、首次配置、硬件转码，以及手机、电视和电脑端的客户端选择。
+Emby 把 NAS 上的电影和剧集整理成海报墙，保存用户、观看记录和播放进度。部署使用 LinuxServer 的 Docker 镜像，主要工作在目录权限、首次配置、硬件转码和手机、电视、电脑端的客户端选择上。
 
-MoviePilot 整理本地文件、CMS 生成 STRM 后，都可以交给 Emby 入库。完整接法见 [DebNAS 自动观影流程](/posts/debnas-media-workflow/)；其他媒体库与配套工具放在 [NAS 服务清单](/posts/nas-software-websites/)。
-
-## 目录
-
-- [先分清服务端、客户端和 Premiere](#先分清服务端客户端和-premiere)
-- [准备目录与权限](#准备目录与权限)
-- [使用 Docker Compose 部署](#使用-docker-compose-部署)
-- [初始化与媒体库设置](#初始化与媒体库设置)
-- [接入 MoviePilot、CMS 与插件](#接入-moviepilotcms-与插件)
-- [直接播放与硬件转码](#直接播放与硬件转码)
-- [各平台客户端怎么选](#各平台客户端怎么选)
-- [连接服务器与验证播放](#连接服务器与验证播放)
-- [远程访问、备份与更新](#远程访问备份与更新)
-- [常见问题](#常见问题)
-- [参考资料](#参考资料)
+文件由 MoviePilot 整理好，或由 CMS 生成 STRM 之后，都可以交给 Emby 入库。完整接法见 [DebNAS 自动观影流程](/posts/debnas-media-workflow/)；其他媒体库与配套工具放在 [NAS 服务清单](/posts/nas-software-websites/)。
 
 ## 先分清服务端、客户端和 Premiere
 
@@ -85,7 +71,7 @@ id <service-user>
 | `lscr.io/linuxserver/emby` | `PUID`、`PGID`          | 本文独立部署示例            |
 | `emby/embyserver`          | `UID`、`GID`、`GIDLIST` | DebNAS 自动观影流程中的示例 |
 
-已有稳定部署时，继续按现有镜像的文档维护。更换镜像需要重新核对环境变量、配置目录和权限，不能只改 `image` 一行。下面采用 LinuxServer 的稳定通道 `latest`；正式长期运行可在验证后固定具体版本标签或 digest。
+已有稳定部署时，继续按现有镜像的文档维护。更换镜像时，环境变量、配置目录和权限要一起核对，`image` 一行只是其中一项。这里采用 LinuxServer 的稳定通道 `latest`；正式长期运行可在验证后固定具体版本标签或 digest。
 
 ### 保存配置文件
 
@@ -120,7 +106,7 @@ services:
 
 媒体目录以 `:ro` 只读挂载，适合由 MoviePilot 等工具维护 NFO、海报与字幕的情况。如果准备让 Emby 把这些文件保存到影片旁边，需要有意移除相应挂载的 `:ro`，并给应用账户写入权限；同时核对 Emby 的元数据保存选项。
 
-`/transcode` 是本文自定义的临时目录，**还需要在 Emby 的转码设置中将临时路径设为 `/transcode`**。单独挂载目录不会自动更改应用设置。
+这里的 `/transcode` 是自定义的临时目录，**还需要在 Emby 的转码设置中将临时路径设为 `/transcode`**。单独挂载目录不会自动更改应用设置。
 
 本地媒体播放不需要默认开启特权模式，也不要求先添加 GPU。参考文章同时写了 `network_mode: host` 和 `ports`；根据 [Docker host 网络说明][docker-host]，host 模式下端口映射不生效。若因特定发现协议改用 host，应删除 `ports`，并直接使用 Emby 在宿主机上监听的端口。
 
@@ -158,7 +144,7 @@ docker compose logs --tail=100 emby
 4. 在转码设置中填写前面准备的 `/transcode`。
 5. 为日常观看创建普通用户，按需分配媒体库访问权限。
 
-手动连接自己的服务器时，使用服务器上创建的本地账号即可。Emby Connect 是另外的账号连接功能；它不能代替服务器本身的网络可达性，也不会自动完成家庭网络穿透。
+手动连接自己的服务器时，使用服务器上创建的本地账号即可。Emby Connect 是另外的账号连接功能；它不改变服务器本身的网络可达性，也不会自动完成家庭网络穿透。
 
 ### 添加的是容器内路径
 
@@ -194,9 +180,9 @@ tv/
 刮削就是识别影片并获取简介、海报等元数据，可以由 Emby 或上游整理工具负责：
 
 - **只有视频文件**：在 Emby 中选择适合的元数据与图片提供方，设置语言、地区，先验证一部影片的识别结果。
-- **MoviePilot / CMS 已经生成 NFO 和海报**：让 Emby 读取现有本地元数据，按需求减少在线刮削和重复下载。检查当前版本的读取器、下载器与保存设置，不能把参考截图里的选项数量当成所有环境通用的规则。
+- **MoviePilot / CMS 已经生成 NFO 和海报**：让 Emby 读取现有本地元数据，按需求减少在线刮削和重复下载。读取器、下载器与保存设置按当前版本核对，参考截图里的选项数量会随版本变化。
 
-使用本文只读挂载时，Emby 可以读媒体旁已有的元数据，但不能把新 NFO、海报或字幕写回媒体目录。要启用“保存到媒体文件夹”一类功能，需同时调整挂载和目录权限。
+使用上面的只读挂载时，Emby 可以读媒体旁已有的元数据，但写不回新的 NFO、海报或字幕。要启用“保存到媒体文件夹”一类功能，需同时调整挂载和目录权限。
 
 没有海报也可能是元数据服务无法连接。先看服务端日志、DNS 和目标服务连通性；代理地址应来自自己的环境，不能直接复制参考文中的内网 IP。容器内的 `127.0.0.1` 指向容器自身，添加代理后还要确认本地媒体服务的访问不会被错误转发。
 
@@ -233,7 +219,7 @@ networks:
     external: true
 ```
 
-已有名为 `emby` 的服务时，先确认目标实例，避免同一共享网络出现重复别名。MoviePilot 的目录映射应与实际文件布局对应；本文沿用 `/data/library`，不会把下载和保种目录重复加入 Emby。
+已有名为 `emby` 的服务时，先确认目标实例，避免同一共享网络出现重复别名。MoviePilot 的目录映射要与实际文件布局对应；这里沿用 `/data/library`，不把下载和保种目录重复加入 Emby。
 
 ### 加入 CMS 生成的 STRM
 
@@ -253,13 +239,13 @@ STRM_ROOT=/path/to/strm
 
 重建容器后，按实际输出结构添加 `/strm/movies`、`/strm/tv` 等媒体库。CMS 与 Emby 必须使用同一个宿主机 STRM 目录；如果 CMS 内是 `/media`、Emby 内是 `/strm`，通知刷新时要配置对应的路径替换。
 
-先分别建立本地电影、本地剧集、云端电影和云端剧集库，容易看清哪个环节出问题。**STRM 不等于 302，也不自动保证视频流量绕过 NAS。** 如果使用 CMS 的 Emby 302 代理，还要按对应版本的说明配置入口，验证播放器是否能访问跳转后的地址。
+先分别建立本地电影、本地剧集、云端电影和云端剧集库，容易看清哪个环节出问题。**STRM 只是把播放地址交给 Emby，走不走 302、视频流量是否绕过 NAS，取决于 CMS 的代理配置。** 如果使用 CMS 的 Emby 302 代理，还要按对应版本的说明配置入口，验证播放器是否能访问跳转后的地址。
 
 CloudDrive2 / rclone 将网盘挂到宿主机后再交给 Emby 读取，是另一种接法，需要另外处理挂载先后顺序、断线恢复和容器可见性；不要把网盘挂载目录与 CMS 的 STRM 输出目录混为一谈。
 
 ### 神医助手按需安装
 
-[StrmAssistant（Emby 神医助手）][strmassistant]提供媒体信息提取、字幕扫描、预览图、搜索等增强功能。它不负责下载资源，也不能代替 CMS 生成 STRM。
+[StrmAssistant（Emby 神医助手）][strmassistant]提供媒体信息提取、字幕扫描、预览图、搜索等增强功能。它不负责下载资源，也不生成 STRM。
 
 先确认 Emby 原生播放正常，再按插件项目说明核对 Emby 版本、插件版本及社区版 / PRO 的适配条件。生成预览图、提取媒体信息可能实际读取远程视频，云端库需要控制任务频率，并观察请求与流量。
 
@@ -275,7 +261,7 @@ CloudDrive2 / rclone 将网盘挂到宿主机后再交给 Emby 读取，是另�
 | 直接串流（Direct Stream） | 保留视频编码，按需重新封装或转换音频 | 封装、音轨与客户端兼容性       |
 | 转码（Transcoding）       | 重新编码视频，可能同时处理音频、字幕 | CPU / GPU 能力、码率、临时目录 |
 
-在 Emby 管理面板的播放会话或客户端播放信息中查看实际模式和原因。视频可以直播放时，不需要为了“用上核显”强行转码；直接播放也不代表播放器一定绕过服务器直接连接网盘。
+在 Emby 管理面板的播放会话或客户端播放信息中查看实际模式和原因。视频可以直播放时，不需要为了“用上核显”强行转码。
 
 字幕格式、音轨、客户端能力和播放质量限制都可能触发处理。比如某些客户端无法直接显示 PGS 字幕，需要服务端将字幕烧录进画面，即使启用了硬件加速，仍可能有较高 CPU 占用。
 
@@ -300,7 +286,7 @@ NVIDIA 通常还需要宿主机驱动及 NVIDIA Container Toolkit，按 [LinuxSe
 
 ### 在 Emby 内启用并验证
 
-官方将硬件加速转码列入 [Emby Premiere][premiere] 功能。完成适用授权与设备配置后，在转码设置中选择可用的硬件加速方式。HDR 转 SDR 的色调映射还取决于具体 GPU、驱动、系统和视频格式，不能仅凭出现一个开关就判断整条链路可用。
+官方将硬件加速转码列入 [Emby Premiere][premiere] 功能。完成适用授权与设备配置后，在转码设置中选择可用的硬件加速方式。HDR 转 SDR 的色调映射还取决于具体 GPU、驱动、系统和视频格式，选了硬件加速之后仍要用实际播放确认。
 
 选择一段测试视频，将客户端质量临时调低以触发转码，查看会话、服务端转码日志和资源占用；结束后恢复日常质量设置。确认视频正常、字幕正确、拖动可用，并核对实际使用的是哪种硬件处理方式。
 
@@ -318,7 +304,7 @@ NVIDIA 通常还需要宿主机驱动及 NVIDIA Container Toolkit，按 [LinuxSe
 | AfuseKt         | [移动版发布页](https://github.com/AttemptD/AfuseKt-release)                                      | 项目说明支持 Emby 直连，移动版要求 Android 8 或以上                       |
 | AfuseKt TV      | [TV 版发布页](https://github.com/AttemptD/AfuseKtV-release)                                      | 与移动版分开发布，按电视版本说明安装和配置                                |
 
-AfuseKt 的发布仓库明确只提供安装包，不含源码，不能因为托管在 GitHub 就称它为开源客户端。各应用的付费方式、设备限制和 TV 版授权是否通用，以对应版本说明为准。
+AfuseKt 的发布仓库明确只提供安装包，不含源码，所以它不算开源客户端。各应用的付费方式、设备限制和 TV 版授权是否通用，要看对应版本说明。
 
 手动下载 APK 时，再看文件名中的架构标记：
 
@@ -335,11 +321,11 @@ AfuseKt 的发布仓库明确只提供安装包，不含源码，不能因为托
 adb shell getprop ro.product.cpu.abilist
 ```
 
-仅凭 `mobile-release.apk` 这类名称，无法确定是不是通用包；`universal` 也不是“所有 Android 设备都能装”。更新能否覆盖安装还涉及应用包名、签名、版本与系统限制，不能只按 ARM 的位数判断。相关概念见 [Android ABI 文档][android-abi]。
+仅凭 `mobile-release.apk` 这类名称，无法确定是不是通用包；`universal` 也不是“所有 Android 设备都能装”。更新能否覆盖安装还涉及应用包名、签名、版本与系统限制，与 ARM 位数没有直接关系。相关概念见 [Android ABI 文档][android-abi]。
 
 ### iPhone、iPad、Mac 与 Apple TV
 
-苹果平台的选择比较多，下面按当前项目或商店说明列出。表中的设备范围用于初筛，购买前再核对最低系统版本；“iPhone / iPad 应用可在 Apple 芯片 Mac 上运行”与原生 macOS 客户端也应分别看待。
+苹果平台的选择比较多，表中的平台范围来自当前项目或商店说明，用于初筛；购买前再核对最低系统版本；“iPhone / iPad 应用可在 Apple 芯片 Mac 上运行”与原生 macOS 客户端也应分别看待。
 
 | 客户端                                                  | 已核实的平台或兼容范围                                      | 说明                                                             |
 | ------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -355,19 +341,19 @@ adb shell getprop ro.product.cpu.abilist
 | [Conflux](https://apps.apple.com/cn/app/id6450330892)   | iPhone、iPad、Mac、Apple TV、Vision Pro                     | 商店说明支持 Emby                                                |
 | [iPlay](https://github.com/saltpi/iPlay)                | 项目下载表列出 iOS、macOS、tvOS                             | 由项目下载表进入对应商店，避免误装同名应用                       |
 
-不要只按“支持 Emby”选播放器。实际常用的是字幕样式与偏移、音轨切换、续播与观看记录同步，以及电视上的遥控器体验。HDR、杜比视界和音频输出，还要结合文件格式、设备、电视或功放一起验证。
+选播放器时，“支持 Emby”只是入门条件。实际常用的是字幕样式与偏移、音轨切换、续播与观看记录同步，以及电视上的遥控器体验。HDR、杜比视界和音频输出，还要结合文件格式、设备、电视或功放一起验证。
 
-参考文另收录了 [Forward](https://apps.apple.com/cn/app/id6503940939)。本次未能从所查商店入口确认当前可用页面，因此这里只保留原入口，不据此判断它已下架，也不列为已核实的平台选项。
+参考文另收录了 [Forward](https://apps.apple.com/cn/app/id6503940939)。本次未能从所查商店入口确认当前可用页面，这里只保留原入口，没有放进上表的已核实选项。
 
 ### Windows、Linux 与桌面端
 
 Windows 上可以先用浏览器或 [Emby 官方桌面客户端][emby-download]。希望换一种界面时，再查看 [iPlay](https://github.com/saltpi/iPlay) 的 Windows 发行入口；它的项目说明明确支持 Emby / Jellyfin。
 
-参考文提到的“终点站”是 [Terminus Media Player](https://github.com/Terminus-Media/jellyfin-media-player)。其 [v221122 发行说明](https://github.com/Terminus-Media/jellyfin-media-player/releases/tag/v221122)明确支持 Emby 和 Jellyfin，不能仅因仓库名中有 Jellyfin 就把它排除。不过核对时标记为 Latest 的版本发布于 **2022 年 11 月 22 日**，适合作为旧版备选，需自行验证与当前服务端、系统及视频格式的兼容性。仓库虽然提到 Linux，该版本说明又注明没有编译 Linux 包，不能直接当作现成 Linux 下载教程。
+参考文提到的“终点站”是 [Terminus Media Player](https://github.com/Terminus-Media/jellyfin-media-player)。其 [v221122 发行说明](https://github.com/Terminus-Media/jellyfin-media-player/releases/tag/v221122)明确支持 Emby 和 Jellyfin，仓库名里的 Jellyfin 不影响它接入 Emby。不过核对时标记为 Latest 的版本发布于 **2022 年 11 月 22 日**，适合作为旧版备选，与当前服务端、系统及视频格式的兼容性需自行验证。仓库虽然提到 Linux，该版本说明又注明没有编译 Linux 包。
 
 [Tsukimi](https://github.com/tsukinaha/tsukimi) 的当前项目说明是 **Linux 上的 Jellyfin 客户端**。本次未从当前说明中确认 Windows 或 Emby 支持，因此不沿用参考文章中的 Windows Emby 推荐位置。
 
-iPlay 的参考链接 `ourfor/iPlay` 当前是上游的 fork，本文使用其 README 指向的 `saltpi/iPlay` 入口。客户端下载以当前项目发布页或官方商店为准，不固定到旧网盘合集中的某一版安装包。
+iPlay 的参考链接 `ourfor/iPlay` 当前是上游的 fork，本文使用其 README 指向的 `saltpi/iPlay` 入口。客户端下载走当前项目发布页或官方商店，不固定到旧网盘合集中的某一版安装包。
 
 ## 连接服务器与验证播放
 
@@ -384,7 +370,7 @@ iPlay 的参考链接 `ourfor/iPlay` 当前是上游的 fork，本文使用其 R
 5. 使用 STRM 时，单独验证云端影片的起播、拖动和字幕。
 6. 最后切到移动网络或外部网络，重复测试。
 
-能登录、能看到海报，只能证明媒体库接口可用。视频、字幕和重定向地址可能走不同路径，需要分别验证。
+能登录、能看到海报，说明的是媒体库接口可用。视频、字幕和重定向地址可能走不同路径，逐项测一遍再算通过。
 
 ## 远程访问、备份与更新
 

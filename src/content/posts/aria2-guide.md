@@ -1,6 +1,6 @@
 ---
 title: Aria2 与 AriaNg：Docker 部署与下载设置
-description: 用 Docker 部署 Aria2 与 AriaNg，配置 RPC、下载目录和 BT 参数，并通过网页、浏览器扩展或 AList 添加任务。
+description: Docker 部署 Aria2 与 AriaNg，接通 RPC 与下载目录，从网页、扩展或 AList 投递任务。
 author: Ayulog
 pubDatetime: "2026-10-10T14:15:00+08:00"
 draft: false
@@ -14,13 +14,13 @@ tags:
   - AList
 ---
 
-Aria2 支持 HTTP(S)、FTP、SFTP、BitTorrent 与 Metalink，负责在后台下载；AriaNg 是它的网页管理界面，通过 RPC 查看和控制任务。文件保存在运行 Aria2 的设备，关闭浏览器不会停止任务。
+想让下载留在 NAS 上后台跑，用 Aria2 接收 HTTP(S)、FTP、SFTP、BitTorrent 与 Metalink 任务，AriaNg 通过 RPC 在网页里查看和控制。文件保存在运行 Aria2 的设备，关闭浏览器不会停止任务。
 
-先为 Aria2 建立独立项目目录，创建需要映射的下载目录。用 `id nasuser` 查询实际写入账户的 UID / GID，并授予配置与下载目录读写权限。以下配置依据 2026 年 10 月 10 日的项目文档，未在绿联设备上实机部署。
+动手前先给 Aria2 建独立项目目录和要映射的下载目录，用 `id nasuser` 查询实际写入账户的 UID / GID，并授予配置与下载目录读写权限。以下配置依据 2026 年 10 月 10 日的项目文档，未在绿联设备上实机部署。
 
 ## 选择镜像并部署
 
-本文沿用第三方项目 [superng6/docker-aria2][docker-aria2-repo]。依据下方参考资料中的 Dockerfile 与正式构建流程，使用已包含 AriaNg 的标准 `superng6/aria2:latest`，由 `WEBUI=true` 开启；旧教程中“`latest` 不含 WebUI、要选 `webui-latest`”的说法不适用于该构建。`a2b-latest` 是带额外 Peer 屏蔽功能的变体，本文先使用标准版。
+这里沿用第三方项目 [superng6/docker-aria2][docker-aria2-repo]。依据下方参考资料中的 Dockerfile 与正式构建流程，使用已包含 AriaNg 的标准 `superng6/aria2:latest`，由 `WEBUI=true` 开启；旧教程中“`latest` 不含 WebUI、要选 `webui-latest`”的说法不适用于该构建。`a2b-latest` 是带额外 Peer 屏蔽功能的变体，这里先使用标准版。
 
 在 Aria2 项目中创建 `config`，再单独创建 `.env`：
 
@@ -108,7 +108,7 @@ docker compose logs --tail=100 aria2
 
 ### 直链、种子与磁力下载
 
-新建任务时粘贴真实 HTTP / HTTPS 文件地址，批量提交按界面要求一行一个链接。分享页面和最终下载地址不同；得到 HTML 或立即失败时先核对链接类型。需登录的文件可能要求 Cookie、Referer 或其他请求头，也可能绑定来源 IP、User-Agent 或短期签名，电脑能下载不代表 NAS 一定能使用同一地址。
+新建任务时粘贴真实 HTTP / HTTPS 文件地址，批量提交按界面要求一行一个链接。分享页面和最终下载地址不同；得到 HTML 或立即失败时先核对链接类型。需登录的文件可能要求 Cookie、Referer 或其他请求头，也可能绑定来源 IP、User-Agent 或短期签名；电脑能下载，NAS 用同一地址未必成功。
 
 磁力链接可以直接粘贴 `magnet:`，种子则打开 `.torrent`，检查文件选择和保存位置。磁力通常先获取元数据，长时间无进展时核对在线节点、DHT / UDP 与 Tracker 状态。Tracker 帮助发现节点，不保存资源本体，增加列表不能救活无人做种的资源。
 
@@ -134,7 +134,7 @@ AList 已能正常浏览和下载文件时，可提供可用地址并把任务�
 
 这会把网盘已有文件下载到 Aria2 所在设备。“发送成功”只表示提交成功；实际下载还受地址过期、认证头、出口 IP 和网盘限流影响，先测试单个文件。
 
-AList 后台的[离线下载][alist-offline]是另一条流程：提交外部链接，先下载到临时目录，再转移到选定存储。它需要 AList 读取下载结果，并正确共享临时目录和权限，不能只填写 RPC 就认为配置完成。本文这里只配置文件列表的“发送到 Aria2”。网盘挂载与管理继续参考 [AList 设置](/posts/alist-guide/)。
+AList 后台的[离线下载][alist-offline]是另一条流程：提交外部链接，先下载到临时目录，再转移到选定存储。它需要 AList 读取下载结果，并正确共享临时目录和权限，光填 RPC 不够。这里只配置文件列表的“发送到 Aria2”，网盘挂载与管理继续参考 [AList 设置](/posts/alist-guide/)。
 
 ## Aria2 镜像参数与持久化
 
@@ -150,7 +150,7 @@ AList 后台的[离线下载][alist-offline]是另一条流程：提交外部链
 | `FA=falloc` | 文件预分配方式，还支持 `none`、`trunc`、`prealloc`，按文件系统选择 |
 | `SMD=true`  | 保存磁力取得的种子元数据                                           |
 
-`SMD` 不等于自动重命名种子，后续处理还受 `/config/setting.conf` 的 `handle-torrent` 等设置控制，例如 `backup-rename`。通过 AriaNg RPC 修改的选项不一定永久保存；需要长期保留的设置，核对由 Compose、`/config/aria2.conf` 还是辅助脚本负责，并在重启后查看实际值。
+`SMD` 保存磁力取得的种子元数据，与自动重命名是两回事；后者由 `/config/setting.conf` 的 `handle-torrent` 等设置控制，例如 `backup-rename`。通过 AriaNg RPC 修改的选项不一定永久保存；需要长期保留的设置，核对由 Compose、`/config/aria2.conf` 还是辅助脚本负责，并在重启后查看实际值。
 
 ## 备份与恢复
 

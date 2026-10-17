@@ -1,6 +1,6 @@
 ---
 title: 音频处理篇：音轨识别、提取与编码
-description: 从 MediaInfo 识别蓝光与视频文件中的音轨，按用途选择直通、提取核心、无损转换或重新编码，并记录 QAAC 与 deew 的当前使用入口。
+description: 用 MediaInfo 识别音轨，按用途决定直通、取核心、转无损或重新编码，再封装验收。
 author: Ayulog
 pubDatetime: "2026-10-11T10:00:00+08:00"
 modDatetime: "2026-10-11T16:00:00+08:00"
@@ -17,21 +17,9 @@ tags:
   - Media
 ---
 
-音频处理先要回答一个问题：**成品需要保留原始码流，还是要生成另一种编码？** 只把轨道从容器中取出、或在不改变编码的情况下重新封装，属于分流和封装；把 TrueHD 解码成 PCM，再编码为 DTS、AAC 或 Dolby Digital Plus，则是一次新的有损或无损转换。两条路线的输入、依赖和验收方式不同，不能只看文件扩展名判断结果。
+成品要保留原始码流，还是要生成另一种编码？这决定后面走哪条路。只把轨道从容器中取出、或在不改变编码的情况下重新封装，属于分流和封装；把 TrueHD 解码成 PCM，再编码为 DTS、AAC 或 Dolby Digital Plus，则是一次新的有损或无损转换。两条路线的输入、依赖和验收方式不同，扩展名说明不了结果。
 
-这篇按“识别来源 → 选择路线 → 处理 → 封装 → 回看”记录常见做法。工具入口见[音频软件清单](/posts/audio-software/)，蓝光播放列表、分流与 Remux 的上下文见[蓝光原盘 Remux](/posts/blu-ray-remux/)。deew 的命令和依赖依据项目 README 于 **2026 年 10 月 11 日**核对；QAAC 的中文参数参考为 [NAZOrip 的教程](https://www.nazorip.site/archives/44/)，页面标题标注 **2026.8 更新**。版本、编码器和操作界面会变化，正式处理前仍要查看手头版本的帮助信息。
-
-## 目录
-
-- [先识别音轨](#先识别音轨)
-- [按目标选择处理路线](#按目标选择处理路线)
-- [DTS 系列：保留核心还是重新编码](#dts-系列保留核心还是重新编码)
-- [TrueHD 与 LPCM：解码后的取舍](#truehd-与-lpcm解码后的取舍)
-- [用 QAAC 编码 AAC 或 ALAC](#用-qaac-编码-aac-或-alac)
-- [用 deew 编码 Dolby 音频](#用-deew-编码-dolby-音频)
-- [封装与检查](#封装与检查)
-- [容易混淆的情况](#容易混淆的情况)
-- [参考资料](#参考资料)
+工具入口见[音频软件清单](/posts/audio-software/)，蓝光播放列表、分流与 Remux 的上下文见[蓝光原盘 Remux](/posts/blu-ray-remux/)。deew 的命令和依赖按项目 README 于 **2026 年 10 月 11 日**核对；QAAC 的中文参数参考 [NAZOrip 的教程](https://www.nazorip.site/archives/44/)，页面标题标注 **2026.8 更新**。版本、编码器和操作界面会变化，正式处理时先看手头版本的帮助信息。
 
 ## 先识别音轨
 
@@ -45,13 +33,13 @@ tags:
 | LPCM / PCM                                                | 未压缩音频的声道、位深和采样率，是否需要用 FLAC 保存或重新编码 |
 | FLAC、AAC、ALAC、Opus                                     | 已经是编码后的文件，继续转为另一种有损格式通常会再损失一次     |
 
-TrueHD 与 DTS-HD MA 是完整的音频编码，不要仅凭“有一个核心”就把两者当成同一种结构。DTS-HD 音轨可以包含可独立解码的 DTS core；TrueHD 在蓝光中可能伴随 AC-3 兼容部分，但它和 DTS core 不是同一套提取语义。是否保留兼容轨，取决于成品播放器与自己的用途。
+TrueHD 与 DTS-HD MA 是完整的音频编码，两者结构并不相同。DTS-HD 音轨可以包含可独立解码的 DTS core；TrueHD 在蓝光中可能伴随 AC-3 兼容部分，但它和 DTS core 不是同一套提取语义。是否保留兼容轨，取决于成品播放器与自己的用途。
 
 确认输入来自同一个播放列表或同一次分流结果。视频、音频和字幕分别来自不同版本时，即使片长相同，也可能在分支接缝或片头出现延迟差异。先保存 MediaInfo 输出和原始日志，再开始转换。
 
 ## 按目标选择处理路线
 
-可以把选择先写成一张小表，再决定工具：
+按目标选路线，再决定工具：
 
 | 目标                                    | 建议路线                                             | 结果与代价                                                         |
 | --------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------ |
@@ -87,7 +75,7 @@ eac3to input.thd output.dts
 eac3to input.thd output.dts -resampleTo48000
 ```
 
-这两条命令只说明输入、输出与重采样的关系。TrueHD 到 DTS 需要可用的 DTS 编码器，具体依赖、授权和参数以当前 eac3to / UsEac3To 说明为准；不能因为 GUI 能列出轨道，就认为编码器已经安装。运行后至少检查输出的采样率、声道布局、码率和延迟。
+这两条命令只说明输入、输出与重采样的关系。TrueHD 到 DTS 需要可用的 DTS 编码器，依赖、授权和参数见当前 eac3to / UsEac3To 说明；GUI 能列出轨道，编码器却可能并未安装。运行后至少检查输出的采样率、声道布局、码率和延迟。
 
 LPCM 可以按需要转为 FLAC，例如：
 
@@ -118,7 +106,7 @@ TrueHD / Atmos、DTS-HD MA / DTS:X 和 LPCM 都可能出现在蓝光中，但处
 qaac64.exe --tvbr 91 -o output.m4a input.wav
 ```
 
-`--tvbr` 的数字是质量挡位，具体挡位、封装方式、声道映射和输入格式以当前 `qaac --help` 为准。需要无损压缩时使用 ALAC 相关选项，不要把 AAC 的质量挡位套到 ALAC 上。输入是裸 PCM、管道或多声道文件时，必须额外确认采样率、位深、声道顺序与容器信息。
+`--tvbr` 的数字是质量挡位，具体挡位、封装方式、声道映射和输入格式查当前 `qaac --help`。需要无损压缩时使用 ALAC 相关选项，不要把 AAC 的质量挡位套到 ALAC 上。输入是裸 PCM、管道或多声道文件时，必须额外确认采样率、位深、声道顺序与容器信息。
 
 [NAZOrip 的 QAAC 音频编码器命令行参数教程](https://www.nazorip.site/archives/44/)整理了依赖准备、`qaac --check`、WAV / ffmpeg 管道输入、TVBR / CVBR / ABR、ALAC 与 `--normalize` 等入口，页面在 2026 年 8 月更新过。它适合查参数含义和示例；安装包、Apple 组件、编译工具链和旧版命令仍要结合当前 qaac 发布页与自己的系统重新确认。
 
@@ -126,7 +114,7 @@ QAAC 的编码模式解决的是 AAC / ALAC 输出，不会替代蓝光音轨的
 
 ## 用 deew 编码 Dolby 音频
 
-[deew](https://github.com/pcrlnd/deew) 是 Dolby Encoding Engine Wrapper，为 DEE 生成输入文件与 XML，并提供批量编码用的命令行界面。当前 README 的帮助示例为 deew 3.2.1，格式选项包括 `dd`、`ddp`、`ac4` 和 `thd`；版本更新后，以本地 `deew -h` 的输出为准。
+[deew](https://github.com/pcrlnd/deew) 是 Dolby Encoding Engine Wrapper，为 DEE 生成输入文件与 XML，并提供批量编码用的命令行界面。当前 README 的帮助示例为 deew 3.2.1，格式选项包括 `dd`、`ddp`、`ac4` 和 `thd`；版本更新后，先看本地 `deew -h` 的输出。
 
 ### 准备依赖
 
@@ -134,7 +122,7 @@ README 列出的基础依赖是：
 
 - Python（使用独立构建版时可不装）；
 - `ffmpeg` 与 `ffprobe`；
-- Dolby Encoding Engine。DEE 需要单独安装，并把 `license.lic` 放到对应的 DEE 程序目录；许可和下载入口以 Dolby 官方页面为准。
+- Dolby Encoding Engine。DEE 需要单独安装，并把 `license.lic` 放到对应的 DEE 程序目录；许可和下载入口在 Dolby 官方页面。
 
 deew 可以用发行版安装，也可以在已有 Python 环境中安装：
 
@@ -176,7 +164,7 @@ deew 只是包装层：它不提供 Dolby 编码器，也不替代 Dolby 的许�
 
 成品只需要兼容播放时，可以同时保留原始轨和新编码的兼容轨；成品只需要一个音轨时，也要在删除原轨前确认备份和回退路径。重新封装不会改变音频编码，转码则一定要在轨道名或说明中留下记录。
 
-## 容易混淆的情况
+## 常见说法与实际含义
 
 | 说法                                  | 实际含义                                                                            |
 | ------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -185,17 +173,15 @@ deew 只是包装层：它不提供 Dolby 编码器，也不替代 Dolby 的许�
 | “Atmos 还是 Atmos，转码不会丢”        | 取决于承载格式和编码器；解码成普通 PCM 或有损编码通常不会保留对象元数据             |
 | “采样率越高越好”                      | 采样率必须和目标编码器、设备与发布要求匹配；不必要的重采样只会增加变量              |
 | “输出扩展名对了就完成”                | 扩展名不说明编码是否复制、解码或重新编码，必须查看 MediaInfo 和日志                 |
-| “码率一样，音质就一样”                | 不同编码器、声道布局和源素材不能只按一个码率比较，仍要听检与播放检查                |
+| “码率一样，音质就一样”                | 不同编码器、声道布局和源素材之间，码率只是一个维度，仍要听检与播放检查              |
 
 ## 参考资料
 
-- [deew 项目 README](https://github.com/pcrlnd/deew)：安装、DEE / 许可证依赖、配置项、格式和命令行示例；本文按 2026 年 10 月 11 日页面核对。
+- [deew 项目 README](https://github.com/pcrlnd/deew)：安装、DEE / 许可证依赖、配置项、格式和命令行示例；页面于 2026 年 10 月 11 日核对。
 - [Dolby Encoding Engine](https://customer.dolby.com/content-creation-and-delivery/dolby-encoding-engine-with-ac-4)：DEE 的官方产品与许可入口。
 - [qaac 项目](https://github.com/nu774/qaac)：发布版、源码和当前帮助信息。
 - [QAAC 音频编码器命令行参数教程](https://www.nazorip.site/archives/44/)：依赖准备、参数说明、管道输入和 QAAC 例子；页面标题标注 2026.8 更新。
 - [eac3to](https://forum.doom9.org/showthread.php?t=125966) 与 [UsEac3To](https://forum.doom9.org/showthread.php?t=145574)：音轨分析、分流和转换入口。
 - [MKVToolNix 文档](https://mkvtoolnix.download/doc/mkvmerge.html)：混流、音频轨道属性和章节说明。
 - [MediaInfo](https://mediaarea.net/en/MediaInfo)：查看容器、编码、声道、采样率和轨道元数据。
-- [音频软件清单](/posts/audio-software/)：本博客的工具与资料总览。
-
-下一篇可以按目标设备单独记录 AAC、DDP 或 DTS 兼容轨的批处理参数；在此之前，先用一条样本跑通并保存日志。
+- [音频软件清单](/posts/audio-software/)：工具与资料清单。

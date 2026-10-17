@@ -1,6 +1,6 @@
 ---
 title: 游戏平台与工具清单
-description: 游戏平台、Mod 管理、串流、掌机和安卓模拟器的入口。
+description: 从游戏平台、Mod 管理到串流和安卓模拟器，按用途分组的软件清单。
 author: Ayulog
 pubDatetime: "2026-10-11T00:00:00+08:00"
 modDatetime: "2026-10-11T00:00:00+08:00"
@@ -15,34 +15,9 @@ tags:
   - 软件清单
 ---
 
-游戏相关的软件分成几块：平台客户端、Mod 管理、修改器、串流、掌机和安卓模拟器。这些条目目前只到项目说明和官方文档，还没有写成单篇教程。桌面软件和系统设置见 [Windows 软件清单](/posts/windows-software/)。
+游戏相关的软件按平台客户端、Mod 管理、修改器、串流、掌机和安卓模拟器分组，逐条列出。桌面软件和系统设置见 [Windows 软件清单](/posts/windows-software/)。
 
-## 目录
-
-- [流程概览](#流程概览)
-- [独立教程](#独立教程)
-- [游戏平台与资源](#游戏平台与资源)
-- [Mod 资源与管理](#mod-资源与管理)
-- [修改器](#修改器)
-- [串流与跨平台运行](#串流与跨平台运行)
-- [Steam Deck 与 SteamOS](#steam-deck-与-steamos)
-- [安卓模拟器](#安卓模拟器)
-
-## 流程概览
-
-| 使用场景                 | 阅读顺序                                                          | 软件与资料                                      |
-| ------------------------ | ----------------------------------------------------------------- | ----------------------------------------------- |
-| 在电脑上安装和管理游戏   | 确认游戏平台 → 安装客户端 → 管理对应游戏库                        | [游戏平台与资源](#游戏平台与资源)               |
-| 给游戏安装 Mod           | 找具体游戏的 Mod 页面 → 核对版本、加载器和前置依赖 → 选择管理方式 | [Mod 资源与管理](#mod-资源与管理)               |
-| 从另一台设备玩 PC 游戏   | 区分远程串流与设备本机运行 → 按主机、客户端和游戏核对支持范围     | [串流与跨平台运行](#串流与跨平台运行)           |
-| 在 Steam Deck 上扩展功能 | 先核对 SteamOS 与插件前提 → 按项目说明安装和配置                  | [Steam Deck 与 SteamOS](#steam-deck-与-steamos) |
-| 在电脑上运行安卓游戏     | 先确认目标游戏与运行环境 → 选择平台或模拟器 → 查看对应设置说明    | [安卓模拟器](#安卓模拟器)                       |
-
-## 独立教程
-
-这个分类目前还没有单独的文章。下方先保留软件入口和项目文档；Mod 安装、串流配置、Steam Deck 插件等内容写成教程后，会按单个流程或软件从这里进入。
-
-目前可直接查阅的操作资料包括 [SMAPI 玩家指南](https://stardewvalleywiki.com/Modding:Player_Guide/Getting_Started)、[GameNative 兼容性记录](https://gamenative.app/compatibility)和 [DeckyClash 项目说明](https://github.com/chenx-dust/DeckyClash/tree/main)。这些是外部资料，尚未整理成本站文章。
+条目目前只到项目说明和官方文档这一层，没有逐步的安装教程；需要动手时，按各项目页面里的说明操作。
 
 ## 游戏平台与资源
 
@@ -50,7 +25,7 @@ tags:
 - **[WeGame](https://www.wegame.com.cn/)**：腾讯旗下的 PC 游戏平台，用于发现、下载和启动游戏，并提供游戏助手与玩家社区服务。
 - **[Xbox PC 应用](https://www.xbox.com/zh-TW/apps/xbox-app-on-pc)**：在 Windows 上浏览、购买、下载和启动游戏，也可管理 Game Pass 游戏库。链接为官方繁体中文页面。
 - **[小黑盒](https://www.xiaoheihe.cn/)**：面向游戏玩家的社区与游戏信息平台，用于查看游戏内容和参与玩家讨论。
-- **[BYRUT · GOG 游戏资源](https://byrut.org/gog-games/)**：第三方游戏资源目录，收录 GOG 版本的游戏资源，非 GOG 官方网站。
+- **[BYRUT · GOG 游戏资源](https://byrut.org/gog-games/)**：由第三方维护的游戏资源目录，收录 GOG 版本的游戏资源。
 
 ## Mod 资源与管理
 
@@ -69,7 +44,7 @@ tags:
 ## 串流与跨平台运行
 
 - **[Moonlight PC](https://github.com/moonlight-stream/moonlight-qt/releases)**：开源游戏串流客户端，可连接运行 Sunshine 等主机软件的电脑，在其他设备上远程游玩游戏或操作桌面。
-- **[GameNative](https://github.com/utkarshdalal/GameNative)**：在 Android 设备上本机运行 PC 游戏，可接入 Steam、Epic、GOG 等游戏库，支持云存档、手柄与触控。项目仍处早期，并非所有游戏都能运行；使用前按设备和游戏查看 [兼容性记录](https://gamenative.app/compatibility)。
+- **[GameNative](https://github.com/utkarshdalal/GameNative)**：在 Android 设备上本机运行 PC 游戏，可接入 Steam、Epic、GOG 等游戏库，支持云存档、手柄与触控。项目仍处早期，兼容性因设备和游戏而异；使用前查看 [兼容性记录](https://gamenative.app/compatibility)。
 
 ## Steam Deck 与 SteamOS
 
@@ -77,12 +52,12 @@ tags:
 
 ## 安卓模拟器
 
-- **[NoxPlayer（夜神模拟器）](https://www.bignox.com/)**：在电脑上运行安卓应用与手游，支持键鼠映射、多开和操作录制。附 [Windows 11 的 Hyper-V 共存测试版说明](https://support.bignox.com/ja/else/hypervonbeta)，这是日文 beta 说明，支持范围需按版本核对。
+- **[NoxPlayer（夜神模拟器）](https://www.bignox.com/)**：在电脑上运行安卓应用与手游，支持键鼠映射、多开和操作录制。附 [Windows 11 的 Hyper-V 共存测试版说明](https://support.bignox.com/ja/else/hypervonbeta)，这是日文 beta 说明。
 - **[雷电模拟器](https://www.ldmnq.com/)**：面向电脑玩手游的安卓模拟器，支持键鼠操作、多开和录屏。
 - **[网易 MuMu 模拟器](https://mumu.163.com/)**：网易推出的安卓模拟器，用于在电脑上运行安卓应用和手游，支持键鼠映射、多开等功能。
 - **[BlueStacks（蓝叠）](https://www.bluestacks.com/)**：在电脑上运行安卓应用和手游，支持键鼠映射与多开。
 - **[MEmu（逍遥模拟器）](https://www.memuplay.com/)**：安卓模拟器，支持键鼠操作、多开和不同安卓版本的实例。
-- **[Google Play Games 电脑版](https://play.google.com/googleplaygames)**：Google 提供的 PC 手游平台，可玩其收录的安卓游戏；游戏和地区支持情况以官方列表为准。
+- **[Google Play Games 电脑版](https://play.google.com/googleplaygames)**：Google 提供的 PC 手游平台，可玩其收录的安卓游戏，具体游戏和地区支持见官方列表。
 - **[腾讯手游助手](https://syzs.qq.com/)**：腾讯的电脑手游平台，提供游戏下载和键鼠操作适配。
 
-2026 年 10 月 11 日核对了本次补充的 GameNative、DeckyClash 项目说明和 FLiNG 官网；星露谷 Mod 的安装前提参照 SMAPI 官网与 Wiki 玩家指南。具体支持范围以各项目后续说明为准。
+2026 年 10 月 11 日核对了本次补充的 GameNative、DeckyClash 项目说明和 FLiNG 官网；星露谷 Mod 的安装前提参照 SMAPI 官网与 Wiki 玩家指南。

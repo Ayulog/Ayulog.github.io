@@ -1,6 +1,6 @@
 ---
 title: "qiandao：部署与签到任务"
-description: "从 Docker 部署 qiandao（qd-today）开始，介绍初始化、创建任务、备份升级和常见故障排查。"
+description: "用 Docker 部署 qiandao，注册账号、按 HAR 制作签到任务，并处理备份、升级与故障。"
 pubDatetime: 2026-10-09T12:00:00+08:00
 author: "Ayulog"
 category: nas
@@ -12,20 +12,9 @@ tags:
 draft: false
 ---
 
-qiandao 用 HTTP 请求模板执行签到等定时任务。以下使用 `a76yyyy/qiandao` 镜像，命令在 Linux Shell 中运行。
+签到、领取这类重复操作，可以交给 qiandao 按 HTTP 请求模板定时执行。下面用 `a76yyyy/qiandao` 镜像，命令在 Linux Shell 中运行。
 
-[QD 官方文档](https://qd-today.github.io/qd/zh_CN/guide/deployment.html)使用的是 `qdtoday/qd`。两者的版本和参数需要分别核对；更换镜像时先备份，不要让两个容器同时写同一份数据库。
-
-## 目录
-
-- [准备工作](#准备工作)
-- [使用 Docker 部署](#使用-docker-部署)
-- [初始化与登录](#初始化与登录)
-- [制作 HAR 模板与创建第一个签到任务](#制作-har-模板与创建第一个签到任务)
-- [设置定时执行和通知](#设置定时执行和通知)
-- [备份、升级与回滚](#备份升级与回滚)
-- [常见问题](#常见问题)
-- [参考资料](#参考资料)
+[QD 官方文档](https://qd-today.github.io/qd/zh_CN/guide/deployment.html)使用的是 `qdtoday/qd`，与 `a76yyyy/qiandao` 的版本、参数各自独立；换镜像时先备份，不要让两个容器同时写同一份数据库。
 
 ## 准备工作
 
@@ -87,7 +76,7 @@ docker logs -f qiandao
 3. 如果服务只供自己使用，在防火墙中只放行内网或 VPN 网段；
 4. 需要公网访问时，在 qiandao 前面配置 HTTPS，并在反向代理层增加访问控制。
 
-官方 QD 文档还列出了 `DOMAIN`、`AES_KEY` 和 `COOKIE_SECRET` 等环境变量。`a76yyyy/qiandao` 的具体标签是否保留这些变量，应以该标签的 README 和配置说明为准；如果支持，请把 `DOMAIN` 改成实际访问地址，并把默认的加密密钥和 Cookie 密钥替换成随机值。
+官方 QD 文档还列出了 `DOMAIN`、`AES_KEY` 和 `COOKIE_SECRET` 等环境变量。`a76yyyy/qiandao` 的具体标签是否保留这些变量，看该标签的 README 和配置说明；如果支持，请把 `DOMAIN` 改成实际访问地址，并把默认的加密密钥和 Cookie 密钥替换成随机值。
 
 不要把管理页面直接暴露在公网而不设置 HTTPS。签到任务通常包含 Cookie、Token 或其他账号凭据，泄露后可能导致第三方账号被接管。
 
@@ -122,7 +111,7 @@ HAR 可能包含 Cookie、`Authorization`、密码和完整响应正文。不要
 {{ cookie }}
 ```
 
-变量名要在模板和任务实例中保持一致，实际字段名称以当前 HAR 编辑器提供的变量列表为准。除了用户名、密码和 Cookie，也要检查请求头里的 `Authorization`、请求体中的账号字段，以及 URL 查询参数。不要把一次性 CSRF Token 当成固定值；如果它来自上一个请求，就使用变量提取保存，再供后续请求使用。
+变量名要在模板和任务实例中保持一致，实际字段名称看当前 HAR 编辑器提供的变量列表。除了用户名、密码和 Cookie，也要检查请求头里的 `Authorization`、请求体中的账号字段，以及 URL 查询参数。不要把一次性 CSRF Token 当成固定值；如果它来自上一个请求，就使用变量提取保存，再供后续请求使用。
 
 ### 4. 测试请求、断言和变量提取
 
@@ -207,7 +196,7 @@ Cookie、Token 和验证码状态都有有效期。重新登录目标站点并�
 
 先确认导出时选择了 **with content**，否则 POST 或 JSON 请求体可能没有保存。再检查请求顺序、`Content-Type`、重定向和变量替换是否完整。HTTP 200 只代表请求被服务器接收，成功断言还应检查响应正文中的状态字段或成功关键词。
 
-验证码、二次验证、动态签名、时间戳和 nonce 等流程通常无法只靠一份 HAR 长期回放，需要按站点规则增加变量提取或其他处理。先用测试账号回放，确认站点允许自动化，并遵守站点条款和频率限制。
+验证码、二次验证、动态签名、时间戳和 nonce 等流程通常没法用一份 HAR 长期回放，需要按站点规则增加变量提取或其他处理。先用测试账号回放，确认站点允许自动化，并遵守站点条款和频率限制。
 
 ### 定时任务没有执行
 
@@ -217,5 +206,3 @@ Cookie、Token 和验证码状态都有有效期。重新登录目标站点并�
 
 - [qd-today 官方部署文档](https://qd-today.github.io/qd/zh_CN/guide/deployment.html)
 - [Docker Hub：a76yyyy/qiandao 标签](https://hub.docker.com/r/a76yyyy/qiandao/tags)
-
-部署参数和可用镜像标签可能随项目更新而变化。实际升级前应以官方文档和 Docker Hub 当前页面为准，并保留可用的配置备份。

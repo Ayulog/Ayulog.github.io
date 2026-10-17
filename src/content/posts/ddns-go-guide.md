@@ -1,6 +1,6 @@
 ---
 title: ddns-go：自动更新域名的 IP 地址
-description: 用 Docker 部署 ddns-go，配置 IPv4 和 IPv6 动态解析，记录 DNS 凭据、地址选择和连接排错。
+description: 宽带重拨后公网地址会变，用 ddns-go 获取当前地址并更新 A / AAAA 记录。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
 draft: false
@@ -13,9 +13,9 @@ tags:
   - 远程访问
 ---
 
-家庭宽带重拨后，公网 IP 可能会变。ddns-go 定期获取地址并更新 DNS，省得每次手动改域名记录。它只管解析，端口转发、证书和反向代理需要另外配置。
+家庭宽带重拨后，公网 IP 可能会变，域名记录也要跟着改。ddns-go 定期获取当前地址并更新 DNS，省去每次手动修改；它只管解析，端口转发、证书和反向代理仍要另外配置。
 
-先确认[远程访问的网络条件](/posts/nas-remote-access/)。如果还需要管理 HTTPS 入口，可以直接用 [Lucky](/posts/lucky-guide/) 的 DDNS；同一条记录不要交给两个工具反复更新。其他软件收在 [NAS 服务清单](/posts/nas-software-websites/)。
+先确认[远程访问的网络条件](/posts/nas-remote-access/)；还需要管理 HTTPS 入口的话，可以直接用 [Lucky](/posts/lucky-guide/) 的 DDNS，同一条记录交给一个工具更新即可。其他软件收在 [NAS 服务清单](/posts/nas-software-websites/)。
 
 ## Docker 部署
 
@@ -56,9 +56,9 @@ docker compose logs --tail=100 ddns-go
 
 保存后查看更新日志，确认实际写入的记录。没有可用公网 IPv4 时，不要把运营商共享出口地址写进 A 记录当作直连入口。
 
-## DNS 更新成功后怎么检查
+## 记录生效后检查连接
 
-先看域名解析是否指向预期地址，再用手机关闭 Wi-Fi，从移动网络访问真正需要的服务端口。DNS 缓存受 TTL 影响，更新后可能要等旧记录失效；`ping` 结果也不能代替 HTTPS 访问测试。
+先看域名解析是否指向预期地址，再用手机关闭 Wi-Fi，从移动网络访问真正需要的服务端口。DNS 缓存受 TTL 影响，更新后可能要等旧记录失效；`ping` 通了，也要再从移动网络访问一次 HTTPS。
 
 如果地址正确但连不上，按连接链路检查：公网 IPv4 的端口映射、IPv6 的入站防火墙、应用监听地址和端口，以及外部网络是否支持 IPv6。完整排错放在[远程访问笔记](/posts/nas-remote-access/#常见问题)，这里只确认 DNS 更新这一步。
 

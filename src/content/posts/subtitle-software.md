@@ -1,6 +1,6 @@
 ---
 title: 字幕软件清单
-description: 从 OCR、校对、ASS 排版到 SUP 制作的工具与资料。
+description: 从获取、OCR、校对、排版到 SUP 转换，各环节可用的软件、资料与公网字幕入口。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
 modDatetime: "2026-10-11T16:00:00+08:00"
@@ -13,18 +13,11 @@ tags:
   - OCR
 ---
 
-字幕处理先看手里的素材，再确定成品：已有文本可以直接校对，图形字幕需要改字时才做 OCR；最后根据播放或蓝光制作要求，保留 SRT、ASS，或渲染为 SUP。下面是各环节用到的软件和资料，具体操作放在对应文章里。
+手里是一张蓝光原盘、一份公网下载的 SRT，还是已经压进画面的硬字幕，第一步就不一样：有文本可以直接校对，图形字幕要改字才做 OCR，最后按播放或蓝光制作要求保留 SRT、ASS，或渲染成 SUP。
 
-## 目录
+软件与资料按环节分组，每一条都给出入口和用途；具体操作步骤放在对应的教程里。
 
-- [处理流程](#处理流程)
-- [相关文章](#相关文章)
-- [公网字幕来源](#公网字幕来源)
-- [常用软件](#常用软件)
-- [文档、教程与个人文章](#文档教程与个人文章)
-- [按处理目标选择入口](#按处理目标选择入口)
-
-## 处理流程
+## 从素材到成品：每一步先确定什么
 
 | 环节             | 先确定什么                                       | 后续产物或操作                                       |
 | ---------------- | ------------------------------------------------ | ---------------------------------------------------- |
@@ -34,23 +27,7 @@ tags:
 | 排版与特效       | 字幕画布、字体、样式和目标渲染器                 | 保存可编辑的 ASS 工程与所需字体、图片                |
 | 导出与回看       | 外挂播放、MKV 封装，还是蓝光 PGS 字幕            | 保留文本或渲染成 SUP，检查开头、中段、结尾和特效段落 |
 
-完整的文字字幕制作流程见[字幕处理教程：从来源核对到 ASS 与 SUP](/posts/subtitle-workflow/)。只改已有 SUP 的时间、位置或图像时，可直接进入图形字幕修改教程。
-
-## 相关文章
-
-### 识别、校对与制作
-
-- [字幕处理教程：从来源核对到 ASS 与 SUP](/posts/subtitle-workflow/)：沿着一份字幕稿完成来源核对、OCR、校对、翻译、ASS 排版和 SUP 导出。
-- [AI 字幕：图形识别、硬字幕提取与翻译校对](/posts/ai-subtitles/)：按素材选择识别路线，再用 VideoCaptioner、LinguaGacha 等工具辅助翻译并人工审校。
-- [基于 Aegisub 的 ASS 特效字幕制作教程](/posts/aegisub-ass-effects/)：建立样式，使用覆盖标签、矢量绘图、卡拉 OK 和 PNG 挂图。
-
-### 图形字幕与播放
-
-- [SUP 图形字幕的修改方法](/posts/sup-subtitle-editing/)：直接调整现有 SUP，或导出 BDN XML / PNG 修改后重新编码。
-- [使用大金 Scenarist BD 制作特效字幕 SUP](/posts/scenarist-bd-effects-sup/)：把已渲染的字幕图像加入 Scenarist BD 工程，再提取 SUP 并验收。
-- [PotPlayer 和 MPC-HC 挂载 VSFilterMod 加载外挂特效字幕](/posts/vsfiltermod-external-subtitles/)：注册滤镜，配置播放器，检查扩展标签、PNG 和高位深视频的兼容性。
-
-校对视频需要缩小体积时，接[字幕校对用的快速压片教程](/posts/handbrake-shanaencoder-subtitle-proxy/)；字幕定稿后的蓝光混流与菜单处理见 [蓝光与媒体工具清单](/posts/media-diy-software/)。
+完整的文字字幕制作流程见[字幕处理教程：从来源核对到 ASS 与 SUP](/posts/subtitle-workflow/)。只改已有 SUP 的时间、位置或图像时，看[SUP 图形字幕的修改方法](/posts/sup-subtitle-editing/)。校对视频需要缩小体积时，用[字幕校对用的快速压片教程](/posts/handbrake-shanaencoder-subtitle-proxy/)；字幕定稿后的蓝光混流与菜单处理见[蓝光与媒体工具清单](/posts/media-diy-software/)。
 
 ## 公网字幕来源
 
@@ -63,7 +40,7 @@ tags:
 | [HD.Club 精研視務所](https://www.hd.club.tw/forum.php?forumlist=1) | 综合影音论坛，设有字幕讨论版块；本次首页可访问，字幕版块提示需登录。   |
 | [OpenSubtitles](https://www.opensubtitles.org/zh)                  | 多语言字幕检索入口；本次访问遇到人机验证，未核实当前下载条件。         |
 
-以上入口核查于 2026 年 10 月 10 日。访问、账号和下载条件以各站当前说明为准；保留来源地址、原始文件与署名，后续修改时使用副本。
+以上入口核查于 2026 年 10 月 10 日。各站的访问、账号与下载条件会变，保留来源地址、原始文件与署名，后续修改时使用副本。
 
 ## 常用软件
 
@@ -111,14 +88,14 @@ PGS / SUP 属于图形字幕。格式转换、缩放或切分不会自动得到�
 
 ASS 转 SUP 可以用下面的直接转换工具，不必手工处理每份 XML 和 PNG；需要检查中间图像或单独控制编码时，再走 ass2bdnxml + SUPer 的分步路线。两种方式都见[流程总览](/posts/subtitle-workflow/#第六步渲染并转回-sup)。
 
-| 工具                                                                                    | 用途与前提                                                                                                                                                                                     |
-| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [ass2sup（kidpoleon）](https://github.com/kidpoleon/ass2sup)                            | Windows 终端交互工具，匹配目录中的 ASS 与参考视频，直接输出 SUP。封装 Spp2Pgs 及所需 DLL；仍需可用的 ffprobe 和字体，本次核对 v2.0.0。                                                         |
-| [Spp2Pgs](https://github.com/subelf/Spp2Pgs)                                            | 使用 xy-VSSppf / xy-VSFilter 系渲染组件，命令行直接将 ASS 转为 SUP。旧工具，另有 [GUI 前端](https://github.com/xinnidajiji/spp2pgs-gui)；依赖、路径限制与特效兼容性需按所用版本检查。          |
-| [ass2bdnxml](https://github.com/cubicibo/ass2bdnxml)                                    | 使用 libass 将 ASS 与字体渲染为 BDN XML 和 PNG，可继续交给 SUPer 编码为 SUP。制作前确认字幕画布、帧率与字体，具体衔接见[流程总览](/posts/subtitle-workflow/#第六步渲染并转回-sup)。 |
-| [SUPer](https://github.com/cubicibo/SUPer)                                              | 把 BDN XML 与 PNG 图像编码为 HDMV PGS 字幕，输出 SUP 等格式，支持承载卡拉 OK、淡入淡出等已渲染的字幕效果。ASS 需先经过相应工具渲染为输入素材。                                                 |
-| [BDSup2Sub++](https://github.com/amichaelt/BDSup2SubPlusPlus/tree/master)               | BDSup2Sub 的旧 C++ / Qt 移植版，用于图形字幕格式转换、缩放等处理；不负责 OCR 或 ASS 特效渲染，已有复杂动画的 SUP 不应未经检查就再次转换。                                                      |
-| [pball's Bluray PGS Subtitle splitter](https://forum.doom9.org/showthread.php?t=172556) | 按时间或帧范围切分 SUP 字幕的工具。原帖注明不能把同一条正在显示的字幕拆到两个文件中，切点需要检查。                                                                                            |
+| 工具                                                                                    | 用途与前提                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [ass2sup（kidpoleon）](https://github.com/kidpoleon/ass2sup)                            | Windows 终端交互工具，匹配目录中的 ASS 与参考视频，直接输出 SUP。封装 Spp2Pgs 及所需 DLL；仍需可用的 ffprobe 和字体，本次核对 v2.0.0。                                                |
+| [Spp2Pgs](https://github.com/subelf/Spp2Pgs)                                            | 使用 xy-VSSppf / xy-VSFilter 系渲染组件，命令行直接将 ASS 转为 SUP。旧工具，另有 [GUI 前端](https://github.com/xinnidajiji/spp2pgs-gui)；依赖、路径限制与特效兼容性需按所用版本检查。 |
+| [ass2bdnxml](https://github.com/cubicibo/ass2bdnxml)                                    | 使用 libass 将 ASS 与字体渲染为 BDN XML 和 PNG，可继续交给 SUPer 编码为 SUP。制作前确认字幕画布、帧率与字体，具体衔接见[流程总览](/posts/subtitle-workflow/#第六步渲染并转回-sup)。   |
+| [SUPer](https://github.com/cubicibo/SUPer)                                              | 把 BDN XML 与 PNG 图像编码为 HDMV PGS 字幕，输出 SUP 等格式，支持承载卡拉 OK、淡入淡出等已渲染的字幕效果。ASS 需先经过相应工具渲染为输入素材。                                        |
+| [BDSup2Sub++](https://github.com/amichaelt/BDSup2SubPlusPlus/tree/master)               | BDSup2Sub 的旧 C++ / Qt 移植版，用于图形字幕格式转换、缩放等处理；不负责 OCR 或 ASS 特效渲染，已有复杂动画的 SUP 不应未经检查就再次转换。                                             |
+| [pball's Bluray PGS Subtitle splitter](https://forum.doom9.org/showthread.php?t=172556) | 按时间或帧范围切分 SUP 字幕的工具。原帖注明不能把同一条正在显示的字幕拆到两个文件中，切点需要检查。                                                                                   |
 
 ## 文档、教程与个人文章
 

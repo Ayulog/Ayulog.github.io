@@ -1,6 +1,6 @@
 ---
 title: PT Seedbox：选机、安装与做种
-description: 整理 PT Seedbox 的选机与成本核算，使用 Dedicated-Seedbox 安装 qBittorrent，并说明 SSH 隧道、RSS 筛选、上传与做种、自动删种及常见问题。
+description: 先确认站规和流量预算，再用 Dedicated-Seedbox 装 qBittorrent 并接 RSS。
 author: Ayulog
 pubDatetime: "2026-10-09T23:20:00+08:00"
 draft: false
@@ -13,9 +13,9 @@ tags:
   - 服务器
 ---
 
-Seedbox 就是持续运行下载器的远程服务器，PT 圈里也叫“盒子”。下载和做种走机房网络，家里的设备只负责管理。
+Seedbox 是一台持续运行下载器的远程服务器，也就是 PT 圈里说的“盒子”：下载和做种走机房网络，家里的设备只负责管理。租之前要先弄清楚两件事：站点允许怎么用盒子，以及每月的流量够不够。
 
-这里记录有管理员权限的 Debian / Ubuntu 服务器配置，用 [Dedicated-Seedbox](https://github.com/jerry048/Dedicated-Seedbox) 安装 qBittorrent，再接 RSS。安装参数已对照 **2026 年 10 月 9 日**的项目源码，带宽和费用按供应商条款计算，没有租机跑分数据。
+下面的配置针对有管理员权限的 Debian / Ubuntu 服务器，用 [Dedicated-Seedbox](https://github.com/jerry048/Dedicated-Seedbox) 安装 qBittorrent，再接 RSS。安装参数已对照 **2026 年 10 月 9 日**的项目源码，带宽和费用按供应商条款计算，没有租机跑分数据。
 
 ## 先确认站规，再决定租什么
 
@@ -41,11 +41,11 @@ Seedbox 就是持续运行下载器的远程服务器，PT 圈里也叫“盒子
 | VPS                     | 想学习部署，任务规模较小   | 共享 CPU / 磁盘限制、持续带宽政策、端口和月流量              |
 | 独立服务器              | 需要较大容量和更可控的资源 | 硬盘健康、实际可用容量、机房网络、安装费与维护成本           |
 
-**端口速率不等于持续上传速度。** 1 Gbit/s 的理论上限是 125 MB/s，实际会受到协议开销、对端需求、线路、CPU 与磁盘读写影响。机械盘面对大量并发随机读写，也可能先于网络成为瓶颈。
+**端口的 1 Gbit/s 是链路速率，理论上限 125 MB/s，持续上传通常更低。** 实际值还会受协议开销、对端需求、线路、CPU 与磁盘读写影响。机械盘面对大量并发随机读写，也可能先于网络成为瓶颈。
 
 月流量尤其容易忽略。假设平均持续上传 10 MB/s，按十进制计算，30 天就约为 **25.92 TB**；只有 20 TB 出站额度的套餐，长时间运行也需要限速和预算管理。客户端显示的 MiB/s 与商家标注的 MB/s、TB，不一定使用同一套单位。
 
-以 [Hetzner 官方流量说明](https://docs.hetzner.com/robot/general/traffic/)为例，本次核对时，独立服务器默认 1 Gbit 上联包含不限流量；10 Gbit 上联包含 20 TB 月流量，超出部分另收费。Cloud 产品有自己的地区和套餐额度，**不能把独服的规则套给 VPS**。页面同时说明月流量按出站计算，购买时仍须以具体订单和最新政策为准。
+以 [Hetzner 官方流量说明](https://docs.hetzner.com/robot/general/traffic/)为例，本次核对时，独立服务器默认 1 Gbit 上联包含不限流量；10 Gbit 上联包含 20 TB 月流量，超出部分另收费。Cloud 产品有自己的地区和套餐额度，**独服的规则不适用于 VPS**。页面同时说明月流量按出站计算，下单前看具体订单与当时政策。
 
 预算至少包含：租金、安装费、税费、额外 IP、超额流量及必要备份。RAID 0 可以汇总容量并改善部分读写场景，但任一成员盘故障都可能导致整个阵列数据丢失；它也不提供备份能力。对于长期保种，稳定运行和恢复成本往往比瞬时峰值更值得关注。
 
@@ -63,7 +63,7 @@ Dedicated-Seedbox 当前文档标注为 V2.0.0，支持 Debian 11 及以上、Ub
 ssh -p SSH_PORT ADMIN_USER@SERVER_IP
 ```
 
-将占位符替换成实际 SSH 端口、管理员账号和服务器地址；它们不是稍后创建的下载器账号。本文后续安装命令在服务器的 Bash 中执行，使用具备 `sudo` 权限的管理员。
+将占位符替换成实际 SSH 端口、管理员账号和服务器地址；它们不是稍后创建的下载器账号。后面的安装命令在服务器的 Bash 中执行，使用具备 `sudo` 权限的管理员。
 
 先核对机器与挂载情况：
 
@@ -85,7 +85,7 @@ df -hT
 
 ### 先看脚本会做什么
 
-当前项目以 `seedboxctl` 管理 qBittorrent、调优、BBR、Docker、Vertex、autobrr 和自动删种组件，旧教程中的一长串短参数不能直接理解为同一套行为。
+当前项目以 `seedboxctl` 管理 qBittorrent、调优、BBR、Docker、Vertex、autobrr 和自动删种组件，旧教程中的一长串短参数与现在的脚本行为已经不同。
 
 默认的 dedicated 安装会选择 qBittorrent 和主机调优。本例**明确只装 qBittorrent**，建立账号、安装所需依赖、写入配置和 systemd 服务，暂时不安装订阅器、删种器及 BBR 变体。调优会涉及内核、网络和磁盘参数，BBR 组件还可能引入内核或 DKMS 变更，等基础传输稳定后再单独评估。
 
@@ -104,7 +104,7 @@ curl --fail --location \
 less Install.sh
 ```
 
-在 `less` 中按 `q` 退出。还需要查看同一提交中的 [`lib/`](https://github.com/jerry048/Dedicated-Seedbox/tree/97470df47a948b0f39082e7679c630eaeff438d1/lib) 与[静态版本清单](https://github.com/jerry048/Dedicated-Seedbox/blob/97470df47a948b0f39082e7679c630eaeff438d1/manifests/qbittorrent.tsv)：`Install.sh` 会继续下载运行模块和客户端，下载到本地并不代表后续不再访问网络。
+在 `less` 中按 `q` 退出。还需要查看同一提交中的 [`lib/`](https://github.com/jerry048/Dedicated-Seedbox/tree/97470df47a948b0f39082e7679c630eaeff438d1/lib) 与[静态版本清单](https://github.com/jerry048/Dedicated-Seedbox/blob/97470df47a948b0f39082e7679c630eaeff438d1/manifests/qbittorrent.tsv)：`Install.sh` 会继续下载运行模块和客户端，保存到本地后仍会访问网络。
 
 ### 执行最小安装
 
@@ -165,7 +165,7 @@ WebUI、SSH 和 PT 站点应使用不同密码。截图或求助日志要遮掉 
 
 先选一个站规允许、体积可控、确实有下载需求的任务，手动添加到明确分类，检查保存路径，再开始下载。等客户端完成下载并转为做种后，核对 Tracker 返回状态和站点的做种列表。
 
-客户端显示“做种中”并不保证一定有上传。其他用户已经下完、对端速度较慢、相同资源做种者太多，都可能让上传很少。新发布资源可能更容易遇到下载需求，同时也可能面对更多高速盒子竞争；单看发布时间或热度，不能预测最终上传量。
+客户端显示“做种中”时，上传可能仍是零：其他用户已经下完、对端速度较慢、相同资源做种者太多，都会让上传很少。新发布资源可能更容易遇到下载需求，同时也可能面对更多高速盒子竞争；单看发布时间或热度，无法预测最终上传量。
 
 选种可以同时考虑需求、资源大小、保留时间与自己的磁盘余量。Freeleech 有助于控制站点计入下载量，但它有时限，优惠结束后如何计费要看站规。不要在优惠快结束时自动加入一个明显无法及时完成的大任务。
 
@@ -177,7 +177,7 @@ WebUI、SSH 和 PT 站点应使用不同密码。截图或求助日志要遮掉 
 
 手动任务正常后，再用客户端 RSS，或接入 [Vertex](/posts/vertex-guide/)与 autobrr。Vertex 管理订阅和任务；autobrr 按站点支持的公告方式匹配资源。
 
-第一次只接一个站点、一条规则，并限定分类。下面是一组**配置思路示例**，数值不是通用推荐，更不是某个软件可直接导入的配置：
+第一次只接一个站点、一条规则，并限定分类。下面是一组**配置思路示例**，数值按自己的硬盘和流量预算改：
 
 | 条件       | 起步做法                                                |
 | ---------- | ------------------------------------------------------- |
@@ -194,7 +194,7 @@ WebUI、SSH 和 PT 站点应使用不同密码。截图或求助日志要遮掉 
 
 自动添加与自动删除分开配置。第一轮先看规则命中哪些任务，核对最低保种要求，然后再允许执行删除。
 
-删除条件应同时满足：任务属于自动管理分类、站点规定的做种义务已经完成、没有人工保护标记，并且删除数据不会破坏其他任务。**客户端显示分享率达到 1，不能自动推出已经满足所有站点的 H&R 要求**；本地做种计时也不能替代站点确认。
+删除条件应同时满足：任务属于自动管理分类、站点规定的做种义务已经完成、没有人工保护标记，并且删除数据不会破坏其他任务。**客户端分享率达到 1，站点侧的最低保种要求仍要单独看**；本地做种计时也要回到站点统计确认。
 
 如果规则工具只知道本地时间、速度或分享率，却不知道站点的考核状态，应保守保留或人工确认。磁盘接近满时优先暂停新增任务；不要让“剩余空间不足”直接覆盖最低保种时间。
 
@@ -228,6 +228,6 @@ sudo journalctl -u seedbox-qbittorrent-seedbox.service -n 100 --no-pager
 
 - [Dedicated-Seedbox 项目](https://github.com/jerry048/Dedicated-Seedbox)：当前安装入口、支持环境与组件管理。
 - [本次核对的 Install.sh](https://github.com/jerry048/Dedicated-Seedbox/blob/97470df47a948b0f39082e7679c630eaeff438d1/Install.sh)、[qBittorrent 组件](https://github.com/jerry048/Dedicated-Seedbox/blob/97470df47a948b0f39082e7679c630eaeff438d1/lib/components/qbittorrent.bash)与[环境检测](https://github.com/jerry048/Dedicated-Seedbox/blob/97470df47a948b0f39082e7679c630eaeff438d1/lib/core/detect.bash)：参数、版本选择、配置写入与系统要求。
-- [Hetzner 官网](https://www.hetzner.com/)、[官方流量说明](https://docs.hetzner.com/robot/general/traffic/)、[服务条款](https://www.hetzner.com/legal/terms-and-conditions/)与[系统政策](https://www.hetzner.com/legal/system-policies/)：产品及流量政策以订单和当前官方条款为准。
+- [Hetzner 官网](https://www.hetzner.com/)、[官方流量说明](https://docs.hetzner.com/robot/general/traffic/)、[服务条款](https://www.hetzner.com/legal/terms-and-conditions/)与[系统政策](https://www.hetzner.com/legal/system-policies/)：产品及流量政策看订单和当前官方条款。
 - [autobrr 过滤规则](https://autobrr.com/filters/)与[autoremove-torrents 文档](https://autoremove-torrents.readthedocs.io/en/latest/intro.html)：自动筛选与删除功能的边界。
 - [Hostloc 手机版入口](https://hostloc.com/misc.php?mod=mobile)：社区入口，不作为供应商政策或性能结论的依据。

@@ -1,6 +1,6 @@
 ---
 title: Watchtower：检查镜像更新与维护旧部署
-description: Watchtower 的标签筛选、仅监控、定时与通知配置，附归档版本的 Docker API 兼容问题。
+description: 用白名单标签和仅监控模式跑 Watchtower，含定时、通知配置与归档版的 Docker API 兼容问题。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
 draft: false
@@ -11,9 +11,9 @@ tags:
   - Watchtower
 ---
 
-**截至 2026 年 10 月 10 日，Watchtower 官方仓库已归档，README 明确说明不再维护，最新发布仍为 `v1.7.1`。** 这篇留给仍在用旧部署的人。新装前先确认它能否连接当前的 Docker API。
+**截至 2026 年 10 月 10 日，Watchtower 官方仓库已归档，README 明确说明不再维护，最新发布仍为 `v1.7.1`。** 仍在用旧部署的，先确认它能连上当前的 Docker API。
 
-Watchtower 检查的是容器正在使用的镜像引用。使用 `example/app:1.2.3`，不会自动改成 `1.2.4`；使用 `latest`，则跟踪该标签变化。它按容器现有配置重建，不会替你改原 Compose，也不会完成应用的大版本迁移。
+Watchtower 检查的是容器正在使用的镜像引用：写 `example/app:1.2.3` 就盯着 `1.2.3`，不会自己换成 `1.2.4`；写 `latest` 才跟着该标签走。重建时它照抄容器现有配置，原 Compose 和大版本迁移仍由自己处理。
 
 返回 [NAS 服务清单](/posts/nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/docker-management/)。
 
@@ -59,7 +59,7 @@ labels:
   com.centurylinklabs.watchtower.enable: "true"
 ```
 
-重新部署目标服务，标签才会应用到容器；只保存文件或执行 `docker restart` 不会更新创建参数。PT 下载器可以明确写成 `"false"`。本文开启白名单，没有启用标签的容器不会被选中。
+重新部署目标服务，标签才会应用到容器；只保存文件或执行 `docker restart` 不会更新创建参数。PT 下载器可以明确写成 `"false"`。示例开启白名单，没有启用标签的容器不会被选中。
 
 然后启动 Watchtower，检查日志中是否有 API、权限或定时错误：
 
@@ -100,7 +100,7 @@ secrets:
 
 确认目标范围、兼容性和恢复流程后，才把 `WATCHTOWER_MONITOR_ONLY` 改成 `"false"` 并重建 Watchtower。需要继续只监控的单个服务，可同时设置启用标签和 `com.centurylinklabs.watchtower.monitor-only: "true"`。
 
-第一次更新后，检查应用页面、日志和数据。`WATCHTOWER_CLEANUP: "true"` 会清理更新前的旧镜像，本文初始配置不启用；故障时先停止 Watchtower，再按应用流程恢复旧镜像和匹配的数据备份。
+第一次更新后，检查应用页面、日志和数据。`WATCHTOWER_CLEANUP: "true"` 会清理更新前的旧镜像，上面的初始配置不启用；故障时先停止 Watchtower，再按应用流程恢复旧镜像和匹配的数据备份。
 
 ## API 兼容问题
 

@@ -1,6 +1,6 @@
 ---
 title: 一键压制篇：用图形工具完成一次转码
-description: 从 HandBrake 与 ShanaEncoder 入手，记录预设、尺寸、帧率、音轨、字幕和短片试压的检查方法，再介绍 StaxRip 与 Simple x264 Launcher 等工具。
+description: 用 HandBrake 与 ShanaEncoder 走通一次转码，检查预设、尺寸、帧率、音轨和字幕。
 author: Ayulog
 pubDatetime: "2026-10-10T12:00:00+08:00"
 modDatetime: "2026-10-11T16:00:00+08:00"
@@ -13,20 +13,11 @@ tags:
   - 软件教程
 ---
 
-这一篇从图形界面开始，把打开片源、选择编码方式、试压和检查成品走通。这里说的“一键”，是把确认过的设置保存成预设，再加入队列执行；片源、音轨和字幕仍要自己检查。
+片源拖进 HandBrake 或 ShanaEncoder，选一个预设，点开始，得到一份新文件。预设里已经写了缩放、帧率上限、音频转换和字幕规则，所以“一键”指的是把确认过的设置存成预设再进队列，片源、音轨和字幕仍要逐项检查。
 
-先用一份**逐行、恒定帧率的 SDR 视频**练习。隔行电视源、可变帧率录屏、HDR 和 Dolby Vision 各有额外处理要求，不能直接套用下面的普通转码设置。蓝光原盘先确认节目和播放列表，相关步骤见[蓝光原盘 Remux](/posts/blu-ray-remux/)。
+先用一份**逐行、恒定帧率的 SDR 视频**练习。隔行电视源、可变帧率录屏、HDR 和 Dolby Vision 各有额外处理要求，下面的普通转码设置对它们不成立。蓝光原盘先确认节目和播放列表，相关步骤见[蓝光原盘 Remux](/posts/blu-ray-remux/)。
 
-本文从[压制软件与资料清单](/posts/encode-software/)中的图形工具路线展开。需要自己写滤镜脚本时接着看 [VapourSynth 压制篇](/posts/encode-vapoursynth/)，参数含义见[编码篇](/posts/encode-codecs/)。软件与公开文档核查于 **2026 年 10 月 10 日**；本文按文档整理操作流程，没有把示例写成实测画质结论。
-
-## 目录
-
-- [先选工具](#先选工具)
-- [HandBrake 从预设开始](#handbrake-从预设开始)
-- [ShanaEncoder 批量转码](#shanaencoder-批量转码)
-- [脚本前端与其他工具](#脚本前端与其他工具)
-- [试压后检查什么](#试压后检查什么)
-- [文档与下一篇](#文档与下一篇)
+软件与公开文档核查于 **2026 年 10 月 10 日**，下面的流程按文档整理，示例不构成实测画质结论。需要自己写滤镜脚本时接着看 [VapourSynth 压制篇](/posts/encode-vapoursynth/)，参数含义见[编码篇](/posts/encode-codecs/)，工具与资料入口在[压制软件与资料清单](/posts/encode-software/)。
 
 ## 先选工具
 
@@ -104,9 +95,9 @@ FFmpeg 的选项与独立 x264／x265 命令行不是同一套写法。比如 `-
 
 ### StaxRip 与 Simple x264/x265 Launcher
 
-[StaxRip](https://github.com/staxrip/staxrip)把输入、滤镜、视频编码、音频编码和封装组织为任务，适合想逐步接触脚本又希望保留图形界面的人。跟教程操作时，一起记录前端和所调用组件的版本，不能只写“使用 StaxRip”。
+[StaxRip](https://github.com/staxrip/staxrip)把输入、滤镜、视频编码、音频编码和封装组织为任务，适合想逐步接触脚本又希望保留图形界面的人。跟教程操作时，把前端和所调用组件的版本一起记下来，只写工具名对复现没有帮助。
 
-[Simple x264/x265 Launcher](https://github.com/lordmulder/Simple-x264-Launcher/releases)可以接收 AviSynth／VapourSynth 脚本并管理编码任务。本次核查其最新正式发行仍为 **2024 年 7 月的 3.04**；旧环境包常把它、Python、VS 和编码器捆在一起，不能据此假设它能直接识别新安装的 VS。只需把 `.vpy` 送往编码器时，也可使用[VapourSynth 教程中的 `vspipe` 命令](/posts/encode-vapoursynth/#把画面交给编码器)。
+[Simple x264/x265 Launcher](https://github.com/lordmulder/Simple-x264-Launcher/releases)可以接收 AviSynth／VapourSynth 脚本并管理编码任务。本次核查其最新正式发行仍为 **2024 年 7 月的 3.04**；旧环境包常把它、Python、VS 和编码器捆在一起，装好新的 VS 后仍要确认它实际调用的是哪一套。只需把 `.vpy` 送往编码器时，也可使用[VapourSynth 教程中的 `vspipe` 命令](/posts/encode-vapoursynth/#把画面交给编码器)。
 
 ### 其他保留工具
 
@@ -115,7 +106,7 @@ FFmpeg 的选项与独立 x264／x265 命令行不是同一套写法。比如 `-
 - [MeGUI](https://sourceforge.net/projects/megui/)：较早 AviSynth 教程中常见的前端，阅读旧流程时保留这个入口。
 - [小丸工具箱](https://maruko.appinn.me/)：将 x264、FFmpeg 等工具包装成图形界面，适合查阅旧的 H.264／AAC 流程；随包组件版本需要另行确认。
 
-这些条目沿用原有收藏，不构成当前维护活跃度或画质排名。旧前端能启动，不代表其附带编码器支持新格式。
+这些条目沿用原有收藏，不构成当前维护活跃度或画质排名。旧前端能启动，其附带编码器未必支持新格式。
 
 ## 试压后检查什么
 
@@ -132,7 +123,7 @@ FFmpeg 的选项与独立 x264／x265 命令行不是同一套写法。比如 `-
 
 画面对比要对齐同一帧，保持相同显示尺寸、播放器和色彩处理设置；遇到运动问题再看连续播放。体积小了不一定更好，文件更大也不证明源文件的细节恢复了。
 
-## 文档与下一篇
+## 官方文档与相关篇目
 
 - [HandBrake 官方文档](https://handbrake.fr/docs/en/latest/)：按当前程序版本查预设、视频、音频和字幕行为。
 - [FFmpeg 文档](https://ffmpeg.org/documentation.html)：核对图形前端最终调用的命令。

@@ -1,6 +1,6 @@
 ---
 title: Jellyfin：Docker 部署与硬件转码设置
-description: 用 Jellyfin 官方 Docker 镜像建立本地媒体库，配置目录权限、Intel 核显、客户端和 MoviePilot 刷新，并检查播放、更新与备份。
+description: 用官方 Docker 镜像部署 Jellyfin，处理目录与核显权限，接入客户端和 MoviePilot。
 author: Ayulog
 pubDatetime: "2026-10-10T16:00:00+08:00"
 draft: false
@@ -12,22 +12,9 @@ tags:
   - 家庭影音
 ---
 
-Jellyfin 的服务端和官方客户端免费，账号由自己的服务器管理。Docker 部署最容易卡住的地方是媒体目录权限和核显设备权限，下面分开配置。
+Jellyfin 的服务端和官方客户端免费，账号由自己的服务器管理。Docker 部署容易卡在媒体目录权限和核显设备权限上，先把这两处配好。
 
-本文使用 Linux 上的官方镜像。Windows / macOS 按官方建议使用原生安装，不把 Docker Desktop 的路径、挂载和 GPU 行为当作与 NAS 相同。相关工具见 [NAS 服务清单](/posts/nas-software-websites/)。
-
-## 目录
-
-- [目录和权限](#目录和权限)
-- [使用官方 Docker 镜像](#使用官方-docker-镜像)
-- [首次配置与媒体库](#首次配置与媒体库)
-- [Intel 核显与设备权限](#intel-核显与设备权限)
-- [客户端与自动整理](#客户端与自动整理)
-- [直接播放与硬件转码](#直接播放与硬件转码)
-- [播放检查和远程连接](#播放检查和远程连接)
-- [更新与备份](#更新与备份)
-- [常见问题](#常见问题)
-- [参考资料](#参考资料)
+示例面向 Linux 上的官方镜像。Windows / macOS 按官方建议使用原生安装，Docker Desktop 的路径、挂载和 GPU 行为与 NAS 不同。相关工具见 [NAS 服务清单](/posts/nas-software-websites/)。
 
 ## 目录和权限
 
@@ -58,7 +45,7 @@ movies/Movie Name (2024)/Movie Name (2024).mkv
 tv/Series Name (2024)/Season 01/Series Name S01E01.mkv
 ```
 
-[Jellyfin 官方说明][jellyfin-home]明确：服务端与官方客户端免费，硬件加速没有额外的订阅解锁。使用第三方播放器时，其收费仍由该应用决定。免费不代表自动适配所有显卡和字幕，部署时仍要分别验证路径、播放与转码。
+[Jellyfin 官方说明][jellyfin-home]明确：服务端与官方客户端免费，硬件加速没有额外的订阅解锁。使用第三方播放器时，其收费仍由该应用决定。免费的只是软件本身，路径、播放与转码还要按自己的设备逐项验证。
 
 ## 使用官方 Docker 镜像
 
@@ -110,7 +97,7 @@ docker compose logs --tail=100 jellyfin
 1. 选择界面语言，创建本地管理员账号与密码。
 2. 添加“电影”库，目录填 `/data/library/movies`；添加“电视节目”库，目录填 `/data/library/tv`。
 3. 设置元数据首选语言与地区；有需要时再按库单独调整。
-4. 根据自己的网络方案设置远程连接选项。允许远程连接不等于已经配置公网入口，也不需要因此启用自动端口映射。
+4. 根据自己的网络方案设置远程连接选项。勾选允许远程连接后，公网入口、域名和端口映射仍要另外配置。
 5. 扫描少量影片，确认识别、海报、字幕和播放，再添加其余目录与普通观看用户。
 
 如果上游已经生成 NFO 与图片，检查库中的本地元数据读取、图片下载和保存选项，先用一个条目验证是否沿用预期内容。本文媒体目录只读，不能让 Jellyfin 把新字幕或海报写回原目录。
@@ -139,7 +126,7 @@ devices:
   - /dev/dri/renderD128:/dev/dri/renderD128
 ```
 
-随后执行 `docker compose up -d` 重建容器。这里的 `group_add` 是为了让指定的非 root 用户访问设备；不要假设所有 NAS 的设备组都叫 `render`，或都具有相同的 GID。多显卡环境也可能需要选择其他 `renderD*` 节点。
+随后执行 `docker compose up -d` 重建容器。这里的 `group_add` 是为了让指定的非 root 用户访问设备；设备组名和 GID 在不同 NAS 上并不相同，要按前面 `ls -ln` 查到的数字填。多显卡环境也可能需要选择其他 `renderD*` 节点。
 
 在 Jellyfin 管理面板的转码设置中，按[官方 Intel 指南][jellyfin-intel]选择 QSV 或适用的 VA-API，设备路径与映射保持一致，并只勾选硬件实际支持的解码格式。可先运行官方镜像内的工具检查驱动：
 
@@ -147,13 +134,13 @@ devices:
 docker compose exec jellyfin /usr/lib/jellyfin-ffmpeg/vainfo
 ```
 
-AMD、NVIDIA、Rockchip 等平台分别按[硬件加速文档][jellyfin-hardware]配置，不能把上述 Intel 示例直接套用到所有设备。HDR 色调映射、字幕烧录与特定编码可能只能部分加速；面板中选中硬件加速并不能代替播放日志验证。
+AMD、NVIDIA、Rockchip 等平台分别按[硬件加速文档][jellyfin-hardware]配置，上面的示例按 Intel 核显写。HDR 色调映射、字幕烧录与特定编码可能只能部分加速；是否真的走了硬件，要看播放日志。
 
 ## 客户端与自动整理
 
-先用浏览器验证，再从[Jellyfin 官方客户端目录][jellyfin-clients]选择设备对应的应用，例如桌面的 Jellyfin Media Player、Android / Android TV、iOS 或 Kodi 插件。官方目录会区分官方与第三方客户端，按实际平台下载，不能假设一个包同时适合手机与电视。
+先用浏览器验证，再从[Jellyfin 官方客户端目录][jellyfin-clients]选择设备对应的应用，例如桌面的 Jellyfin Media Player、Android / Android TV、iOS 或 Kodi 插件。官方目录会区分官方与第三方客户端，手机、电视和桌面要分别下载对应的包。
 
-客户端手动填写 `http://NAS_IP:8097` 和本地账号。MoviePilot 接入时选择 Jellyfin 类型，在 Jellyfin 后台按用途创建 API 密钥，填写可达地址与密钥，再验证整理后的刷新。使用宿主地址时端口是 `8097`；只有服务处于共同 Docker 网络时，才能使用 `http://jellyfin:8096`。CMS 插件、Emby 神医助手或 Emby 302 代理需要核对所选项目的 Jellyfin 支持范围，不能直接套用 Emby 配置。
+客户端手动填写 `http://NAS_IP:8097` 和本地账号。MoviePilot 接入时选择 Jellyfin 类型，在 Jellyfin 后台按用途创建 API 密钥，填写可达地址与密钥，再验证整理后的刷新。使用宿主地址时端口是 `8097`；只有服务处于共同 Docker 网络时，才能使用 `http://jellyfin:8096`。CMS 插件、Emby 神医助手或 Emby 302 代理是否支持 Jellyfin，要看各项目自己的说明。
 
 ## 直接播放与硬件转码
 
@@ -165,7 +152,7 @@ AMD、NVIDIA、Rockchip 等平台分别按[硬件加速文档][jellyfin-hardware
 | 直接串流（Direct Stream） | 保留视频编码，按需重新封装或转换音频 | 封装、音轨与客户端兼容性       |
 | 转码（Transcoding）       | 重新编码视频，可能同时处理音频、字幕 | CPU / GPU 能力、码率、临时目录 |
 
-在对应服务端的播放会话、转码日志或客户端播放信息中查看实际模式和原因。视频可以直播放时，不需要为了“用上核显”强行转码；直接播放也不代表播放器一定绕过服务器直接连接网盘。
+在对应服务端的播放会话、转码日志或客户端播放信息中查看实际模式和原因。视频可以直播放时，不需要为了“用上核显”强行转码。
 
 字幕格式、音轨、客户端能力和播放质量限制都可能触发处理。比如某些客户端无法直接显示 PGS 字幕，需要服务端将字幕烧录进画面，即使启用了硬件加速，仍可能有较高 CPU 占用。
 
@@ -173,7 +160,7 @@ AMD、NVIDIA、Rockchip 等平台分别按[硬件加速文档][jellyfin-hardware
 
 在手机或电视上填写 `http://NAS_IP:8097` 和本地账号。容器内部仍使用 `8096`；只有处于共同 Docker 网络的应用，才可以连接 `http://jellyfin:8096`。
 
-先播放一部本地影片，切换音轨与字幕，拖动进度，再退出检查续播。需要核实硬件转码时，临时降低客户端质量，查看转码日志和资源占用，随后恢复日常质量。能看到海报不代表视频、字幕和远程地址都可访问。
+先播放一部本地影片，切换音轨与字幕，拖动进度，再退出检查续播。需要核实硬件转码时，临时降低客户端质量，查看转码日志和资源占用，随后恢复日常质量。海报只是媒体库接口的结果，视频、字幕和远程地址要另外测试。
 
 外网连接可参考 [NAS 远程访问](/posts/nas-remote-access/)。启用服务器的远程访问选项，并不会自动配置域名、反向代理或家庭网络穿透；本地媒体的外网播放也受家庭上行带宽限制。
 

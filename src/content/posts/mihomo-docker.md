@@ -1,6 +1,6 @@
 ---
 title: Mihomo：Docker 部署、订阅与分流设置
-description: 用 Docker Compose 部署 Mihomo 和 MetaCubeXD，记录配置文件、订阅、分流规则和应用代理的接入方法。
+description: 在 NAS 上用 Docker Compose 部署 Mihomo 与 MetaCubeXD，导入订阅、配置分流。
 author: Ayulog
 pubDatetime: "2026-10-09T20:50:00+08:00"
 draft: false
@@ -13,31 +13,15 @@ tags:
   - 网络
 ---
 
-Mihomo 负责代理和规则，MetaCubeXD 提供网页面板。把它们放在 NAS 上，电脑和其他容器就可以共用节点；应用仍要主动连接代理端口，装好容器不会自动接管整个局域网。
+Mihomo 负责代理和规则，MetaCubeXD 提供网页面板。把这两个容器放在 NAS 上，电脑和其他容器就能共用同一组节点；应用仍要主动连接代理端口，装好容器不会自动接管整个局域网的流量。
 
-下面用 Linux Docker Engine、Compose V2 和 bridge 网络部署，适合 Debian、DebNAS。Docker 还没准备好时，先看 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。部署参考 windowBR 的 [《在 docker 中使用 mihomo》](https://windowbr.top/2024/11/02/mihomo-docker/)。
+部署环境是 Linux Docker Engine、Compose V2 和 bridge 网络，Debian 与 DebNAS 都适用；还没有 Docker 的话，先看 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。步骤参考 windowBR 的 [《在 docker 中使用 mihomo》](https://windowbr.top/2024/11/02/mihomo-docker/)。
 
 订阅、密码、控制器密钥和 NAS 地址都要换成自己的值。偏好在网页里导入节点，可以看 [v2rayA](/posts/v2raya-guide/)；其他软件收在 [NAS 服务清单](/posts/nas-software-websites/)。
 
-## 目录
+## 先分清代理、控制器和面板三个入口
 
-- [先分清三个入口](#先分清三个入口)
-- [第一步：准备目录与完整配置](#第一步准备目录与完整配置)
-- [第二步：编写 Compose](#第二步编写-compose)
-- [第三步：检查配置并启动](#第三步检查配置并启动)
-- [第四步：连接 MetaCubeXD](#第四步连接-metacubexd)
-- [第五步：验证客户端代理](#第五步验证客户端代理)
-- [第六步：确认订阅与分流](#第六步确认订阅与分流)
-- [让其他应用使用代理](#让其他应用使用代理)
-- [规则、全局和 TUN 的区别](#规则全局和-tun-的区别)
-- [另一种方案：v2rayA](#另一种方案v2raya)
-- [修改、更新与备份](#修改更新与备份)
-- [常见问题](#常见问题)
-- [参考资料](#参考资料)
-
-## 先分清三个入口
-
-本文选择下面这组端口。它们是本例约定，Mihomo 的监听端口由配置文件决定；遇到冲突时可以调整。
+下面这组端口是示例约定，Mihomo 的监听端口由配置文件决定；遇到冲突时可以调整。
 
 | 入口            | 示例端口 | 用途                                 |
 | --------------- | -------- | ------------------------------------ |
@@ -54,7 +38,7 @@ Mihomo 负责代理和规则，MetaCubeXD 提供网页面板。把它们放在 N
 
 `NAS_IP` 指客户端能够访问的 NAS 地址，使用时替换。手机访问面板时，控制器连接也是手机浏览器发起的，不能填仅 Docker 内部可解析的容器名。
 
-本文为代理入口和控制器分别设置凭据：`authentication` 供代理客户端使用，`secret` 供面板连接 API 使用。两者用途不同。
+示例为代理入口和控制器分别设置凭据：`authentication` 供代理客户端使用，`secret` 供面板连接 API 使用。两者用途不同。
 
 ## 第一步：准备目录与完整配置
 
@@ -293,7 +277,7 @@ rules:
 
 `allow-lan: true` 和 `bind-address: "*"` 会扩大代理监听范围；`external-controller: 0.0.0.0:9090` 会监听所有容器接口。示例补充了 `authentication` 和 `secret` 占位符，部署时应只在可信内网或私有组网中开放，并用防火墙限制 7890、9090 的来源，绝不要把控制 API 直接暴露到公网。
 
-### 这份配置怎样工作
+### 这份配置怎样解析和分流
 
 这份复用配置使用 `fake-ip`、`respect-rules: true` 和 `nameserver-policy`，会依据 GeoSite 分类选择解析器。`fake-ip-filter` 中保留了 `*`，按 Mihomo 常见语义会匹配所有域名，实际效果接近全局绕过 fake-IP；如果需要真正为普通域名分配 fake IP，应删除 `*`，只保留局域网和确有需要的例外。配置没有把 DNS 端口发布到宿主机，不能直接当作局域网 DNS 服务。
 
@@ -301,7 +285,7 @@ rules:
 
 订阅每天更新，provider 在使用期间每五分钟进行健康检查；地区分组通过 `include-all` 动态筛选订阅节点，“自动选择”根据延迟记录选择。配置还包含 Google、Telegram、Twitter、哔哩哔哩、巴哈姆特、YouTube、海外 AI、Netflix、Spotify 和 GitHub 等策略组，其余外部请求交给“其他”。订阅下载失败时，依赖 `include-all` 的地区组可能没有可用节点。
 
-这套分流依赖 GeoIP、GeoSite、MMDB 和 ASN 数据。`geodata-mode: true` 使用 DAT 模式，但配置仍保留来源示例中的 `mmdb`、`asn` 下载地址；首次加载和自动更新需要访问 `geox-url`。如果下载失败，按当前 Mihomo 版本和日志补齐对应数据文件，再重新校验；不要只凭文件名猜测版本是否兼容。
+这套分流依赖 GeoIP、GeoSite、MMDB 和 ASN 数据。`geodata-mode: true` 使用 DAT 模式，但配置仍保留来源示例中的 `mmdb`、`asn` 下载地址；首次加载和自动更新需要访问 `geox-url`。如果下载失败，按当前 Mihomo 版本和日志补齐对应数据文件，再重新校验。
 
 `tun.enable: false` 表示当前配置不会启用透明代理；其余 TUN 字段是来源配置中保留的待用参数。普通 bridge Compose 不需要 `NET_ADMIN`、`/dev/net/tun` 或 host 网络。若以后改为 `true`，必须另行补充设备、能力、路由、DNS 和防火墙配置。
 
@@ -333,7 +317,7 @@ services:
 
 端口映射左侧是宿主机端口，右侧是容器监听端口。例如面板与 qBittorrent 的 `8080` 冲突时，可以把面板改为 `8081:80`，同时将 `allow-origins` 改为 `http://NAS_IP:8081`。控制器 `9090` 也可能与 Cockpit 冲突，调整宿主映射后要同步修改面板中的后端地址。
 
-本文的普通代理不需要 host 网络、宿主 PID / IPC、Docker socket 或 TUN 设备映射。容器发布的端口应限制在预期的局域网或私有组网访问范围，尤其不要把管理 API 当作公开网页入口。
+这里的普通代理不需要 host 网络、宿主 PID / IPC、Docker socket 或 TUN 设备映射。容器发布的端口应限制在预期的局域网或私有组网访问范围，尤其不要把管理 API 当作公开网页入口。
 
 ## 第三步：检查配置并启动
 
@@ -356,7 +340,7 @@ docker compose logs --tail=100 mihomo
 
 两项检查验证的内容不同：`docker compose config` 处理容器配置；`mihomo -t` 解析应用配置。都通过以后，还需要实际连接测试，才能确认认证、网络与节点可用。
 
-`docker compose run` 的这次校验不会按服务定义发布代理端口，但可能访问或缓存外部资源。完整配置引用了订阅、GeoIP 与 GeoSite，先填写有效订阅并确认 Geo 数据可获取；配置解析通过，也不能代替对订阅节点的实际连接验证。
+`docker compose run` 的这次校验不会按服务定义发布代理端口，但可能访问或缓存外部资源。完整配置引用了订阅、GeoIP 与 GeoSite，先填写有效订阅并确认 Geo 数据可获取；配置解析通过后，还要实际连一次订阅节点。
 
 ## 第四步：连接 MetaCubeXD
 
@@ -369,7 +353,7 @@ docker compose logs --tail=100 mihomo
 
 面板能加载，只说明网页容器正常。连接后端成功、能够查看连接和日志，才说明浏览器可以访问 Mihomo 控制器。
 
-`http://mihomo:9090` 只可能在对应 Docker 网络内解析；`localhost` 指当前访问者自身；`0.0.0.0` 用于监听。这些地址都不能代替远程浏览器眼中的 NAS 地址。
+`http://mihomo:9090` 只可能在对应 Docker 网络内解析；`localhost` 指当前访问者自身；`0.0.0.0` 用于监听。远程浏览器要填的是 NAS 的局域网地址。
 
 如果使用 HTTPS 在线面板连接 HTTP 内网 API，浏览器可能因混合内容或私有网络访问策略阻止请求。`allow-private-network` 不能绕过全部浏览器限制。可以先用本例的局域网面板验证，或者为面板与控制器统一配置可访问、受信任的 HTTPS 入口。
 
@@ -395,7 +379,7 @@ curl --proxy socks5h://NAS_IP:7890 \
 
 `socks5h` 会把目标主机名交给代理处理，有助于保留域名供规则匹配。普通 `socks5` 通常在客户端解析域名，两者在 DNS 和分流结果上可能不同。
 
-同时查看 MetaCubeXD 的连接记录或 Mihomo 日志，核对目标、命中的规则和最终节点。当前完整配置会按域名与 Geo 数据分流，不能预先把所有测试都当作直连；看到网页返回成功，只能说明这条测试链路可用。访问 HTTPS 时，代理先返回的 `200 Connection established` 也不等于目标网站已经返回最终响应。
+同时查看 MetaCubeXD 的连接记录或 Mihomo 日志，核对目标、命中的规则和最终节点。当前完整配置会按域名与 Geo 数据分流，测试请求可能落到代理节点；看到网页返回成功，只说明这条测试链路可用。访问 HTTPS 时，代理先返回的 `200 Connection established` 是建立隧道的响应，目标网站的内容在此之后才到。
 
 本例只发布 TCP 代理端口，覆盖这里的 HTTP 与 SOCKS TCP 测试。需要 SOCKS UDP 时，还要核对客户端、节点协议及相应 UDP 端口映射，不能因端口名叫 mixed 就认为所有 UDP 流量已可用。
 
@@ -407,7 +391,7 @@ curl --proxy socks5h://NAS_IP:7890 \
 
 `subscription` 是这份配置中的 provider 名称。地区分组、全部节点和自动选择使用 `include-all: true` 收集 provider 节点，地区分组再按 `filter` 筛选。订阅下载失败时，先看日志，确认地址有效、设备能够访问订阅服务器。
 
-YAML 节点集合使用顶层 `proxies:`。官方也支持兼容的 URI 节点列表及其 base64 形式，具体以 [文件内容格式](https://wiki.metacubex.one/config/proxy-providers/content/) 为准，不能假定任意服务商的所有订阅都能直接解析。
+YAML 节点集合使用顶层 `proxies:`。官方也支持兼容的 URI 节点列表及其 base64 形式，格式见 [文件内容格式](https://wiki.metacubex.one/config/proxy-providers/content/)；各服务商的订阅内容不同，导入前先确认能被解析。
 
 完整 Clash / Mihomo 配置如果包含兼容的顶层 `proxies:`，provider 可以读取这些节点，但不会同时导入其中的策略组、DNS 和规则。只有 `proxy-providers` 而没有实际 `proxies` 的完整配置，也不能当作这种节点文件使用。
 
@@ -432,7 +416,7 @@ Geo 分类由数据项目维护，不能把分类命中当作每个网站都适�
 
 如需临时排查，可以在面板中切换某个组为“直连”，再比较连接记录；测试后恢复预期节点。更改兜底策略只影响**已经送入 Mihomo 的请求**，不会自动接管未配置代理的应用。
 
-## 让其他应用使用代理
+## 让电脑、手机和容器使用代理
 
 电脑、手机或应用本身的代理设置中，填写 NAS 地址、`7890` 和代理凭据。Windows 系统代理不会被所有应用遵守，遇到未走代理的软件，先检查它自己的代理支持。
 
@@ -444,11 +428,11 @@ export https_proxy="$http_proxy"
 export no_proxy='localhost,127.0.0.1,::1'
 ```
 
-替换地址与账号；用户名或密码中若包含 URL 保留字符，需要先做百分号编码。`https_proxy` 中的 `http://` 表示与 HTTP 代理通信，不代表最终 HTTPS 网站使用明文传输。不同程序对变量名称、认证和 `no_proxy` 的支持不同，要看它实际发出的请求。
+替换地址与账号；用户名或密码中若包含 URL 保留字符，需要先做百分号编码。`https_proxy` 中的 `http://` 表示与 HTTP 代理通信，HTTPS 目标仍经代理加密访问。不同程序对变量名称、认证和 `no_proxy` 的支持不同，要看它实际发出的请求。
 
 ### 其他容器的代理
 
-其他应用容器也需要自己支持并配置代理。可以连接 NAS 可达地址上的 `7890`；或者让应用容器与 Mihomo 加入同一个用户自定义 Docker 网络，再使用服务名 `mihomo:7890`。后者需要先建立共享网络并让两个服务都加入，不能仅把地址写成服务名。
+其他应用容器也需要自己支持并配置代理。可以连接 NAS 可达地址上的 `7890`；或者让应用容器与 Mihomo 加入同一个用户自定义 Docker 网络，再使用服务名 `mihomo:7890`。后者要先建立共享网络并让两个服务都加入，服务名才解析得到。
 
 应用容器里的 `127.0.0.1` 指该容器自身。将代理地址写成 `127.0.0.1:7890`，并不会自动连接宿主机或 Mihomo 容器。
 
@@ -461,11 +445,11 @@ export no_proxy='localhost,127.0.0.1,::1'
 ## 规则、全局和 TUN 的区别
 
 - **规则模式**：按 `rules` 顺序决定送往直连、代理节点或策略组。
-- **全局模式**：已进入 Mihomo 的代理请求使用全局策略选择，不等于整个系统的所有流量都会进入 Mihomo。
+- **全局模式**：已进入 Mihomo 的代理请求使用全局策略选择；没有配置代理的应用不受影响。
 - **直连模式**：已进入 Mihomo 的请求直接连接目标。
 - **TUN**：通过虚拟网络设备和路由把更多流量导入内核，属于流量接入方式。
 
-本篇先完成显式代理。TUN 需要另外配置设备、能力、路由、DNS 和防火墙，还要明确影响的是容器、宿主机还是作为网关转发的流量。普通 bridge 容器中切换 `tun.enable`，不能自动变成宿主机或全局域网的透明代理。
+上面的配置完成的是显式代理。TUN 需要另外配置设备、能力、路由、DNS 和防火墙，还要明确影响的是容器、宿主机还是作为网关转发的流量。普通 bridge 容器中切换 `tun.enable`，不会自动变成宿主机或全局域网的透明代理。
 
 ## 另一种方案：v2rayA
 
@@ -513,13 +497,13 @@ docker compose up -d
 
 ### 规则报 MMDB 或 geosite 下载错误
 
-说明当前配置引用了额外的规则数据。按实际的 `GEOIP` / `GEOSITE` 规则、`geodata-mode`、数据 URL 和错误日志核对需要的文件及存放位置，再处理下载连通性；不要仅凭别的模板列出的文件名猜测。
+说明当前配置引用了额外的规则数据。按实际的 `GEOIP` / `GEOSITE` 规则、`geodata-mode`、数据 URL 和错误日志核对需要的文件及存放位置，再处理下载连通性。
 
-本文复用的配置同时声明 DAT、MMDB 和 ASN 数据地址。遇到 MMDB、GeoSite 或 GeoIP 报错时，先看实际规则和日志，再按当前版本下载对应数据；不要把其他模板中的文件直接混用。
+这份配置同时声明 DAT、MMDB 和 ASN 数据地址。遇到 MMDB、GeoSite 或 GeoIP 报错时，先看实际规则和日志，再按当前版本下载对应数据；不要把其他模板中的文件直接混用。
 
 ### 应用访问成功，却看不到代理节点流量
 
-先看应用是否实际连接 `7890`，再看匹配结果是否为 `DIRECT`。面板连通、容器处于 running 状态、网页能打开，都不能单独证明请求经过了某个节点。
+先看应用是否实际连接 `7890`，再看匹配结果是否为 `DIRECT`。面板连通、容器处于 running 状态、网页能打开，这些只说明服务正常，请求走了哪个节点还要看连接记录。
 
 ### 修改 config.yaml 后没有生效
 
@@ -527,11 +511,11 @@ docker compose up -d
 
 ### 改端口后面板失联
 
-代理端口、控制器和网页端口分别核对。改网页宿主端口时同步 CORS 来源；改控制器宿主端口时同步面板后端地址；改容器实际监听端口时，还要同步 Compose 映射右侧。
+先分清代理端口、控制器和网页端口三处映射。改网页宿主端口时同步 CORS 来源；改控制器宿主端口时同步面板后端地址；改容器实际监听端口时，还要同步 Compose 映射右侧。
 
 ## 参考资料
 
-- windowBR：[《在 docker 中使用 mihomo》](https://windowbr.top/2024/11/02/mihomo-docker/)，2024 年 11 月 2 日。本文的完整配置按公开示例整理，访问日期为 2026 年 10 月 9 日；字段和行为仍以 Mihomo 官方文档为准。
+- windowBR：[《在 docker 中使用 mihomo》](https://windowbr.top/2024/11/02/mihomo-docker/)，2024 年 11 月 2 日。完整配置按公开示例整理，访问日期为 2026 年 10 月 9 日；字段和行为以 Mihomo 官方文档为准。
 - [Mihomo 项目](https://github.com/MetaCubeX/mihomo)、[官方容器构建流程](https://github.com/MetaCubeX/mihomo/blob/Meta/.github/workflows/build.yml)与[Dockerfile](https://github.com/MetaCubeX/mihomo/blob/Meta/Dockerfile)：镜像与启动方式。
 - [全局配置](https://wiki.metacubex.one/config/general/)、[代理端口](https://wiki.metacubex.one/config/inbound/port/)：监听、认证、控制器与 CORS。
 - [代理集合](https://wiki.metacubex.one/config/proxy-providers/)、[集合文件格式](https://wiki.metacubex.one/config/proxy-providers/content/)、[代理组](https://wiki.metacubex.one/config/proxy-groups/)与[规则](https://wiki.metacubex.one/config/rules/)：订阅、健康检查、策略选择和匹配顺序。

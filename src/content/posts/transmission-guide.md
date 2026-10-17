@@ -1,6 +1,6 @@
 ---
 title: Transmission 安装与设置
-description: 在 Docker 或 Windows 上安装 Transmission，配置下载与做种、Web 和 TrguiNG、RPC 白名单、settings.json 与备份迁移。
+description: 在 Docker 或 Windows 上安装 Transmission，配置做种、Web 界面、RPC 与备份迁移。
 author: Ayulog
 pubDatetime: "2026-10-10T14:15:00+08:00"
 draft: false
@@ -13,13 +13,13 @@ tags:
   - 下载器
 ---
 
-Transmission 可以使用桌面 Qt、本机 daemon 或 NAS 上的 Docker 后端。它们各有自己的配置和任务；先确定要管理哪个实例，再选择内置 Web 或 TrguiNG。
+Transmission 的桌面 Qt、本机 daemon 和 NAS 上的 Docker 后端各有自己的配置与任务，内置 Web 和 TrguiNG 连的都是其中某一个实例。改设置之前先确认自己在管哪一个。
 
-## 目录和权限
+## 目录、挂载路径与权限
 
 单独建立项目目录，例如 `stacks/transmission/`，将下文的 `compose.yaml` 与 `.env` 放在里面。`./config` 保存这个下载器的配置，下载文件另放在 NAS 数据盘。
 
-本文把 NAS 数据根目录映射到容器的 `/data`，供下载器和 MoviePilot 共用：
+下面把 NAS 数据根目录映射到容器的 `/data`，供下载器和 MoviePilot 共用：
 
 ```text
 /path/to/data/
@@ -88,7 +88,7 @@ docker compose logs --tail=100 transmission
 
 从局域网打开 `http://NAS_IP:9091/transmission/web/`，使用刚设置的凭据登录。`/watch` 用于自动加载种子，不使用时可省略该挂载。设置默认下载目录为 `/data/downloads/transmission`，如需分离未完成文件，可用 `/data/downloads/incomplete/transmission`。
 
-这里为联动而采用 `/data`。镜像文档中的 `/downloads` 是另一种常用映射，不能照搬其默认路径而忘记本例只挂载了 `/data`。配置与任务状态保存在 `/config`，下载文件保存在数据根目录，两者都应持久化。
+这里为联动而采用 `/data`。镜像文档中的 `/downloads` 是另一种常用映射；本例只挂载了 `/data`，照搬默认路径前先确认挂载点。配置与任务状态保存在 `/config`，下载文件保存在数据根目录，两者都应持久化。
 
 LinuxServer 镜像的认证和白名单通过 `USER`、`PASS`、`WHITELIST`、`HOST_WHITELIST` 等环境变量管理；按自己的访问来源与所用版本文档配置，不要直接沿用 `root/root`，也不要把后文 Windows 的认证片段覆盖进容器配置。
 
@@ -105,21 +105,21 @@ LinuxServer 镜像的认证和白名单通过 `USER`、`PASS`、`WHITELIST`、`H
 
 限速与队列先按实际负载调整。“小乌龟”是备用速度开关，定时计划按后端的本地时间计算，后续计划切换还可能覆盖手动切换的状态。无需一律按 GMT 减去八小时。
 
-长期保种时检查全局和单任务的分享率、空闲做种停止条件。**下载完成不等于满足 PT 的最短做种时长、分享率或 H&R 规则**，Freeleech 也不一定免除做种义务，自动删种前以站点规则和统计为准。
+长期保种时检查全局和单任务的分享率、空闲做种停止条件。**下载完成只是开始，站点统计里的最短做种时长、分享率和 H&R 才是判据**；Freeleech 也可能不免除做种义务，自动删种前先看站点规则和统计。
 
 ## 选择 TrguiNG 或内置 Web
 
 先确认内置 Web 能登录、添加和暂停任务，再考虑换界面：
 
 - [openscopeproject/TrguiNG][trguing] 是上游项目，提供桌面版与 Web 版。
-- [jayzcoder/TrguiNG][trguing-zh] 是汉化与自用功能分支，发布节奏独立，不能当作与上游完全同步的版本。
+- [jayzcoder/TrguiNG][trguing-zh] 是汉化与自用功能分支，发布节奏独立，版本与上游不同步。
 - [Transmission Web Control][tr-web-control] 已于 2025 年 6 月 1 日归档并停止维护，作为旧部署资料保留。
 
 TrguiNG 桌面版增加服务器时使用后端地址、管理端口 `9091`、RPC 路径 `/transmission/rpc` 和认证信息。完整 RPC 地址例如 `http://NAS_IP:9091/transmission/rpc`，不是浏览器页面的 `/transmission/web/`。关闭 TrguiNG 后，只要后端仍在运行，任务便由后端继续处理。
 
 将 TrguiNG Web 版放入 Docker 容器时：
 
-1. 从选定项目的 Releases 下载编译好的 Web 压缩包，不能使用自动生成的 `Source code (zip)` 代替。
+1. 从选定项目的 Releases 下载编译好的 Web 压缩包，不要用自动生成的 `Source code (zip)`。
 2. 解压到项目配置目录的 `webui/trguing-zh`，确认容器内直接存在 `/config/webui/trguing-zh/index.html`。
 3. 在 Transmission 服务已有的 `environment` 中追加下面一项，保留其余环境变量。
 4. 执行 `docker compose up -d` 更新容器，刷新页面并验证添加、文件选择、暂停和移除任务等操作。
@@ -132,7 +132,7 @@ TRANSMISSION_WEB_HOME: /config/webui/trguing-zh
 
 ## Windows 安装与局域网管理
 
-从 [Transmission 官方下载页][tr-download]选择适合架构的 MSI。截至 2026 年 10 月 9 日，官网提供的版本为 4.1.3，普通安装包要求 Windows 10 或更新版本；常见 Intel / AMD 64 位电脑选择 x64，实际以系统信息及下载页为准。用于 PT 时先看白名单。
+从 [Transmission 官方下载页][tr-download]选择适合架构的 MSI。截至 2026 年 10 月 9 日，官网提供的版本为 4.1.3，普通安装包要求 Windows 10 或更新版本；常见 Intel / AMD 64 位电脑选择 x64，具体按系统信息和下载页选择。用于 PT 时先看白名单。
 
 普通桌面安装选择 **Qt client + Web interface**。4.1.3 的 Web interface 是可选组件，漏装时重新运行安装器修改。先不选 Daemon：它会安装并启动另一套 Windows 后台服务。
 
@@ -149,7 +149,7 @@ $env:TRANSMISSION_WEB_HOME = 'D:\Apps\TrguiNG-Web'
 & 'C:\Program Files\Transmission\transmission-qt.exe'
 ```
 
-程序路径按实际安装位置修改。此设置仅对当前会话和新启动进程生效；验证可用后，可在 Windows 用户环境变量中保存 `TRANSMISSION_WEB_HOME`，重启程序，必要时注销后登录。删除变量并重启即可恢复默认界面。服务账户不一定继承桌面用户的环境变量，需分别核对。
+程序路径按实际安装位置修改。此设置仅对当前会话和新启动进程生效；验证可用后，可在 Windows 用户环境变量中保存 `TRANSMISSION_WEB_HOME`，重启程序，必要时注销后登录。删除变量并重启即可恢复默认界面。服务账户可能读不到桌面用户的环境变量，要为它单独设置。
 
 ## 修改 settings.json 与 Windows 自启动
 
@@ -160,7 +160,7 @@ $env:TRANSMISSION_WEB_HOME = 'D:\Apps\TrguiNG-Web'
 | Windows Qt 当前用户              | `%LOCALAPPDATA%\transmission`                                             |
 | Windows daemon 当前用户          | `%LOCALAPPDATA%\transmission-daemon`                                      |
 | 4.1.3 MSI 默认 LocalService 服务 | `%WINDIR%\ServiceProfiles\LocalService\AppData\Local\transmission-daemon` |
-| 本文 Docker                      | 项目映射到 `/config` 的目录                                               |
+| Docker 示例                      | 项目映射到 `/config` 的目录                                               |
 
 自定义账户、启动参数与配置目录会改变这些位置，以实际进程和日志为准。Transmission 4.1 开始兼容 `rpc_enabled` 等下划线命名，4.x 默认保存仍为 `rpc-enabled` 等连字符形式，不要为同一项混写两套字段。
 
@@ -191,11 +191,11 @@ $env:TRANSMISSION_WEB_HOME = 'D:\Apps\TrguiNG-Web'
 
 ## 备份和迁移
 
-正常退出客户端或停止服务，备份整个配置目录和重要下载文件。`.torrent`、恢复状态与设置要一起保留，单独复制 `settings.json` 不能恢复全部任务。Docker 更新前同样停止容器，备份私有 `.env`、Compose 和 `config`，再拉取并重建。
+正常退出客户端或停止服务，备份整个配置目录和重要下载文件。`.torrent`、恢复状态与设置要一起保留，单独复制 `settings.json` 会丢掉任务恢复数据。Docker 更新前同样停止容器，备份私有 `.env`、Compose 和 `config`，再拉取并重建。
 
 迁移后核对保存路径、账户权限，先校验少量任务再批量恢复。任务突然消失时，先检查是否连接了另一实例。移除任务和同时删除本地数据是不同操作，有跨站任务或硬链接时先确认影响。
 
-## 常见问题
+## 排错：现象与检查位置
 
 | 现象                          | 检查位置                                                  |
 | ----------------------------- | --------------------------------------------------------- |
@@ -216,9 +216,9 @@ $env:TRANSMISSION_WEB_HOME = 'D:\Apps\TrguiNG-Web'
 - [官方安装包][tr-download]、[4.1.3 Web Interface][tr-web]、[Configuration Files][tr-config]。
 - [4.1.3 Windows 安装组件][tr-msi]、[Daemon 服务定义][tr-service]、[环境变量][tr-env]与[定时限速实现][tr-alt-speed]。
 - [4.1.3 Editing Configuration Files][tr-edit]与[4.0.6 连字符字段参考][tr-old-config]。
-- [TrguiNG 上游][trguing]与[汉化分支][trguing-zh]：版本、发布页和前端兼容情况分别核对。
+- [TrguiNG 上游][trguing]与[汉化分支][trguing-zh]：版本、发布页和前端兼容情况看各自项目的发布记录。
 - [Transmission Web Control][tr-web-control]及其 [Windows 安装说明][tr-web-control-windows]：已归档的旧方案资料。
-- 磕巴白菜：[绿联新系统部署 Transmission][keba-transmission]，提供 NAS 部署与汉化界面的实践参考；容器参数以 [LinuxServer 文档][tr-image]为准。
+- 磕巴白菜：[绿联新系统部署 Transmission][keba-transmission]，提供 NAS 部署与汉化界面的实践参考；容器参数见 [LinuxServer 文档][tr-image]。
 - 暮城：[Transmission 配置文件参数中文详细解释][tr-legacy-cn]，2022 年的旧版中文参考，默认值与字段需对照当前官方文档。
 
 [tr-download]: https://transmissionbt.com/download

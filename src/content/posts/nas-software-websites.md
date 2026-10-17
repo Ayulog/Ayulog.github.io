@@ -1,6 +1,6 @@
 ---
 title: NAS 服务清单
-description: 系统、容器、存储、网盘与影音服务的软件对照。
+description: NAS 上按用途分组的软件清单，每项附部署文章或项目入口。
 author: Ayulog
 pubDatetime: "2026-10-09T15:30:00+08:00"
 modDatetime: "2026-10-11T00:00:00+08:00"
@@ -14,22 +14,22 @@ tags:
   - 家庭影音
 ---
 
-NAS 上跑的东西大多可以从这几类里找：系统与容器、网络入口、媒体库与下载、网盘与照片。下面按用途列软件和服务，每个软件的部署方式在对应文章里。
+NAS 上装什么，取决于它要承担的角色：系统与容器、网络入口、媒体库与下载、网盘与照片。先按这四组挑，具体软件条目逐个附了部署文章或项目入口。
 
-做种工具见 [PT 工具清单](/posts/pt-software/)，路由与代理见 [软路由系统与插件清单](/posts/soft-router-software/)。Windows 上的容器环境另见 [WSL 与 Docker](/posts/windows-containers/)。
+做种相关的工具收在 [PT 工具清单](/posts/pt-software/)，路由与代理在 [软路由系统与插件清单](/posts/soft-router-software/)；Windows 上的容器环境另见 [WSL 与 Docker](/posts/windows-containers/)。
 
 ## 流程概览
 
-| 要完成的事         | 阅读顺序                                                                 | 对应文章                                                                                              |
-| ------------------ | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| 从 Debian 建立 NAS | 系统与 SSH → 磁盘和共享 → 逐个部署应用 → 重启、备份与恢复验证            | [DebNAS 安装与验收](/posts/debnas-installation-notes/)                                     |
-| 管理和更新容器     | 确认原部署入口 → 记录版本与挂载 → 备份 → 更新并验证 → 再清理旧镜像       | [Docker 应用维护](/posts/docker-management/)                                               |
-| 从外部访问家中服务 | 确认公网与组网条件 → 选择访问方案 → 配置入口 → 从实际客户端验证          | [NAS 远程访问](/posts/nas-remote-access/)                                                  |
-| 自动整理和播放影视 | 下载或云端文件 → 命名与目录映射 → 整理或 STRM 同步 → 媒体库 → 客户端播放 | [DebNAS 自动观影流程](/posts/debnas-media-workflow/)                                       |
+| 要完成的事         | 阅读顺序                                                                 | 对应文章                                                                        |
+| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| 从 Debian 建立 NAS | 系统与 SSH → 磁盘和共享 → 逐个部署应用 → 重启、备份与恢复验证            | [DebNAS 安装与验收](/posts/debnas-installation-notes/)                          |
+| 管理和更新容器     | 确认原部署入口 → 记录版本与挂载 → 备份 → 更新并验证 → 再清理旧镜像       | [Docker 应用维护](/posts/docker-management/)                                    |
+| 从外部访问家中服务 | 确认公网与组网条件 → 选择访问方案 → 配置入口 → 从实际客户端验证          | [NAS 远程访问](/posts/nas-remote-access/)                                       |
+| 自动整理和播放影视 | 下载或云端文件 → 命名与目录映射 → 整理或 STRM 同步 → 媒体库 → 客户端播放 | [DebNAS 自动观影流程](/posts/debnas-media-workflow/)                            |
 | 将网盘接入本地应用 | 选择文件路径或 WebDAV → 挂载与权限 → 核对缓存、上传和挂载恢复            | [CloudDrive2](/posts/cloud-storage-local-mount/) · [AList](/posts/alist-guide/) |
-| 整理照片与观看直播 | 照片按原件、配置和上传目录分别规划；直播按列表、节目单、播放器接入       | [MT Photos](/posts/mt-photos-guide/) · [IPTV 教程入口](#直播命名与刮削)                    |
+| 整理照片与观看直播 | 照片按原件、配置和上传目录分别规划；直播按列表、节目单、播放器接入       | [MT Photos](/posts/mt-photos-guide/) · [IPTV 教程入口](#直播命名与刮削)         |
 
-下面按这些用途收录全部文章。容器管理面板、媒体库和网络入口都有可替代方案，不需要把软件表逐项装完。
+容器管理面板、媒体库和网络入口都有可替代方案，不需要把软件表逐项装完。
 
 ## 系统与容器基础
 
@@ -40,14 +40,14 @@ NAS 上跑的东西大多可以从这几类里找：系统与容器、网络入�
 
 ## 容器管理与定时任务
 
-| 软件                                                                       | 用途                                           | 教程                                                        |
-| -------------------------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------- |
-| [Dockge](https://github.com/louislam/dockge)                               | 编辑和管理 Compose 项目                        | [部署与栈管理](/posts/dockge-guide/)             |
-| [Portainer CE](https://www.portainer.io/)                                  | 管理容器、镜像、网络和卷                       | [部署与环境连接](/posts/portainer-guide/)        |
-| [Watchtower](https://github.com/containrrr/watchtower)                     | 监控镜像变化，可按标签更新；项目维护状态需留意 | [标签、通知与更新范围](/posts/watchtower-guide/) |
-| [DockerCopilot](https://github.com/onlyLTY/dockerCopilot)                  | 容器更新、清理和配置备份                       | [部署与使用](/posts/dockercopilot/)              |
-| [1Panel](https://1panel.cn/)                                               | Linux 服务与应用管理面板                       | [直接安装与 Docker 部署](/posts/1panel-guide/)   |
-| [QD / QD-Today](https://qd-today.github.io/qd/zh_CN/guide/deployment.html) | 用 HTTP 模板执行签到等定时任务                 | [qiandao 部署与任务配置](/posts/qiandao-docker-guide/)      |
+| 软件                                                                       | 用途                                           | 教程                                                   |
+| -------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| [Dockge](https://github.com/louislam/dockge)                               | 编辑和管理 Compose 项目                        | [部署与栈管理](/posts/dockge-guide/)                   |
+| [Portainer CE](https://www.portainer.io/)                                  | 管理容器、镜像、网络和卷                       | [部署与环境连接](/posts/portainer-guide/)              |
+| [Watchtower](https://github.com/containrrr/watchtower)                     | 监控镜像变化，可按标签更新；项目维护状态需留意 | [标签、通知与更新范围](/posts/watchtower-guide/)       |
+| [DockerCopilot](https://github.com/onlyLTY/dockerCopilot)                  | 容器更新、清理和配置备份                       | [部署与使用](/posts/dockercopilot/)                    |
+| [1Panel](https://1panel.cn/)                                               | Linux 服务与应用管理面板                       | [直接安装与 Docker 部署](/posts/1panel-guide/)         |
+| [QD / QD-Today](https://qd-today.github.io/qd/zh_CN/guide/deployment.html) | 用 HTTP 模板执行签到等定时任务                 | [qiandao 部署与任务配置](/posts/qiandao-docker-guide/) |
 
 ### 管理工具怎么选
 
@@ -61,12 +61,12 @@ NAS 上跑的东西大多可以从这几类里找：系统与容器、网络入�
 
 这些工具的职责有重叠，不必全装。同一个服务由哪个面板、哪份 Compose 管理，记清楚即可。迁移、备份与一次更新的操作见 [Docker 应用维护](/posts/docker-management/)。
 
-QD 官方文档用 `qdtoday/qd`，现有教程保留的是 [`a76yyyy/qiandao`](https://hub.docker.com/r/a76yyyy/qiandao/tags)。两者的标签、参数和数据迁移要分别核对。
+QD 官方文档用 `qdtoday/qd`，现有教程保留的是 [`a76yyyy/qiandao`](https://hub.docker.com/r/a76yyyy/qiandao/tags)。两者的标签、参数和数据迁移方式不同。
 
 ## 网络访问与浏览器配套
 
-| 软件                                          | 用途                           | 教程                                                                            |
-| --------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------- |
+| 软件                                          | 用途                           | 教程                                                                 |
+| --------------------------------------------- | ------------------------------ | -------------------------------------------------------------------- |
 | [Lucky](https://github.com/gdy666/lucky)      | DDNS、反向代理、证书与转发     | [Lucky 设置](/posts/lucky-guide/) · [项目网站](https://lucky666.cn/) |
 | [ddns-go](https://github.com/jeessy2/ddns-go) | 跟踪公网地址并更新 DNS         | [ddns-go 设置](/posts/ddns-go-guide/)                                |
 | [Mihomo](https://github.com/MetaCubeX/mihomo) | 代理核心，配合 MetaCubeXD 管理 | [容器部署与配置](/posts/mihomo-docker/)                              |
@@ -85,26 +85,26 @@ qBittorrent 和 Transmission 的做种设置归在 [PT 工具清单](/posts/pt-s
 
 ## 路由器与家庭网络
 
-路由系统、插件和设备资料移到了 [软路由系统与插件清单](/posts/soft-router-software/)，配网教程也收在 [软路由系统与插件清单](/posts/soft-router-software/) 下。
+路由系统、插件、设备和配网教程都在 [软路由系统与插件清单](/posts/soft-router-software/)。
 
 ## 媒体库与自动化整理
 
 ### 媒体库
 
-| 软件                              | 记录                                                  | 选择时关注                                      |
-| --------------------------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| 软件                              | 记录                                       | 选择时关注                                      |
+| --------------------------------- | ------------------------------------------ | ----------------------------------------------- |
 | [Emby](https://emby.media/)       | [部署、媒体库与客户端](/posts/emby-guide/) | 本地账号、Premiere 硬解，以及常用的客户端       |
 | [Jellyfin](https://jellyfin.org/) | [部署与硬件转码](/posts/jellyfin-guide/)   | 官方服务端与客户端免费，核显权限需要配置        |
 | [Plex](https://www.plex.tv/)      | [部署与远程播放](/posts/plex-guide/)       | 账号认领、客户端体验和 Plex Pass / 远程播放要求 |
 
 三者可以读取同一份媒体文件，配置数据库各自独立。比较时用同一部电影和一集剧，检查字幕、音轨、拖动与续播；整库分析会占用资源，错开执行。
 
-[StrmAssistant（Emby 神医助手）](https://github.com/sjtuross/StrmAssistant) 是 Emby 的增强插件，提供媒体信息提取、外挂字幕扫描、中文搜索和视频预览图等功能。[Emby 教程](/posts/emby-guide/#神医助手按需安装)中记录了接入位置；另存 [PRO 版安装与授权](https://github.com/sjtuross/StrmAssistant/wiki/PRO%E7%89%88%E5%AE%89%E8%A3%85%E5%92%8C%E6%8E%88%E6%9D%83)。社区版和 PRO 的维护状态、功能与适配版本分别看项目说明。
+[StrmAssistant（Emby 神医助手）](https://github.com/sjtuross/StrmAssistant) 是 Emby 的增强插件，提供媒体信息提取、外挂字幕扫描、中文搜索和视频预览图等功能。[Emby 教程](/posts/emby-guide/#神医助手按需安装)中记录了接入位置；另存 [PRO 版安装与授权](https://github.com/sjtuross/StrmAssistant/wiki/PRO%E7%89%88%E5%AE%89%E8%A3%85%E5%92%8C%E6%8E%88%E6%9D%83)。社区版和 PRO 的维护状态、功能与适配版本按项目说明确认。
 
 ### 订阅、整理与云端同步
 
-| 软件                                                     | 记录                                                                  | 用途                                          |
-| -------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------- |
+| 软件                                                     | 记录                                                       | 用途                                          |
+| -------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------- |
 | [MoviePilot](https://github.com/jxxghp/MoviePilot)       | [V3 部署与配置](/posts/moviepilot-guide/)                  | 搜索、订阅、下载联动、整理和媒体库刷新        |
 | [Cloud Media Sync](https://github.com/imaliang/cms-docs) | [115 同步与 Emby 302](/posts/cloud-media-sync/)            | 同步云端目录、生成 STRM，并按配置提供播放入口 |
 | [CookieCloud](https://github.com/easychen/CookieCloud)   | [浏览器与 MoviePilot 同步](/posts/cookiecloud-moviepilot/) | 加密上传浏览器 Cookie，供受支持的应用读取     |
@@ -123,23 +123,23 @@ CMS 上面的项目链接是文档仓库，另有 [CMSHelp 补充帮助](https:/
 
 ### 网盘挂载与文件管理
 
-| 软件                                                     | 记录                                                                 | 用途                                                               |
-| -------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 软件                                                     | 记录                                                      | 用途                                                               |
+| -------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------ |
 | [CloudDrive2](https://www.clouddrive2.com/)              | [挂载、目录共享与缓存](/posts/cloud-storage-local-mount/) | 把远端文件显示成 NAS 目录或 Windows 盘符                           |
 | [AList](https://alistgo.com/)                            | [部署、WebDAV 与路径权限](/posts/alist-guide/)            | 聚合多种存储，提供文件列表和 WebDAV                                |
-| [CloudSaver](https://github.com/jiangrui1994/CloudSaver) | 项目文档                                                             | 网盘资源搜索与转存；仓库公开源码停留在较早版本，新版以项目镜像为准 |
+| [CloudSaver](https://github.com/jiangrui1994/CloudSaver) | 项目文档                                                  | 网盘资源搜索与转存；仓库公开源码停留在较早版本，新版以项目镜像为准 |
 
 原收藏的 [CloudDrive2 第三方安装脚本](https://github.com/sublaim/clouddrive2)也留在这里。它是社区安装方案，和官方核心服务、fnOS 套件、Docker 镜像分开核对。
 
-支持 WebDAV 的播放器可以直接连 AList，只认文件路径的应用再接 CloudDrive2。挂载目录中出现文件名，并不代表本地有离线副本，写入结束也要检查远端上传是否完成。
+支持 WebDAV 的播放器可以直接连 AList，只认文件路径的应用再接 CloudDrive2。挂载目录里出现文件名，文件本体可能仍在远端；写入结束要检查远端上传是否完成。
 
 ### 照片、音乐和有声书
 
-| 软件                                                                       | 记录或文档                                             | 用途                                         |
-| -------------------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------- |
+| 软件                                                                       | 记录或文档                                  | 用途                                         |
+| -------------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------- |
 | [MT Photos](https://mtmt.tech/)                                            | [部署与照片库设置](/posts/mt-photos-guide/) | NAS 照片整理、浏览与客户端访问               |
-| [Music Tag Web V2](https://xiers-organization.gitbook.io/music-tag-web-v2) | 项目文档                                               | 音乐标签、元数据刮削和播放，适合整理文件信息 |
-| [Audiobookshelf](https://audiobookshelf.org/)                              | 项目文档                                               | 自建有声书与播客库                           |
+| [Music Tag Web V2](https://xiers-organization.gitbook.io/music-tag-web-v2) | 项目文档                                    | 音乐标签、元数据刮削和播放，适合整理文件信息 |
+| [Audiobookshelf](https://audiobookshelf.org/)                              | 项目文档                                    | 自建有声书与播客库                           |
 
 配置和原始文件分开备份。照片整理、音乐标签写入会修改文件，自动任务先限制在测试目录。
 

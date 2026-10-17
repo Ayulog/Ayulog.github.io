@@ -1,6 +1,6 @@
 ---
 title: MT Photos：Docker 安装与照片目录
-description: MT Photos 的基础 Compose 部署，区分配置、上传原件和已有图库，记录端口、缓存和备份位置。
+description: 用 Compose 部署 MT Photos，分清配置、上传原件与已有图库的挂载位置。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
 draft: false
@@ -12,13 +12,13 @@ tags:
   - 照片管理
 ---
 
-MT Photos 用来管理照片。先把原件、上传目录和应用数据分清楚，后面扫描图库、迁移磁盘和备份都方便些。
+用 MT Photos 管照片之前，先把应用数据、上传原件和已有图库的位置定下来；后面扫描图库、迁移磁盘和备份都靠这套目录。
 
-这篇从 [DebNAS 安装笔记](/posts/debnas-installation-notes/)中拆出，保留原来的基础配置。需要先装好 Linux Docker Engine 和 Compose V2，步骤见 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。本例面向 amd64，其他架构按 [MT Photos 官方安装说明](https://mtmt.tech/docs/start/install/)选择镜像。
+基础配置来自 [DebNAS 安装笔记](/posts/debnas-installation-notes/)。需要先装好 Linux Docker Engine 和 Compose V2，步骤见 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。本例面向 amd64，其他架构按 [MT Photos 官方安装说明](https://mtmt.tech/docs/start/install/)选择镜像。
 
 其他媒体服务见 [NAS 服务清单](/posts/nas-software-websites/)。
 
-## 准备目录
+## 准备项目目录与三个挂载点
 
 单独建一个 MT Photos 项目目录，里面保存 `compose.yaml`、`config/` 和 `upload/`。已有照片留在原位置，通过挂载交给 MT Photos。
 
@@ -30,7 +30,7 @@ MT Photos 用来管理照片。先把原件、上传目录和应用数据分清�
 
 相对路径以 Compose 项目目录为准。`/photos` 是这里给已有图库取的容器路径，不是系统要求的固定目录。已有实例迁移时，要先确认旧数据和挂载位置，避免接到新建的空目录。
 
-## Compose 部署
+## 用 Compose 启动服务
 
 保存下面的配置，也可以[直接下载](/examples/debnas/mtphotos/compose.yaml)：
 

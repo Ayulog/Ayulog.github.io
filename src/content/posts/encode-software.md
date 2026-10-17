@@ -1,6 +1,6 @@
 ---
 title: 压制软件与资料清单
-description: 图形工具、脚本流程、编码器和学习资料的入口。
+description: 压制流程会用到的图形工具、脚本环境、编码器和学习资料，按环节分组。
 author: Ayulog
 pubDatetime: "2026-10-09T16:10:00+08:00"
 modDatetime: "2026-10-11T16:00:00+08:00"
@@ -15,21 +15,11 @@ tags:
   - 软件清单
 ---
 
-压制从成品用途开始：先判断是否需要重新编码，再选择图形工具或脚本处理，做短片试压，最后封装和验收。这里是软件、教程与文档的入口；单次转码、脚本处理、编码比较和学习练习各自成篇。
+压制先看成品用途：是否需要重新编码，随后选择图形工具或脚本处理，做短片试压，最后封装和验收。工具、教程与文档按环节归在一起；单次转码、脚本处理、编码比较和学习练习各自成篇。
 
-只需要换容器、补字幕或调整音轨时，先看 [蓝光与媒体工具清单](/posts/media-diy-software/)；裁边、缩放、烧录字幕和降低视频体积等需求，再进入压制流程。原有公开资料核查日期为 **2026 年 10 月 10 日**，本次按流程重新整理；各工具与教程的版本边界见对应条目。
+只需要换容器、补字幕或调整音轨时，先看 [蓝光与媒体工具清单](/posts/media-diy-software/)；裁边、缩放、烧录字幕和降低视频体积等需求，再进入压制流程。公开资料于 **2026 年 10 月 10 日**核查；各工具与教程的版本边界见对应条目。
 
-## 目录
-
-- [处理流程](#处理流程)
-- [相关文章](#相关文章)
-- [一键压制篇](#一键压制篇)
-- [VapourSynth 压制篇](#vapoursynth-压制篇)
-- [编码篇](#编码篇)
-- [学习篇](#学习篇)
-- [基础工具与成品整理](#基础工具与成品整理)
-
-## 处理流程
+## 从片源检查到成品验收
 
 1. **检查片源和用途。** 确认节目版本、帧率、分辨率、位深与色彩信息，明确目标播放器、尺寸和体积要求。
 2. **选择处理路线。** 简单转码从图形工具开始；需要裁边、滤镜或可复用脚本时，再接 VapourSynth。
@@ -52,8 +42,6 @@ tags:
 - [HandBrake 与 ShanaEncoder：字幕校对用的快速压片教程](/posts/handbrake-shanaencoder-subtitle-proxy/)：制作便于校对的小片，保留画幅与时间线，避免把字幕烧入视频。
 - [压制练习：从一段样片到文档查阅](/posts/encode-learning/)：记录片源与版本，建立基线，做单项比较，并把报错或画面问题定位到对应组件。
 
-下面保留软件、系统教程和文档入口，按需要查阅。
-
 ## 一键压制篇
 
 - **[HandBrake](https://handbrake.fr/)**：[功能列表](https://handbrake.fr/features.php)与[官方文档](https://handbrake.fr/docs/en/latest/)。跨平台转码工具，提供预设、滤镜、音轨、字幕与队列；视频会重新编码。
@@ -64,10 +52,10 @@ tags:
 
 ## VapourSynth 压制篇
 
-- **[VapourSynth](https://www.vapoursynth.com/)**：[官方文档总入口](https://www.vapoursynth.com/doc/)、[安装说明](https://www.vapoursynth.com/doc/installation.html)与[发布记录](https://github.com/vapoursynth/vapoursynth/releases)。R74 起安装与插件布局已有变化，旧便携包教程需要按当前接口重查。
+- **[VapourSynth](https://www.vapoursynth.com/)**：[官方文档目录](https://www.vapoursynth.com/doc/)、[安装说明](https://www.vapoursynth.com/doc/installation.html)与[发布记录](https://github.com/vapoursynth/vapoursynth/releases)。R74 起安装与插件布局已有变化，旧便携包教程需要按当前接口重查。
 - **[VapourSynth Editor（YomikoR）](https://github.com/YomikoR/VapourSynth-Editor/releases?page=1)**：脚本编辑与预览工具。编辑器、Python 与 VS 库应使用相互兼容的版本。
 - **[L-SMASH-Works](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works)**：源滤镜项目，当前可通过 `vapoursynth-lsmas` 包安装；负责把压缩片源解码成脚本可访问的视频帧。
-- **[VapourSynth Database](https://vsdb.top/)**：第三方插件与脚本目录，用来查用途、依赖和上游；具体安装方法以项目说明为准。
+- **[VapourSynth Database](https://vsdb.top/)**：第三方插件与脚本目录，用来查用途、依赖和上游；安装方法看项目说明。
 - **[VSRepoGUI](https://github.com/theChaosCoder/VSRepoGUI/releases)**：保留旧入口，仓库已经归档并标为过时。新环境按官方文档和各插件的 pip 安装说明配置。
 - **旧 AVS 流程**：[AviSynth Wiki](http://avisynth.nl/index.php/Main_Page)与[AvsPmod](https://github.com/gispos/AvsPmod)。阅读旧教程时注意脚本语言与插件接口不同。
 
@@ -89,7 +77,7 @@ H.264、HEVC、AV1 是编码格式，x264、x265、SVT-AV1 是具体实现。不
 
 先读基本概念，再选一篇操作文章完成短片练习；有了能复现的基线，再查滤镜、率控制或自动化。一次完整练习还要包含音轨、字幕、封装与播放检查，具体记录方法见[压制练习：从一段样片到文档查阅](/posts/encode-learning/)。
 
-这些资料的侧重点不同：有的从动画蓝光处理讲起，有的关注真人素材、保留颗粒或控制体积，也有专门解释编码器内部行为的长文。先确认作者处理的素材和目标，再判断某个设置是否适合自己的任务。下面的介绍沿用 **2026 年 10 月 10 日**的联网核查记录；能打开教程，不代表其中的工具组合和参数已经通过当前版本验证。
+这些资料的侧重点不同：有的从动画蓝光处理讲起，有的关注真人素材、保留颗粒或控制体积，也有专门解释编码器内部行为的长文。先确认作者处理的素材和目标，再判断某个设置是否适合自己的任务。下面的介绍沿用 **2026 年 10 月 10 日**的联网核查记录；教程能打开，工具组合和参数是否经过当前版本验证则是另一回事。
 
 - [入门与完整流程](#入门与完整流程)：选一套系统教程建立主线。
 - [编码器与滤镜进阶](#编码器与滤镜进阶)：按画面问题和参数查阅。
@@ -157,7 +145,7 @@ H.264、HEVC、AV1 是编码格式，x264、x265、SVT-AV1 是具体实现。不
 
 索引还包含 QAAC、Opus、ffprobe、码率曲线、VMAF、图像序列与去交错 / IVTC 等专题。需要音频或分析工具时，从对应章节进入即可。
 
-作者将这些教程定位为业余分析与参考。长文有助于理解参数，但示例里的结论仍有素材、软件版本和测试条件；尤其不能把不同编码器的同一个 CRF 数字当成相同质量，也不能把一次性能比较推广到所有素材。
+作者将这些教程定位为业余分析与参考。长文有助于理解参数，但示例里的结论仍受素材、软件版本和测试条件限制；不同编码器的同一个 CRF 数字不是同一档质量，一次性能比较也推广不到所有素材。
 
 #### Advanced Encoding Guide 与中文译本
 
@@ -177,7 +165,7 @@ Concertos Encode_Guide 的中文翻译整理，与上面的指南有共同项目
 
 #### x264 参数 Wiki 与 Kokomins
 
-- **[x264 参数 Wiki](https://en.wikibooks.org/wiki/MeGUI/x264_Settings)**：英文社区资料，按 MeGUI / x264 设置解释参数。适合辅助查词，但默认值、预设展开结果和可用参数以手头编码器的帮助信息为准。
+- **[x264 参数 Wiki](https://en.wikibooks.org/wiki/MeGUI/x264_Settings)**：英文社区资料，按 MeGUI / x264 设置解释参数。适合辅助查词，但默认值、预设展开结果和可用参数查手头编码器的帮助信息。
 - **[Kokomins：Anime Encoding Guide for x265 (HEVC) & AAC/OPUS](https://kokomins.wordpress.com/2019/10/10/anime-encoding-guide-for-x265-and-why-to-never-use-flac/)**：英文文章，始于 2019 年，作者明确以 1080p 动画调整参数，讨论 x265、颗粒、微色带与 AAC / Opus。标题中的“不要使用 FLAC”体现其体积与分发取向，不能据此否定无损音频在归档、编辑或其他需求中的用途。
 
 ### 旧文、专题与自动化案例
@@ -189,7 +177,7 @@ Concertos Encode_Guide 的中文翻译整理，与上面的指南有共同项目
 - **[组内新人培训（一）：本组工作基本流程](https://www.nazorip.site/archives/7/)**：F@NAZOrip 于 **2017 年 10 月 19 日**发表。可以看到 Python、VapourSynth、VSEdit、插件和编码器如何衔接，以及检查脚本、预览和启动编码的顺序。原文依赖当时组内提供的工具包与脚本，适合读工作流程，环境安装另看现行文档。
 - **[迷之压制组一键高压缩脚本说明与下载](https://nazorip.site/archives/46/)**：F@NAZOrip 于 **2018 年 6 月 21 日**发表，标题标注同年 7 月更新。使用 Python、VapourSynth 和定制 x265 串联扫描、章节分段、脚本生成、分 GOP 编码、复检及封装。
 
-后一篇涉及 Python 3.6 和特定 x265 修改版，记录的是当时为高压缩目标设计的自动化方案。按章节或 GOP 调整质量会改变画质分配，不能仅凭整体码率更低判断效果更好；是否接受这种取舍，要回到实际画面对比。今天搭建自动化流程时，可以参考任务组织方式，所附组件和参数另行验证。
+后一篇涉及 Python 3.6 和特定 x265 修改版，记录的是当时为高压缩目标设计的自动化方案。按章节或 GOP 调整质量会改变画质分配，整体码率更低与效果更好是两件事；是否接受这种取舍，要回到实际画面对比。今天搭建自动化流程时，可以参考任务组织方式，所附组件和参数另行验证。
 
 #### 在 Premiere 中使用 ASS 字幕
 
@@ -197,7 +185,7 @@ Concertos Encode_Guide 的中文翻译整理，与上面的指南有共同项目
 
 小透明于 **2019 年 8 月 3 日**发表的中文文章。讨论 ASS 字幕进入非线性编辑软件的几条路径：图片序列、带透明度的中间视频，以及通过 VapourSynth、虚拟 AVI 和遮罩组织字幕画面。
 
-适合了解“把字幕渲染成画面”与“直接导入可编辑字幕”之间的区别，也能帮助理解字幕色层与透明度遮罩。文中使用当年的 Premiere 和插件环境，不能由此断言当前版本具有相同限制；avfs、字幕渲染器、透明度处理和宿主软件兼容性需要逐项检查。
+适合了解“把字幕渲染成画面”与“直接导入可编辑字幕”之间的区别，也能帮助理解字幕色层与透明度遮罩。文中使用当年的 Premiere 和插件环境，当前版本的限制要重新查；avfs、字幕渲染器、透明度处理和宿主软件兼容性需要逐项检查。
 
 #### QuickTime Gamma Bug 与历史制式
 
@@ -210,7 +198,7 @@ Concertos Encode_Guide 的中文翻译整理，与上面的指南有共同项目
 
 **[NAZOrip](https://nazorip.site/)** 收录编码器、滤镜、播放、自动化和工具文章。前面的 2017 / 2018 年文章只是其中的旧资料，本次首页也能看到 2026 年的工具与 Opus 专题。查站内文章时看具体发布日期和依赖，不因某篇旧文把整个站点当成停止更新。
 
-**[NanNan's Blog](https://blog.nannan.cool/)** · **[关于页](https://blog.nannan.cool/about/)** 是个人技术与折腾记录，已有收藏继续保留。与本篇直接相关的是 [AV1 编码详解和测试](https://blog.nannan.cool/archives/61/)和 [AV1 编码器使用指南](https://blog.nannan.cool/archives/105/)，分别发表于 **2021 年 10 月 13 日和 18 日**，介绍 AOM-AV1、SVT-AV1 及其使用经验。
+**[NanNan's Blog](https://blog.nannan.cool/)** · **[关于页](https://blog.nannan.cool/about/)** 是个人技术与折腾记录，已有收藏继续保留。与压制直接相关的是 [AV1 编码详解和测试](https://blog.nannan.cool/archives/61/)和 [AV1 编码器使用指南](https://blog.nannan.cool/archives/105/)，分别发表于 **2021 年 10 月 13 日和 18 日**，介绍 AOM-AV1、SVT-AV1 及其使用经验。
 
 这两篇可用于了解 AV1 早期实践，但当时的编码器成熟度、速度、预设和默认值已经带有版本边界。当前选项要查 SVT-AV1 官方文档，性能结论则用自己的素材和当前版本重测。
 

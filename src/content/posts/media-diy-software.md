@@ -1,6 +1,6 @@
 ---
 title: 蓝光与媒体工具清单
-description: 原盘检查、Remux、章节、菜单与封装环节用到的软件。
+description: 蓝光原盘检查、Remux、章节、菜单与封装各环节用到的软件清单。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
 modDatetime: "2026-10-11T16:00:00+08:00"
@@ -13,17 +13,9 @@ tags:
   - 软件清单
 ---
 
-这里的 DIY 主要指蓝光与媒体文件整理：检查原盘、准备音视频和字幕、编辑章节，再按成品目标重新封装或制作蓝光。工具按环节分组，播放列表、Remux、章节和菜单等任务各自成篇。
+一张碟或一份原盘到手，先要确认它是什么、正片对应哪个播放列表，再决定补字幕、换音轨、改章节，还是重做菜单。检查原盘、准备音视频和字幕、编辑章节、按成品目标重新封装或制作蓝光，是这条线上的几个环节。
 
-## 目录
-
-- [处理流程](#处理流程)
-- [相关文章](#相关文章)
-- [原盘与文件检查](#原盘与文件检查)
-- [提取与封装](#提取与封装)
-- [章节与 Matroska 编辑](#章节与-matroska-编辑)
-- [Dolby Vision 元数据](#dolby-vision-元数据)
-- [资料与相关分类](#资料与相关分类)
+工具按环节分组，各任务的操作写在各自的文章里；这里只保留软件与入口。
 
 ## 处理流程
 
@@ -35,9 +27,9 @@ tags:
 | 制作成品   | 输出格式、菜单与导航是否需要修改                     | 封装 MKV，或制作、重制蓝光结构       |
 | 验收与留档 | 轨道、元数据、时间线、章节、菜单和目标设备播放       | 扫描输出、实际回看，并保存工程与日志 |
 
-给一部蓝光影片补字幕的连续操作见[蓝光加字幕教程：从原盘检查到混流验收](/posts/blu-ray-diy-workflow/)。只需要某一环节时，从下面对应教程进入。
+给一部蓝光影片补字幕的连续操作见[蓝光加字幕教程：从原盘检查到混流验收](/posts/blu-ray-diy-workflow/)；只做其中一环时，从下面对应篇目进入。
 
-## 相关文章
+## 各环节对应的篇目
 
 ### 先认识素材与播放条件
 
@@ -65,13 +57,13 @@ tags:
 
 ## 提取与封装
 
-- **[MakeMKV](https://www.makemkv.com/)**：把 DVD、蓝光中的节目转成 MKV，保留音视频轨道、章节和语言等信息，不重新压制画面。选节目与输出流程见 [Remux 教程](/posts/blu-ray-remux/#makemkv先得到一份完整节目)。蓝光处理功能的试用和授权说明以官网为准。
+- **[MakeMKV](https://www.makemkv.com/)**：把 DVD、蓝光中的节目转成 MKV，保留音视频轨道、章节和语言等信息，不重新压制画面。选节目与输出流程见 [Remux 教程](/posts/blu-ray-remux/#makemkv先得到一份完整节目)。蓝光处理功能的试用与授权见官网说明。
 - **[MKVToolNix](https://mkvtoolnix.download/)**：创建、修改和检查 Matroska 文件的工具集，常用于音视频与字幕重新封装、编辑轨道信息、章节和附件，也提供轨道提取工具。当前版本可以直接读取受支持的 MPLS 并合并蓝光双轨 DV，见 [Remux 教程](/posts/blu-ray-remux/#mkvtoolnix直接读取-mpls)。
-- **[tsMuxer](https://github.com/justdan96/tsMuxer)**：处理 TS / M2TS 的混流与重新封装，可输出蓝光或 AVCHD 结构；蓝光输出支持自定义章节时间与按分钟等间隔分章。操作见[章节教程](/posts/media-chapters/#tsmuxer生成蓝光结构时写入章节)。原仓库已停止开发，当前维护中的 [teaching-droid 社区仓库](https://github.com/teaching-droid/tsMuxer) 已发布 v2.19.0；两者的定位和功能差异见[新版 tsMuxer 介绍](/posts/tsmuxer-new-version/)。新建蓝光结构与完整目录打包的区别见[原盘 DIY 教程](/posts/blu-ray-diy/#一tsmuxer-制作蓝光结构)，功能需按具体分支与版本核对。
+- **[tsMuxer](https://github.com/justdan96/tsMuxer)**：处理 TS / M2TS 的混流与重新封装，可输出蓝光或 AVCHD 结构；蓝光输出支持自定义章节时间与按分钟等间隔分章。操作见[章节教程](/posts/media-chapters/#tsmuxer生成蓝光结构时写入章节)。原仓库已停止开发，当前维护中的 [teaching-droid 社区仓库](https://github.com/teaching-droid/tsMuxer) 已发布 v2.19.0；两者的定位和功能差异见[新版 tsMuxer 介绍](/posts/tsmuxer-new-version/)。新建蓝光结构与完整目录打包的区别见[原盘 DIY 教程](/posts/blu-ray-diy/#一tsmuxer-制作蓝光结构)，功能随分支与版本不同。
 - **BDFix Pro**：Defsoft 的旧蓝光重制工具，可参考[历史产品资料](https://www.qweas.com/downloads/audio/multimedia-creation-tools/moreinfo-bdfix.html)了解 M2TS / MPLS 模式、轨道替换与新 BDMV 输出。重制时需复核播放列表中的章节，流程与资料限制见[章节教程](/posts/media-chapters/#bdfix-pro重制现有蓝光时保留和复核章节)；不能从旧版功能说明推断所有 Pro 版本或 UHD 原盘的兼容性。
 - **[KITe UHD Authoring Suite](https://dvd-logic.com/kite)**：DVDLogic 的蓝光与 UHD 编著工具，可导入已有 BDMV、编辑素材与片段后重新混流；输入格式和功能按产品档位核对，见[导入与混流流程](/posts/blu-ray-diy/#三kite-uhd-导入与混流)。
 - **[Scenarist BD / UHD](https://www.scenarist.com/)**：从素材建立蓝光工程、菜单和导航的编著工具，中文圈常称 Scenarist BD 为“大金”。BD 与 UHD 是不同产品，入门见[Scenarist 制作流程](/posts/blu-ray-diy/#四大金-scenarist-bd-制作)。
-- **[DGDemux](https://www.rationalqm.us/dgdemux/dgdemux.html)**：按蓝光 / UHD 播放列表分流视频、音频、字幕和章节，支持无缝分支影片的同步处理。可在 Windows 和 Linux 上运行，当前两平台发行包均含图形界面与命令行程序；具体选项按对应版本核对。操作见 [Remux 教程](/posts/blu-ray-remux/#dgdemux按播放列表分流)，发布记录可参照 [VideoHelp 资料页](https://www.videohelp.com/software/DGDemux)。
+- **[DGDemux](https://www.rationalqm.us/dgdemux/dgdemux.html)**：按蓝光 / UHD 播放列表分流视频、音频、字幕和章节，支持无缝分支影片的同步处理。可在 Windows 和 Linux 上运行，当前两平台发行包均含图形界面与命令行程序；具体选项见对应版本的说明。操作见 [Remux 教程](/posts/blu-ray-remux/#dgdemux按播放列表分流)，发布记录可参照 [VideoHelp 资料页](https://www.videohelp.com/software/DGDemux)。
 - **[eac3to](https://www.videohelp.com/software/eac3to)** 与 **[UsEac3To](https://forum.doom9.org/showthread.php?t=145574)**：前者用于轨道分析、分流与音频处理，后者是图形前端。原样提取、转换和日志检查见 [Remux 教程](/posts/blu-ray-remux/#eac3to-与-useac3to分析与音轨分流)；下载时核对前端与 eac3to 的配套版本。
 
 轨道转换和延迟处理见 [音频清单](/posts/audio-software/)，FFmpeg 等通用媒体工具见 [压制清单](/posts/encode-software/)。
@@ -91,7 +83,7 @@ tags:
 
 为不同片源处理 RPU 时，需要先核对帧序、剪辑与画幅是否匹配，再检查目标播放设备支持的 Dolby Vision Profile。元数据处理完成后仍要验证画面和播放结果。
 
-## 资料与相关分类
+## 相邻分类的清单
 
 - [音频软件清单](/posts/audio-software/)：eac3to、qaac、deew，以及音轨转换和多声道处理资料。
 - [字幕软件清单](/posts/subtitle-software/)：字幕编辑、图形字幕转换、OCR 和同步工具。

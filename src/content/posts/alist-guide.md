@@ -1,6 +1,6 @@
 ---
 title: AList：Docker 部署、WebDAV 与路径权限
-description: 部署 AList 聚合网盘，建立专用 WebDAV 用户，检查角色与目录权限，并通过 NAS 网络文件夹或 CloudDrive2 接入本地。
+description: Docker 部署 AList，建专用 WebDAV 用户和路径权限，再接入 NAS 或 CloudDrive2。
 author: Ayulog
 pubDatetime: "2026-10-10T16:00:00+08:00"
 draft: false
@@ -13,26 +13,11 @@ tags:
   - Docker
 ---
 
-AList 把多个存储放到同一棵目录树里，提供网页浏览和 WebDAV 访问。它不会把网盘容量合成一块本地硬盘，添加存储也不会自动建立 NAS 文件系统挂载点。
+当网盘分散在几个服务里，又希望在 NAS 上用同一套目录浏览、播放和下载时，AList 把它们挂进一棵目录树，网页和 WebDAV 都能访问。它提供的是这层目录视图，容量不会合成一块本地硬盘，添加存储也不会在 NAS 上生成挂载点。
 
-播放器支持 WebDAV 时，可以直接连接 AList；只认本地路径的软件，再经 [CloudDrive2](/posts/cloud-storage-local-mount/) 挂载。其他软件见 [NAS 服务清单](/posts/nas-software-websites/)。
-
-## 目录
-
-- [部署 AList](#部署-alist)
-- [添加存储并验证](#添加存储并验证)
-- [准备 WebDAV 用户与地址](#准备-webdav-用户与地址)
-- [方式 A：接入 NAS 网络文件夹](#方式-a接入-nas-网络文件夹)
-- [方式 B：AList 接入 CloudDrive2，再挂载到本地](#方式-balist-接入-clouddrive2再挂载到本地)
-- [给媒体容器提供本地路径](#给媒体容器提供本地路径)
-- [上传、缓存与扫描](#上传缓存与扫描)
-- [更新与备份](#更新与备份)
-- [常见问题](#常见问题)
-- [参考资料](#参考资料)
+播放器支持 WebDAV 时可以直接连 AList；只认本地路径的软件，先经 [CloudDrive2](/posts/cloud-storage-local-mount/) 挂载。其他软件见 [NAS 服务清单](/posts/nas-software-websites/)。
 
 ## 部署 AList
-
-AList 是支持多种存储的文件列表程序，可以统一浏览目录并提供 WebDAV。它的“添加存储”只是把网盘加入 AList 的目录树，不会直接给 NAS 创建一个 Linux 挂载点。
 
 在独立的 `alist` 项目目录创建 `data` 子目录，再保存下面的 `compose.yaml`。镜像名和数据路径依据 [AList 官方 Docker 文档][alist-docker]：
 
@@ -77,9 +62,9 @@ docker exec -it alist ./alist admin random
 3. 按所选驱动填写授权信息和必要参数，保存后确认状态正常。
 4. 回到 AList 文件页面，进入对应目录，验证列目录和读取小文件。
 
-这里的 `/drive-a` 是 **AList 虚拟路径**，不是宿主机目录，也不等于 Docker 数据目录 `./data`。`./data` 保存的是程序配置等数据，不会因为添加网盘就存入全部网盘文件。
+这里的 `/drive-a` 是 **AList 虚拟路径**，不是宿主机目录，与 Docker 数据目录 `./data` 无关；后者只保存程序配置等数据，不会因为添加网盘就存入全部网盘文件。
 
-不同驱动支持的上传、删除、复制和重命名能力可能不同。添加成功后仍需逐项验证，不能默认所有网盘具有一样的读写功能。
+不同驱动支持的上传、删除、复制和重命名能力可能不同，添加成功后逐项试一遍。
 
 ## 准备 WebDAV 用户与地址
 
@@ -91,7 +76,7 @@ http://NAS_IP:5244/dav/
 
 账号密码使用 **AList 用户**的凭据，不是网盘账号或 CloudDrive 账号。建议新建专用用户，先只授予需要目录的读取权限，并启用该版本要求的 **WebDAV 读取**权限；需要写入时再开放 **WebDAV 管理**及对应上传、删除等操作权限。
 
-新版 AList 还涉及角色的路径作用域和“检查路径限制”。**基本路径只是默认进入的位置，不能单独当作访问隔离**；如果只想开放一个目录，应按当前[用户与权限文档][alist-users]设置作用域，并验证不能访问其他目录。
+新版 AList 还涉及角色的路径作用域和“检查路径限制”。**基本路径只是默认进入的位置，访问隔离要靠作用域和路径限制**；只想开放一个目录时，按当前[用户与权限文档][alist-users]设置作用域，再验证其他目录访问不到。
 
 若客户端把连接参数拆开填写，对应关系如下：
 
@@ -120,7 +105,7 @@ http://NAS_IP:5244/dav/
 
 如果已经挂载了 CloudDrive2 的聚合根目录，新加入的 WebDAV 存储可以从该根目录下访问，不必再占用一个挂载点。先确认实际层级，再给其他软件填写路径。
 
-本文用 `NAS_IP` 连接 AList，地址必须能从**运行 CloudDrive2 的机器或容器**访问。普通 bridge 容器里的 `localhost` 是容器自己；不要把电脑浏览器中可用的 `localhost` 原样复制进去。
+这里的 `NAS_IP` 必须能从**运行 CloudDrive2 的机器或容器**访问。普通 bridge 容器里的 `localhost` 是容器自己；不要把电脑浏览器中可用的 `localhost` 原样复制进去。
 
 AList 的 WebDAV 下载策略可能使用重定向或代理。遇到“目录能列出，文件读不了”，结合[官方 WebDAV 说明][alist-webdav]检查该存储的策略、客户端重定向支持及目标地址可达性；改用代理后，文件流量会经过 AList 所在设备。
 
@@ -134,7 +119,7 @@ AList 的 WebDAV 下载策略可能使用重定向或代理。遇到“目录能
 
 ## 给媒体容器提供本地路径
 
-NAS 文件管理器中的“网络文件夹”可能只有文件管理器能访问。供 Emby、Jellyfin 或其他容器使用前，先确认 NAS 是否提供实际的宿主机路径；没有的话，可使用 CloudDrive2 挂载 WebDAV。
+Emby、Jellyfin 或其他容器要读的是宿主机上实际存在的路径，“网络文件夹”未必提供这一层。没有的话，继续用 CloudDrive2 挂载 WebDAV。
 
 使用 CloudDrive2 Docker 方式时，先按其教程核实 FUSE 和宿主机挂载传播。媒体容器映射挂载父目录，例如：
 
@@ -172,7 +157,7 @@ docker compose up -d alist
 docker compose logs --tail=100 alist
 ```
 
-随后检查登录、存储状态、专用用户权限和 WebDAV 实际读取。若 CloudDrive2 依赖它，继续验证挂载恢复；媒体程序启动时不能只看空目录是否存在。
+随后检查登录、存储状态、专用用户权限和 WebDAV 实际读取。若 CloudDrive2 依赖它，继续验证挂载恢复；媒体程序启动时还要确认目录里真能读到文件。
 
 ## 常见问题
 
