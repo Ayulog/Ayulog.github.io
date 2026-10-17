@@ -7,11 +7,9 @@ draft: false
 category: library
 tags:
   - MoviePilot
-  - NAS
   - Docker
   - 自动观影
   - PostgreSQL
-  - 企业微信
 ---
 
 从站点搜索到媒体库入库，搜索、订阅、下载下发、文件整理和媒体库刷新都由 [MoviePilot](https://github.com/jxxghp/MoviePilot) 串起来。下载和做种仍由下载器负责，播放交给 [Emby](/posts/emby-guide/)、[Jellyfin](/posts/jellyfin-guide/) 或 [Plex](/posts/plex-guide/)。

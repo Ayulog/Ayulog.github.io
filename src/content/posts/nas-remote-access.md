@@ -6,8 +6,6 @@ pubDatetime: "2026-10-09T21:00:00+08:00"
 draft: false
 category: network
 tags:
-  - NAS
-  - 网络
   - 远程访问
   - DDNS
   - Lucky

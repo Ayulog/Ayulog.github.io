@@ -8,7 +8,6 @@ category: library
 tags:
   - Vercel
   - TMDB
-  - NAS
   - MoviePilot
   - Emby
 ---

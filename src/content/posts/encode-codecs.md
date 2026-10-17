@@ -7,8 +7,6 @@ modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 category: encode
 tags:
-  - Encode
-  - 视频编码
   - x264
   - x265
   - AV1

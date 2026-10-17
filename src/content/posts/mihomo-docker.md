@@ -6,11 +6,9 @@ pubDatetime: "2026-10-09T20:50:00+08:00"
 draft: false
 category: network
 tags:
-  - NAS
   - Debian
   - Docker
   - Mihomo
-  - 网络
 ---
 
 Mihomo 负责代理和规则，MetaCubeXD 提供网页面板。把这两个容器放在 NAS 上，电脑和其他容器就能共用同一组节点；应用仍要主动连接代理端口，装好容器不会自动接管整个局域网的流量。

@@ -9,8 +9,6 @@ category: library
 tags:
   - IPTV
   - EPG
-  - 播放器
-  - 家庭影音
 ---
 
 先从 [IPTVindex](https://iptvindex.com/) 找一份现成的直播列表，导入播放器，再补上节目单；这条路不需要先部署 NAS 服务。需要自己部署和整理订阅时，另看 [Allinone 与频道整理服务](/posts/iptv-guide/)，两条流程的入口收在 [NAS 服务清单](/posts/nas-software-websites/#直播命名与刮削)。

@@ -7,8 +7,6 @@ draft: false
 category: nas
 tags:
   - Aria2
-  - AriaNg
-  - NAS
   - Docker
   - 下载器
   - AList

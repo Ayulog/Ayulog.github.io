@@ -7,8 +7,6 @@ draft: false
 category: pt
 tags:
   - IYUU
-  - PT
-  - NAS
   - Docker
   - 绿联
 ---

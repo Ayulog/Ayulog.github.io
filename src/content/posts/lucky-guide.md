@@ -10,7 +10,6 @@ tags:
   - Docker
   - Lucky
   - DDNS
-  - 远程访问
 ---
 
 Lucky 把 DDNS、证书和反向代理放在同一个界面里。有公网入口时，可以用它给照片或媒体服务配一个 HTTPS 地址；没有公网入口的话，先看 [NAS 远程访问](/posts/nas-remote-access/)，DDNS 本身不能打通连接。

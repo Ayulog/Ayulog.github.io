@@ -8,7 +8,6 @@ category: network
 tags:
   - 路由器
   - OpenWrt
-  - 家庭网络
 ---
 
 第一次配置 OpenWrt，可以先搭一个二级路由：保留原主路由，只接一台测试设备。改错网关或 DNS 时，影响也只在测试网络内。

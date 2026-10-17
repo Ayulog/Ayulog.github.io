@@ -9,9 +9,7 @@ category: nas
 tags:
   - Debian
   - DebNAS
-  - NAS
   - Docker
-  - 运维
 ---
 
 从系统安装开始，先装 Debian 和 DebNAS，再依次接上数据盘、文件共享和 Docker 应用，最后用重启、备份恢复与故障取证确认这套系统能救回来。

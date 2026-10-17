@@ -7,8 +7,6 @@ category: nas
 tags:
   - qiandao
   - Docker
-  - 自动化
-  - 教程
 draft: false
 ---
 

@@ -10,8 +10,6 @@ tags:
   - HDR
   - Dolby Vision
   - 蓝光
-  - DIY
-  - Media
 ---
 
 [认识蓝光碟片](/posts/understanding-blu-ray/)提到，UHD 蓝光常见 HDR10，也可能带 Dolby Vision 或 HDR10+。文件名里的 `HDR`、`DV` 只是标签：视频里到底有哪些数据、重新封装后留下了什么、播放器实际用了什么，是三件不同的事。

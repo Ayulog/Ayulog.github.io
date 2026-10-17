@@ -7,12 +7,10 @@ modDatetime: "2026-10-11T00:00:00+08:00"
 draft: false
 category: windows
 tags:
-  - 游戏
   - Mod
   - 星露谷物语
   - Steam Deck
   - Android
-  - 软件清单
 ---
 
 游戏相关的软件按平台客户端、Mod 管理、修改器、串流、掌机和安卓模拟器分组，逐条列出。桌面软件和系统设置见 [Windows 软件清单](/posts/windows-software/)。

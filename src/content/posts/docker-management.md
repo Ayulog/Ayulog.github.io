@@ -9,7 +9,6 @@ category: nas
 tags:
   - Debian
   - Docker
-  - 运维
   - Docker Compose
 ---
 

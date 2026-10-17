@@ -6,7 +6,6 @@ pubDatetime: "2026-10-10T16:00:00+08:00"
 draft: false
 category: windows
 tags:
-  - Windows
   - WSL
   - Docker
 ---

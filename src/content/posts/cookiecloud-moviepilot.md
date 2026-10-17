@@ -8,9 +8,7 @@ category: nas
 tags:
   - CookieCloud
   - MoviePilot
-  - NAS
   - Docker
-  - PT
 ---
 
 站点登录状态留在浏览器里，MoviePilot 需要的是同一份 Cookie。[CookieCloud](https://github.com/easychen/CookieCloud) 从浏览器读取指定站点的 Cookie，加密后上传到服务端，[MoviePilot](/posts/moviepilot-guide/) 再拉取这些数据，更新受支持站点的登录信息。

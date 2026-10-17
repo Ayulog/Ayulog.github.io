@@ -6,14 +6,10 @@ pubDatetime: "2026-10-11T13:00:00+08:00"
 draft: true
 category: subtitles
 tags:
-  - 字幕
   - AI 字幕
   - SUP
   - OCR
   - 字幕翻译
-  - Subtitle Edit
-  - VideoCaptioner
-  - Aegisub
 ---
 
 一段视频没有现成字幕，原因可能是字幕被压进了画面，也可能素材里只有音轨。蓝光 SUP 与硬字幕都是图片，提取方法不同；只有音轨时要先做语音转写，已有的 SRT 则可以直接整理和翻译。原文与时间轴可靠之后，再进入翻译和审校。

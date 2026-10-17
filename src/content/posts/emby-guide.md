@@ -6,11 +6,8 @@ pubDatetime: "2026-10-10T13:00:00+08:00"
 draft: false
 category: library
 tags:
-  - NAS
   - Emby
   - Docker
-  - 家庭影音
-  - 教程
 ---
 
 Emby 把 NAS 上的电影和剧集整理成海报墙，保存用户、观看记录和播放进度。部署使用 LinuxServer 的 Docker 镜像，主要工作在目录权限、首次配置、硬件转码和手机、电视、电脑端的客户端选择上。

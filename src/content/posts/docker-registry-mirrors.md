@@ -7,10 +7,8 @@ draft: false
 category: nas
 tags:
   - Docker
-  - NAS
   - Debian
   - 镜像加速
-  - 网络
 ---
 
 镜像拉取超时，先确认镜像来自 Docker Hub、GHCR 还是其他仓库，再决定改哪一层配置。Docker Hub 加速器、仓库前缀和 Docker 服务代理解决的不是同一个问题；完全离线的机器可以用 `docker save` / `docker load`。

@@ -6,7 +6,6 @@ pubDatetime: "2026-10-11T15:00:00+08:00"
 draft: true
 category: subtitles
 tags:
-  - 字幕
   - Scenarist BD
   - SUP
   - ASS

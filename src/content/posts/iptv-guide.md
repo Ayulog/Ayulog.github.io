@@ -8,11 +8,8 @@ draft: false
 category: library
 tags:
   - IPTV
-  - NAS
   - Docker
   - Docker Compose
-  - 家庭影音
-  - 教程
 ---
 
 想让电视、电脑和平板共用一个直播列表，并把频道分组放在服务端维护，链路是 **Allinone 生成直播订阅 → allinone_format 整理频道 → 播放器读取列表**。

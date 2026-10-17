@@ -7,9 +7,7 @@ draft: false
 category: library
 tags:
   - Jellyfin
-  - NAS
   - Docker
-  - 家庭影音
 ---
 
 Jellyfin 的服务端和官方客户端免费，账号由自己的服务器管理。Docker 部署容易卡在媒体目录权限和核显设备权限上，先把这两处配好。

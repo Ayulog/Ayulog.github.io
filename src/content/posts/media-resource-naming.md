@@ -6,10 +6,7 @@ pubDatetime: "2026-10-10T14:00:00+08:00"
 draft: false
 category: library
 tags:
-  - NAS
-  - 家庭影音
   - 媒体库
-  - Encode
 ---
 
 影视文件名里，片名、年份和 `S01E01` 用来识别作品；`2160p`、`WEB-DL`、`HEVC`、`DDP5.1` 等标记描述版本与格式。下载时看的是发布名，入库时则要换成媒体服务器认得的命名。

@@ -6,7 +6,6 @@ pubDatetime: "2026-10-10T10:00:00+08:00"
 draft: false
 category: nas
 tags:
-  - NAS
   - Docker
   - MT Photos
   - 照片管理

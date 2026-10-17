@@ -11,8 +11,6 @@ tags:
   - Remux
   - Dolby Vision
   - MKVToolNix
-  - DIY
-  - Media
 ---
 
 一张蓝光原盘里常有多条播放列表，先确认要保留哪个版本，再把其中的音视频、字幕和章节整理成便于播放的 MKV。播放列表、HDR 与章节的基础分别在[蓝光目录与播放列表](/posts/understanding-blu-ray/)、[HDR 与杜比视界](/posts/understanding-hdr/)和[章节的处理](/posts/media-chapters/)，这里的流程从它们接下去。

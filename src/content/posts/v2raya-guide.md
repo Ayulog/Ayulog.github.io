@@ -9,7 +9,6 @@ tags:
   - Debian
   - Docker
   - v2rayA
-  - 网络
 ---
 
 v2rayA 自带网页管理界面，导入订阅后就能选节点、调分流，不用再装控制面板。这里的步骤针对 `v2.5.10`；偏好直接改 YAML 的话，可以看 [Mihomo](/posts/mihomo-docker/)，两者的配置格式不同。

@@ -7,10 +7,8 @@ modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 category: encode
 tags:
-  - 视频压制
   - VapourSynth
   - Python
-  - 软件教程
 ---
 
 VapourSynth（下文简称 VS）负责读取、处理并输出视频帧。脚本描述如何导入片源、裁边、缩放或使用滤镜，编码器再把这些帧压成 H.264、HEVC 或 AV1，最后与音频、字幕和章节封装成成品。

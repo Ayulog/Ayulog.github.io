@@ -7,9 +7,7 @@ modDatetime: "2026-10-11T00:00:00+08:00"
 draft: false
 category: windows
 tags:
-  - Windows
-  - 装机
-  - 软件清单
+  - 桌面软件
 ---
 
 装系统、装软件时用得上的工具列在下面，按用途分组。程序自启动、远程桌面证书和容器环境另有三篇记录：[设置程序开机自启动](/posts/windows-app-startup/)、[为 RDP 配置 TLS](/posts/windows-rdp-tls/)、[Windows 容器](/posts/windows-containers/)。

@@ -7,11 +7,9 @@ draft: false
 category: library
 tags:
   - CMS
-  - NAS
   - Docker
   - "115"
   - STRM
-  - Emby
 ---
 
 网盘里的影片要进 Emby，又不想把原片下载到 NAS：[Cloud-Media-Sync（CMS）][cms-docs] 读取 115 的目录，在本地生成 STRM，Emby 扫描这些小文件，播放时再获取远端视频。整条链路是 **115 → CMS → Emby**。

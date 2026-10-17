@@ -7,7 +7,6 @@ draft: false
 category: pt
 tags:
   - Vertex
-  - PT
   - RSS
   - Docker
 ---

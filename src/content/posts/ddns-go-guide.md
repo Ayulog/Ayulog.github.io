@@ -9,7 +9,6 @@ tags:
   - Debian
   - Docker
   - DDNS
-  - ddns-go
   - 远程访问
 ---
 

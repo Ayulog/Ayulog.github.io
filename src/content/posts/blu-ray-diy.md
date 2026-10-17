@@ -7,12 +7,9 @@ draft: true
 category: diy
 tags:
   - 蓝光
-  - DIY
-  - tsMuxeR
-  - BDFix Pro
+  - tsMuxer
+  - BDFix
   - KITe UHD
-  - Scenarist BD
-  - Media
 ---
 
 前一步的[蓝光原盘 Remux](/posts/blu-ray-remux/)把节目整理成 MKV；要改蓝光目录本身，则给原盘加入音轨或字幕，或者从音视频素材重新制作 BDMV，并让章节、菜单和轨道选择对应起来。

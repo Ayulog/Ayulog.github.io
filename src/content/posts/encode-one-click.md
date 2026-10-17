@@ -7,10 +7,8 @@ modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 category: encode
 tags:
-  - 视频压制
   - HandBrake
   - ShanaEncoder
-  - 软件教程
 ---
 
 片源拖进 HandBrake 或 ShanaEncoder，选一个预设，点开始，得到一份新文件。预设里已经写了缩放、帧率上限、音频转换和字幕规则，所以“一键”指的是把确认过的设置存成预设再进队列，片源、音轨和字幕仍要逐项检查。

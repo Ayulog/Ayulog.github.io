@@ -7,14 +7,10 @@ modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 category: audio
 tags:
-  - 音频
   - 音轨
   - DTS
   - TrueHD
   - QAAC
-  - Dolby
-  - deew
-  - Media
 ---
 
 成品要保留原始码流，还是要生成另一种编码？这决定后面走哪条路。只把轨道从容器中取出、或在不改变编码的情况下重新封装，属于分流和封装；把 TrueHD 解码成 PCM，再编码为 DTS、AAC 或 Dolby Digital Plus，则是一次新的有损或无损转换。两条路线的输入、依赖和验收方式不同，扩展名说明不了结果。

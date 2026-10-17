@@ -7,8 +7,6 @@ draft: false
 category: network
 tags:
   - iStoreOS
-  - 软路由
-  - 家庭网络
   - 虚拟机
 ---
 

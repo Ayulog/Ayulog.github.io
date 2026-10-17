@@ -7,7 +7,6 @@ modDatetime: "2026-10-11T16:00:00+08:00"
 draft: true
 category: subtitles
 tags:
-  - 字幕
   - SUP
   - BDSup2Sub
   - BDN XML

@@ -7,10 +7,8 @@ draft: false
 category: pt
 tags:
   - qBittorrent
-  - PT
   - Docker
   - 下载器
-  - 教程
 ---
 
 qBittorrent 负责下载、校验和做种。装在哪台机器上，文件就由那台后端保存，浏览器只是管理入口：NAS 上用 Docker 部署，Windows / macOS 装桌面版，Debian 上跑无桌面的 nox 服务。

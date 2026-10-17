@@ -6,11 +6,9 @@ pubDatetime: "2026-10-09T23:20:00+08:00"
 draft: false
 category: pt
 tags:
-  - PT
   - Seedbox
   - qBittorrent
   - Linux
-  - 服务器
 ---
 
 Seedbox 是一台持续运行下载器的远程服务器，也就是 PT 圈里说的“盒子”：下载和做种走机房网络，家里的设备只负责管理。租之前要先弄清楚两件事：站点允许怎么用盒子，以及每月的流量够不够。

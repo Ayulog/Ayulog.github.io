@@ -7,9 +7,7 @@ draft: false
 category: library
 tags:
   - Plex
-  - NAS
   - Docker
-  - 家庭影音
 ---
 
 Plex 用账号认领自己的媒体服务器，再让手机、电视和电脑连接。部署用 Linux NAS 上的官方 Docker 镜像，第一次先处理服务器认领和媒体目录权限。

@@ -7,8 +7,6 @@ modDatetime: "2026-10-11T00:00:00+08:00"
 draft: false
 category: pt
 tags:
-  - PT
-  - 软件清单
   - 下载器
   - 做种
 ---

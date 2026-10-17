@@ -10,8 +10,6 @@ tags:
   - 章节
   - MKVToolNix
   - 蓝光
-  - DIY
-  - Media
 ---
 
 一部影片的章节通常跟着原盘或 MKV 一起存在，需要时可以提取、补上名称、校正时间，再写回成品。播放列表与 HDR 的基础见[蓝光碟片与播放列表](/posts/understanding-blu-ray/)和[HDR 与杜比视界](/posts/understanding-hdr/)。

@@ -7,11 +7,9 @@ modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 category: subtitles
 tags:
-  - 字幕
   - OCR
   - Subtitle Edit
   - Aegisub
-  - DIY
   - 蓝光
 ---
 

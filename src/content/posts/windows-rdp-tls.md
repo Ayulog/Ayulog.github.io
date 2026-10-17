@@ -6,8 +6,6 @@ pubDatetime: "2026-10-09T17:25:00+08:00"
 draft: false
 category: windows
 tags:
-  - Windows
-  - 装机
   - 远程桌面
   - TLS
 ---

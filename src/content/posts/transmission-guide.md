@@ -7,9 +7,7 @@ draft: false
 category: pt
 tags:
   - Transmission
-  - PT
   - Docker
-  - Windows
   - 下载器
 ---
 
