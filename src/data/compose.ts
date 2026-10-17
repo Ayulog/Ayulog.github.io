@@ -1,3 +1,9 @@
+export const composeArchive = {
+  slug: "compose",
+  label: "Compose 存档",
+  description: "Docker Compose 示例、配置模板与配套教程。",
+};
+
 export type ComposeEntry = {
   slug: string;
   name: string;
@@ -22,7 +28,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "MoviePilot V3 配置说明",
-      path: "/posts/2026-10-10-moviepilot-guide/",
+      path: "/posts/moviepilot-guide/",
     },
   },
   {
@@ -39,7 +45,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "qBittorrent 配置说明",
-      path: "/posts/2026-10-10-qbittorrent-guide/",
+      path: "/posts/qbittorrent-guide/",
     },
   },
   {
@@ -60,7 +66,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Transmission 配置说明",
-      path: "/posts/2026-10-10-transmission-guide/",
+      path: "/posts/transmission-guide/",
     },
   },
   {
@@ -80,7 +86,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "CMS 配置说明",
-      path: "/posts/2026-10-10-cloud-media-sync/",
+      path: "/posts/cloud-media-sync/",
     },
   },
   {
@@ -94,7 +100,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Emby 配置说明",
-      path: "/posts/2026-10-10-emby-guide/",
+      path: "/posts/emby-guide/",
     },
   },
   {
@@ -107,7 +113,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Dockge 配置说明",
-      path: "/posts/2026-10-10-dockge-guide/",
+      path: "/posts/dockge-guide/",
     },
   },
   {
@@ -120,7 +126,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Portainer 配置说明",
-      path: "/posts/2026-10-10-portainer-guide/",
+      path: "/posts/portainer-guide/",
     },
   },
   {
@@ -133,7 +139,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "MT Photos 配置说明",
-      path: "/posts/2026-10-10-mt-photos-guide/",
+      path: "/posts/mt-photos-guide/",
     },
   },
   {
@@ -146,7 +152,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Lucky 配置说明",
-      path: "/posts/2026-10-10-lucky-guide/",
+      path: "/posts/lucky-guide/",
     },
   },
   {
@@ -163,7 +169,7 @@ export const composeEntries: readonly ComposeEntry[] = [
     ],
     guide: {
       label: "Mihomo 与 MetaCubeXD 配置说明",
-      path: "/posts/2026-10-09-mihomo-docker/",
+      path: "/posts/mihomo-docker/",
     },
   },
 ];

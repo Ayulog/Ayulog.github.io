@@ -17,8 +17,7 @@ import BackToTopButton from "./_components/BackToTopButton.astro";
 import AdjacentPostNav from "./_components/AdjacentPostNav.astro";
 import config from "@/config";
 import { getRelativeLocaleUrl } from "astro:i18n";
-import { setupCategories } from "@/data/setup";
-import { mediaCategories } from "@/data/media";
+import { getCategory, getSectionOfCategory } from "@/data/categories";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts");
@@ -99,28 +98,8 @@ const {
 } = post.data;
 
 const { Content } = await render(post);
-const setupCategory = setupCategories.find(
-  category => category.slug === post.data.setupCategory
-);
-const mediaCategory = mediaCategories.find(
-  category => category.slug === post.data.mediaCategory
-);
-const articleCategory = setupCategory ?? mediaCategory;
-const sectionSlug = setupCategory ? "setup" : "media";
-const sectionLabel = setupCategory ? "折腾" : "Media";
-const isOverview = setupCategory
-  ? post.data.setupRole === "overview"
-  : post.data.mediaRole === "overview";
-const overview = articleCategory
-  ? getSortedPosts(await getCollection("posts")).find(
-      entry =>
-        (setupCategory
-          ? entry.data.setupCategory === setupCategory.slug &&
-            entry.data.setupRole === "overview"
-          : entry.data.mediaCategory === mediaCategory?.slug &&
-            entry.data.mediaRole === "overview") && entry.id !== post.id
-    )
-  : undefined;
+const articleCategory = getCategory(post.data.category);
+const articleSection = getSectionOfCategory(post.data.category);
 
 let ogImageUrl: string | undefined;
 
@@ -156,15 +135,15 @@ const ogImage = ogImageUrl
   <BackButton />
 
   {
-    articleCategory && (
+    articleCategory && articleSection && (
       <nav class="app-layout mt-4 mb-5 text-sm" aria-label="文章分类">
         <ol class="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-2">
           <li>
             <a
-              href={getRelativeLocaleUrl(locale, sectionSlug)}
+              href={getRelativeLocaleUrl(locale, articleSection.slug)}
               class="hover:text-accent"
             >
-              {sectionLabel}
+              {articleSection.label}
             </a>
           </li>
           <li aria-hidden="true">&raquo;</li>
@@ -172,28 +151,13 @@ const ogImage = ogImageUrl
             <a
               href={getRelativeLocaleUrl(
                 locale,
-                `${sectionSlug}/${articleCategory.slug}`
+                `${articleSection.slug}/${articleCategory.slug}`
               )}
               class="hover:text-accent"
             >
               {articleCategory.label}
             </a>
           </li>
-          {overview && (
-            <>
-              <li aria-hidden="true">&raquo;</li>
-              <li>
-                <a
-                  href={getPostUrl(overview.id, overview.filePath, locale)}
-                  class="hover:text-accent"
-                >
-                  {articleCategory.label}总篇
-                </a>
-              </li>
-            </>
-          )}
-          <li aria-hidden="true">&raquo;</li>
-          <li aria-current="page">{isOverview ? "总篇" : "子篇"}</li>
         </ol>
       </nav>
     )

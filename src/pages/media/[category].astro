@@ -1,111 +1,38 @@
 ---
 import type { GetStaticPaths } from "astro";
-import { getCollection } from "astro:content";
 import { getRelativeLocaleUrl } from "astro:i18n";
-import Layout from "@/layouts/Layout.astro";
-import Header from "@/components/Header.astro";
-import Main from "@/components/Main.astro";
-import Footer from "@/components/Footer.astro";
-import Card from "@/components/Card.astro";
-import MediaNav from "@/components/MediaNav.astro";
-import { mediaCategories, type MediaCategory } from "@/data/media";
-import { getSortedPosts } from "@/utils/getSortedPosts";
-import { getPostUrl } from "@/utils/getPostPaths";
+import CategoryPage from "@/components/CategoryPage.astro";
+import { categories, getSection, type Category } from "@/data/categories";
 import config from "@/config";
 
+const section = getSection("media");
+if (!section) {
+  throw new Error("Missing media section");
+}
+
 export const getStaticPaths = (() => [
-  ...mediaCategories.map(category => ({
-    params: { category: category.slug },
-    props: { category },
-  })),
+  ...categories
+    .filter(category => category.section === "media")
+    .map(category => ({
+      params: { category: category.slug },
+      props: { category },
+    })),
   {
     params: { category: "other" },
     props: { redirectTo: "media" },
   },
 ]) satisfies GetStaticPaths;
 
-type Props = { category: MediaCategory } | { redirectTo: string };
+type Props = { category: Category } | { redirectTo: string };
+
 const locale = Astro.currentLocale ?? config.site.lang;
+
 if ("redirectTo" in Astro.props) {
   return Astro.redirect(
     getRelativeLocaleUrl(locale, Astro.props.redirectTo),
     301
   );
 }
-const { category } = Astro.props;
-const posts = getSortedPosts(await getCollection("posts")).filter(
-  post => post.data.mediaCategory === category.slug
-);
-const overview = posts.find(post => post.data.mediaRole === "overview");
-const guides = posts.filter(post => post.data.mediaRole !== "overview");
 ---
 
-<Layout
-  title={`${category.label} · Media | ${config.site.title}`}
-  description={category.description}
->
-  <Header />
-  <nav class="app-layout mt-8 mb-1" aria-label="面包屑导航">
-    <ol class="text-muted-foreground flex flex-wrap items-center gap-x-2">
-      <li>
-        <a href={getRelativeLocaleUrl(locale, "")} class="hover:text-accent"
-          >首页</a
-        >
-      </li>
-      <li aria-hidden="true">&raquo;</li>
-      <li>
-        <a
-          href={getRelativeLocaleUrl(locale, "media")}
-          class="hover:text-accent">Media</a
-        >
-      </li>
-      <li aria-hidden="true">&raquo;</li>
-      <li aria-current="page">{category.label}</li>
-    </ol>
-  </nav>
-  <Main pageTitle={category.label} pageDesc={category.description}>
-    <MediaNav current={category.slug} />
-    {
-      overview && (
-        <section aria-label="总篇" class="border-border mb-10 border-s-2 ps-5">
-          <p class="text-muted-foreground mb-2 text-sm">
-            总篇 · 流程、软件与教程入口
-          </p>
-          <h2 class="text-xl font-semibold">
-            <a
-              href={getPostUrl(overview.id, overview.filePath, locale)}
-              class="text-accent hover:underline"
-            >
-              {overview.data.title}
-            </a>
-          </h2>
-          <p class="mt-2 leading-7">{overview.data.description}</p>
-        </section>
-      )
-    }
-    <section aria-labelledby="guides">
-      <h2 id="guides" class="text-xl font-semibold">
-        子篇 <span class="text-muted-foreground text-sm font-normal"
-          >{guides.length} 篇</span
-        >
-      </h2>
-      <p class="text-muted-foreground mt-2 text-sm">
-        单个流程、软件或具体问题的教程。
-      </p>
-      {
-        guides.length > 0 ? (
-          <ul>
-            {guides.map(post => (
-              <Card {...post} variant="h3" />
-            ))}
-          </ul>
-        ) : (
-          <p class="text-muted-foreground py-8">
-            该类目暂无子篇，可先查看总篇中的流程与软件。
-          </p>
-        )
-      }
-    </section>
-  </Main>
-  <Footer />
-</Layout>
+<CategoryPage section={section} category={Astro.props.category} />

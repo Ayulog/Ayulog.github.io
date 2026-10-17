@@ -1,0 +1,87 @@
+---
+import { getCollection } from "astro:content";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Main from "@/components/Main.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import {
+  getSectionCategories,
+  type Category,
+  type Section,
+} from "@/data/categories";
+import { getSortedPosts } from "@/utils/getSortedPosts";
+import config from "@/config";
+
+type Props = { section: Section; category: Category };
+
+const { section, category } = Astro.props;
+const locale = Astro.currentLocale ?? config.site.lang;
+const siblings = getSectionCategories(section.slug).filter(
+  entry => entry.slug !== category.slug
+);
+const posts = getSortedPosts(await getCollection("posts")).filter(
+  post => post.data.category === category.slug
+);
+---
+
+<Layout
+  title={`${category.label} · ${section.label} | ${config.site.title}`}
+  description={category.description}
+>
+  <Header />
+  <nav class="app-layout mt-8 mb-1" aria-label="面包屑导航">
+    <ol class="text-muted-foreground flex flex-wrap items-center gap-x-2">
+      <li>
+        <a href={getRelativeLocaleUrl(locale, "")} class="hover:text-accent">
+          首页
+        </a>
+      </li>
+      <li aria-hidden="true">&raquo;</li>
+      <li>
+        <a
+          href={getRelativeLocaleUrl(locale, section.slug)}
+          class="hover:text-accent">{section.label}</a
+        >
+      </li>
+      <li aria-hidden="true">&raquo;</li>
+      <li aria-current="page">{category.label}</li>
+    </ol>
+  </nav>
+  <Main pageTitle={category.label} pageDesc={category.description}>
+    {
+      siblings.length > 0 && (
+        <nav aria-label={`${section.label}分类`} class="mb-8">
+          <ul class="flex flex-wrap gap-x-6 gap-y-2">
+            {siblings.map(entry => (
+              <li>
+                <a
+                  href={getRelativeLocaleUrl(
+                    locale,
+                    `${section.slug}/${entry.slug}`
+                  )}
+                  class="hover:text-accent inline-block py-2 text-sm"
+                >
+                  {entry.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+    {
+      posts.length > 0 ? (
+        <ul>
+          {posts.map(post => (
+            <Card {...post} variant="h3" />
+          ))}
+        </ul>
+      ) : (
+        <p class="text-muted-foreground py-8">这个分类下还没有文章。</p>
+      )
+    }
+  </Main>
+  <Footer />
+</Layout>

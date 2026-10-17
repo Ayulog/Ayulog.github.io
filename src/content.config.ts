@@ -2,8 +2,7 @@ import { defineCollection } from "astro:content";
 import { z } from "astro/zod";
 import { glob } from "astro/loaders";
 import config from "@/config";
-import { setupCategorySlugs } from "@/data/setup";
-import { mediaCategorySlugs } from "@/data/media";
+import { categorySlugs } from "@/data/categories";
 import {
   contentDateSchema,
   optionalContentDateSchema,
@@ -22,21 +21,9 @@ const posts = defineCollection({
       featured: z.boolean().optional(),
       draft: z.boolean().optional(),
       tags: z.array(z.string()).default(["others"]),
-      setupCategory: z.preprocess(
+      category: z.preprocess(
         value => (value === "" || value === null ? undefined : value),
-        z.enum(setupCategorySlugs).optional()
-      ),
-      setupRole: z.preprocess(
-        value => (value === "" || value === null ? undefined : value),
-        z.enum(["overview", "guide"]).default("guide")
-      ),
-      mediaCategory: z.preprocess(
-        value => (value === "" || value === null ? undefined : value),
-        z.enum(mediaCategorySlugs).optional()
-      ),
-      mediaRole: z.preprocess(
-        value => (value === "" || value === null ? undefined : value),
-        z.enum(["overview", "guide"]).default("guide")
+        z.enum(categorySlugs).optional()
       ),
       // CMS uploads use public URLs; only source assets need image imports.
       ogImage: z

@@ -11,28 +11,21 @@ import LinkButton from "./LinkButton.astro";
 import { stripBase, stripLocale } from "@/utils/withBase";
 import { useTranslations } from "@/i18n";
 import config from "@/config";
-import { mediaCategories } from "@/data/media";
-import { setupCategories } from "@/data/setup";
+import { categories, sections } from "@/data/categories";
 
 const { site, features } = config;
 
 const locale = Astro.currentLocale ?? config.site.lang;
 const t = useTranslations(locale);
-const dropdownGroups = [
-  {
-    slug: "setup",
-    label: "折腾",
-    categories: [{ slug: "", label: "折腾总览" }, ...setupCategories],
-  },
-  {
-    slug: "media",
-    label: "Media",
-    categories: [{ slug: "", label: "Media 总览" }, ...mediaCategories],
-  },
-];
-const getCategoryPath = (group: string, category: string) =>
-  category ? `${group}/${category}` : group;
-
+const dropdownGroups = sections.map(section => ({
+  slug: section.slug,
+  label: section.label,
+  categories: section.categories
+    .map(slug => categories.find(category => category.slug === slug))
+    .filter((category): category is (typeof categories)[number] =>
+      Boolean(category)
+    ),
+}));
 // Strip the base prefix so isActive comparisons work regardless of deploy subdirectory.
 // e.g. with base "/blog": "/blog/posts/slug" → "/posts/slug"
 const relativePath = stripBase(Astro.url.pathname);
@@ -100,77 +93,89 @@ const isActive = (path: string) => {
           </a>
         </li>
         {
-          dropdownGroups.map(group => (
-            <li class="col-span-2">
-              <details
-                id={`${group.slug}-menu`}
-                data-nav-dropdown
-                name="nav-dropdowns"
-                class="relative"
-              >
-                <summary
-                  class:list={[
-                    "hover:text-accent flex cursor-pointer list-none items-center justify-center gap-1.5 px-4 py-3 font-medium sm:px-2 sm:py-1",
-                    { "active-nav text-accent": isActive(`/${group.slug}`) },
-                  ]}
+          dropdownGroups.map(group =>
+            group.categories.length > 1 ? (
+              <li class="col-span-2">
+                <details
+                  id={`${group.slug}-menu`}
+                  data-nav-dropdown
+                  name="nav-dropdowns"
+                  class="relative"
                 >
-                  {group.label}
-                  <svg
-                    aria-hidden="true"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="nav-chevron motion-safe:transition-transform"
+                  <summary
+                    class:list={[
+                      "hover:text-accent flex cursor-pointer list-none items-center justify-center gap-1.5 px-4 py-3 font-medium sm:px-2 sm:py-1",
+                      { "active-nav text-accent": isActive(`/${group.slug}`) },
+                    ]}
                   >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </summary>
-                <ul class="nav-submenu bg-background relative z-20 mx-2 mb-2 grid gap-1 p-2 sm:absolute sm:start-0 sm:top-full sm:mx-0 sm:mt-3 sm:mb-0 sm:w-64">
-                  {group.categories.map(category => (
+                    {group.label}
+                    <svg
+                      aria-hidden="true"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="nav-chevron motion-safe:transition-transform"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </summary>
+                  <ul class="nav-submenu bg-background relative z-20 mx-2 mb-2 grid gap-1 p-2 sm:absolute sm:start-0 sm:top-full sm:mx-0 sm:mt-3 sm:mb-0 sm:w-64">
                     <li>
                       <a
-                        href={getRelativeLocaleUrl(
-                          locale,
-                          getCategoryPath(group.slug, category.slug)
-                        )}
-                        class:list={[
-                          "hover:text-accent block px-4 py-2.5 text-center sm:text-start",
-                          {
-                            "active-nav text-accent":
-                              currentPath ===
-                              `/${getCategoryPath(group.slug, category.slug)}`,
-                          },
-                        ]}
-                        aria-current={
-                          currentPath ===
-                          `/${getCategoryPath(group.slug, category.slug)}`
-                            ? "page"
-                            : undefined
-                        }
+                        href={getRelativeLocaleUrl(locale, group.slug)}
+                        class="hover:text-accent block px-4 py-2.5 text-center sm:text-start"
                       >
-                        {category.label}
+                        {group.label}总览
                       </a>
                     </li>
-                  ))}
-                </ul>
-              </details>
-            </li>
-          ))
+                    {group.categories.map(category => (
+                      <li>
+                        <a
+                          href={getRelativeLocaleUrl(
+                            locale,
+                            `${group.slug}/${category.slug}`
+                          )}
+                          class:list={[
+                            "hover:text-accent block px-4 py-2.5 text-center sm:text-start",
+                            {
+                              "active-nav text-accent":
+                                currentPath ===
+                                `/${group.slug}/${category.slug}`,
+                            },
+                          ]}
+                          aria-current={
+                            currentPath === `/${group.slug}/${category.slug}`
+                              ? "page"
+                              : undefined
+                          }
+                        >
+                          {category.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </li>
+            ) : (
+              <li class="col-span-2">
+                <a
+                  href={getRelativeLocaleUrl(locale, group.slug)}
+                  class:list={{ "active-nav": isActive(`/${group.slug}`) }}
+                  aria-current={
+                    currentPath === `/${group.slug}` ? "page" : undefined
+                  }
+                >
+                  {group.label}
+                </a>
+              </li>
+            )
+          )
         }
-        <li class="col-span-2">
-          <a
-            href={getRelativeLocaleUrl(locale, "tags")}
-            class:list={{ "active-nav": isActive("/tags") }}
-            aria-current={currentPath === "/tags" ? "page" : undefined}
-          >
-            {t.nav.tags}
-          </a>
-        </li>
         <li class="col-span-2">
           <a
             href={getRelativeLocaleUrl(locale, "about")}

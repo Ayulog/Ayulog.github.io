@@ -1,0 +1,115 @@
+---
+import { getCollection } from "astro:content";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Main from "@/components/Main.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import { getSectionCategories, type Section } from "@/data/categories";
+import { composeArchive } from "@/data/compose";
+import { getSortedPosts } from "@/utils/getSortedPosts";
+import { getPostUrl } from "@/utils/getPostPaths";
+import config from "@/config";
+
+type Props = { section: Section };
+
+const { section } = Astro.props;
+const locale = Astro.currentLocale ?? config.site.lang;
+const categories = getSectionCategories(section.slug);
+const posts = getSortedPosts(await getCollection("posts"));
+const withPosts = categories.map(category => {
+  const entries = posts.filter(post => post.data.category === category.slug);
+  return { category, entries };
+});
+---
+
+<Layout
+  title={`${section.label} | ${config.site.title}`}
+  description={section.description}
+>
+  <Header />
+  <nav class="app-layout mt-8 mb-1" aria-label="面包屑导航">
+    <ol class="text-muted-foreground flex flex-wrap items-center gap-x-2">
+      <li>
+        <a href={getRelativeLocaleUrl(locale, "")} class="hover:text-accent">
+          首页
+        </a>
+      </li>
+      <li aria-hidden="true">&raquo;</li>
+      <li aria-current="page">{section.label}</li>
+    </ol>
+  </nav>
+  <Main pageTitle={section.label} pageDesc={section.description}>
+    {
+      withPosts.length > 1 ? (
+        <div class="grid gap-x-8 gap-y-10 sm:grid-cols-2">
+          {withPosts.map(({ category, entries }) => (
+            <section aria-labelledby={`category-${category.slug}`}>
+              <h2
+                id={`category-${category.slug}`}
+                class="text-xl font-semibold"
+              >
+                <a
+                  href={getRelativeLocaleUrl(
+                    locale,
+                    `${section.slug}/${category.slug}`
+                  )}
+                  class="text-accent flex items-center justify-between gap-3 hover:underline"
+                >
+                  {category.label}
+                  <span class="text-muted-foreground text-sm font-normal">
+                    {entries.length}
+                  </span>
+                </a>
+              </h2>
+              <p class="text-muted-foreground mt-2 text-sm leading-6">
+                {category.description}
+              </p>
+              {entries.length > 0 ? (
+                <ul class="mt-4 space-y-2">
+                  {entries.slice(0, 3).map(post => (
+                    <li>
+                      <a
+                        href={getPostUrl(post.id, post.filePath, locale)}
+                        class="hover:text-accent text-sm leading-6 hover:underline"
+                      >
+                        {post.data.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p class="text-muted-foreground mt-4 text-sm">
+                  这个分类下还没有文章。
+                </p>
+              )}
+            </section>
+          ))}
+        </div>
+      ) : (
+        <ul>
+          {withPosts.flatMap(({ entries }) =>
+            entries.map(post => <Card {...post} variant="h3" />)
+          )}
+        </ul>
+      )
+    }
+    {
+      section.slug === "setup" && (
+        <p class="border-border mt-10 border-t pt-6 text-sm">
+          <a
+            href={getRelativeLocaleUrl(locale, `setup/${composeArchive.slug}`)}
+            class="text-accent underline decoration-dashed underline-offset-4"
+          >
+            {composeArchive.label} &rarr;
+          </a>
+          <span class="text-muted-foreground ms-2">
+            文章里用到的配置文件与示例。
+          </span>
+        </p>
+      )
+    }
+  </Main>
+  <Footer />
+</Layout>

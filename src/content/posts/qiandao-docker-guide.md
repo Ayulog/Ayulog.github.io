@@ -1,10 +1,9 @@
 ---
-setupCategory: nas
-setupRole: guide
 title: "qiandao：部署与签到任务"
 description: "从 Docker 部署 qiandao（qd-today）开始，介绍初始化、创建任务、备份升级和常见故障排查。"
 pubDatetime: 2026-10-09T12:00:00+08:00
 author: "Ayulog"
+category: nas
 tags:
   - qiandao
   - Docker

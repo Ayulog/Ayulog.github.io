@@ -1,0 +1,11 @@
+---
+import SectionPage from "@/components/SectionPage.astro";
+import { getSection } from "@/data/categories";
+
+const section = getSection("notes");
+if (!section) {
+  return Astro.redirect("/404", 302);
+}
+---
+
+<SectionPage {section} />
