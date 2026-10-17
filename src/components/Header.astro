@@ -12,6 +12,7 @@ import { stripBase, stripLocale } from "@/utils/withBase";
 import { useTranslations } from "@/i18n";
 import config from "@/config";
 import { categories, sections } from "@/data/categories";
+import { getCollection } from "astro:content";
 
 const { site, features } = config;
 
@@ -26,6 +27,15 @@ const dropdownGroups = sections.map(section => ({
       Boolean(category)
     ),
 }));
+const navPosts = await getCollection("posts");
+// 没有文章的板块不进导航，等有内容再自动出现。
+const visibleGroups = dropdownGroups.filter(group =>
+  navPosts.some(
+    post =>
+      post.data.category &&
+      group.categories.some(category => category.slug === post.data.category)
+  )
+);
 // Strip the base prefix so isActive comparisons work regardless of deploy subdirectory.
 // e.g. with base "/blog": "/blog/posts/slug" → "/posts/slug"
 const relativePath = stripBase(Astro.url.pathname);
@@ -93,7 +103,7 @@ const isActive = (path: string) => {
           </a>
         </li>
         {
-          dropdownGroups.map(group =>
+          visibleGroups.map(group =>
             group.categories.length > 1 ? (
               <li class="col-span-2">
                 <details
@@ -176,6 +186,15 @@ const isActive = (path: string) => {
             )
           )
         }
+        <li class="col-span-2">
+          <a
+            href={getRelativeLocaleUrl(locale, "tags")}
+            class:list={{ "active-nav": isActive("/tags") }}
+            aria-current={currentPath === "/tags" ? "page" : undefined}
+          >
+            {t.nav.tags}
+          </a>
+        </li>
         <li class="col-span-2">
           <a
             href={getRelativeLocaleUrl(locale, "about")}
