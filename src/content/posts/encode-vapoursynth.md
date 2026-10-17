@@ -8,7 +8,6 @@ draft: false
 category: encode
 tags:
   - VapourSynth
-  - Python
 ---
 
 VapourSynth（下文简称 VS）负责读取、处理并输出视频帧。脚本描述如何导入片源、裁边、缩放或使用滤镜，编码器再把这些帧压成 H.264、HEVC 或 AV1，最后与音频、字幕和章节封装成成品。

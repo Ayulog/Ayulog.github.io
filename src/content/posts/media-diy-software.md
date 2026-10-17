@@ -3,7 +3,7 @@ title: 蓝光与媒体工具清单
 description: 蓝光原盘检查、Remux、章节、菜单与封装各环节用到的软件清单。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
-modDatetime: "2026-10-11T16:00:00+08:00"
+modDatetime: "2026-10-17T21:00:00+08:00"
 draft: false
 category: diy
 tags:

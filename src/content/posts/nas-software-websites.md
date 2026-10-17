@@ -3,7 +3,7 @@ title: NAS 服务清单
 description: NAS 上按用途分组的软件清单，每项附部署文章或项目入口。
 author: Ayulog
 pubDatetime: "2026-10-09T15:30:00+08:00"
-modDatetime: "2026-10-11T00:00:00+08:00"
+modDatetime: "2026-10-17T21:00:00+08:00"
 draft: false
 category: nas
 tags:

@@ -4,13 +4,12 @@ description: 给一部蓝光影片补字幕：确认版本与播放列表，校�
 author: Ayulog
 pubDatetime: "2026-10-11T12:00:00+08:00"
 modDatetime: "2026-10-11T16:00:00+08:00"
-draft: true
+draft: false
 category: diy
 tags:
   - 蓝光
   - Aegisub
   - BDFix
-  - tsMuxer
 ---
 
 手上有一部蓝光影片想补中文字幕时，要处理的不只是字幕文件本身：影片版本、播放列表、时间轴和最终混流都要对上。软件和其他任务入口放在[蓝光与媒体工具清单](/posts/media-diy-software/)。

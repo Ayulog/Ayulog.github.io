@@ -3,13 +3,12 @@ title: 蓝光原盘 DIY：tsMuxeR、BDFix Pro、KITe UHD 与大金
 description: 在现有 BDMV 上换音轨、加字幕，或用 tsMuxeR、KITe、Scenarist 重建蓝光结构并对应菜单。
 author: Ayulog
 pubDatetime: "2026-10-11T10:00:00+08:00"
-draft: true
+draft: false
 category: diy
 tags:
   - 蓝光
   - tsMuxer
   - BDFix
-  - KITe UHD
 ---
 
 前一步的[蓝光原盘 Remux](/posts/blu-ray-remux/)把节目整理成 MKV；要改蓝光目录本身，则给原盘加入音轨或字幕，或者从音视频素材重新制作 BDMV，并让章节、菜单和轨道选择对应起来。

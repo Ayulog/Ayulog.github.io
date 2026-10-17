@@ -4,13 +4,11 @@ description: 不改文字，只调 SUP 的时间、位置、大小与 forced，�
 author: Ayulog
 pubDatetime: "2026-10-11T12:00:00+08:00"
 modDatetime: "2026-10-11T16:00:00+08:00"
-draft: true
+draft: false
 category: subtitles
 tags:
   - SUP
-  - BDSup2Sub
   - BDN XML
-  - SUPer
 ---
 
 一条已经能播的 SUP，常常只差一点：对白要往上挪、整体延后半秒，或者其中一幅字幕图需要修。先分清要动的是**显示时间、图像位置，还是图片里的文字**，再决定是直接改字幕，还是导出图像重做。

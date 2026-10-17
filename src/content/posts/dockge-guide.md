@@ -9,7 +9,6 @@ tags:
   - Debian
   - Docker
   - Docker Compose
-  - Dockge
 ---
 
 Dockge 把 `compose.yaml` 的编辑、部署和日志查看搬进网页。一个项目放一个目录，文件仍留在磁盘上，随时能回到终端用 Compose 命令维护。

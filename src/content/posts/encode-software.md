@@ -3,7 +3,7 @@ title: 压制软件与资料清单
 description: 压制流程会用到的图形工具、脚本环境、编码器和学习资料，按环节分组。
 author: Ayulog
 pubDatetime: "2026-10-09T16:10:00+08:00"
-modDatetime: "2026-10-11T16:00:00+08:00"
+modDatetime: "2026-10-17T21:00:00+08:00"
 draft: false
 category: encode
 tags:

@@ -3,14 +3,11 @@ title: 游戏平台与工具清单
 description: 从游戏平台、Mod 管理到串流和安卓模拟器，按用途分组的软件清单。
 author: Ayulog
 pubDatetime: "2026-10-11T00:00:00+08:00"
-modDatetime: "2026-10-11T00:00:00+08:00"
+modDatetime: "2026-10-17T21:00:00+08:00"
 draft: false
 category: windows
 tags:
   - Mod
-  - 星露谷物语
-  - Steam Deck
-  - Android
 ---
 
 游戏相关的软件按平台客户端、Mod 管理、修改器、串流、掌机和安卓模拟器分组，逐条列出。桌面软件和系统设置见 [Windows 软件清单](/posts/windows-software/)。

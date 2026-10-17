@@ -3,12 +3,11 @@ title: HandBrake 与 ShanaEncoder：字幕校对用的快速压片教程
 description: 用 HandBrake 或 ShanaEncoder 压一份 720p 小片，便于字幕校对，同时避开字幕烧录和时间轴偏移。
 author: Ayulog
 pubDatetime: "2026-10-11T12:00:00+08:00"
-draft: true
+draft: false
 category: encode
 tags:
   - HandBrake
   - ShanaEncoder
-  - 字幕校对
 ---
 
 原盘或高码率视频体积大，在字幕编辑器里反复拖动也可能不够顺畅。校字、听对白、调普通时间轴时，先压一份体积小的工作视频，再把 SRT、ASS 外挂上去。这份副本保留完整片长，下面叫它“小片”。

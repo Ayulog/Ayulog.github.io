@@ -8,7 +8,6 @@ draft: false
 category: diy
 tags:
   - 蓝光
-  - Remux
   - Dolby Vision
   - MKVToolNix
 ---

@@ -3,7 +3,7 @@ title: 字幕软件清单
 description: 从获取、OCR、校对、排版到 SUP 转换，各环节可用的软件、资料与公网字幕入口。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
-modDatetime: "2026-10-11T16:00:00+08:00"
+modDatetime: "2026-10-17T21:00:00+08:00"
 draft: false
 category: subtitles
 tags:

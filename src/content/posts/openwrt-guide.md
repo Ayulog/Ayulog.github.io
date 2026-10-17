@@ -6,7 +6,6 @@ pubDatetime: "2026-10-09T23:20:00+08:00"
 draft: false
 category: network
 tags:
-  - 路由器
   - OpenWrt
 ---
 

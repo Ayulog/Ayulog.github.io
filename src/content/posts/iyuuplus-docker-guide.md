@@ -6,9 +6,7 @@ pubDatetime: "2026-10-10T13:55:00+08:00"
 draft: false
 category: pt
 tags:
-  - IYUU
   - Docker
-  - 绿联
 ---
 
 IYUUPlus 拿已有种子去查跨站匹配，命中后把新任务交给下载器校验、做种；也能在 qBittorrent 与 Transmission 之间转移任务。转移的是种子任务，下载文件留在原处。

@@ -6,7 +6,6 @@ pubDatetime: "2026-10-10T14:15:00+08:00"
 draft: false
 category: nas
 tags:
-  - Aria2
   - Docker
   - 下载器
   - AList

@@ -7,7 +7,6 @@ modDatetime: "2026-10-11T16:00:00+08:00"
 draft: false
 category: diy
 tags:
-  - HDR
   - Dolby Vision
   - 蓝光
 ---

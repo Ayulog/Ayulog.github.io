@@ -3,12 +3,11 @@ title: PT 工具清单
 description: PT 常用工具的分工：下载器、订阅、辅种、整理与远程管理各对应一篇文章。
 author: Ayulog
 pubDatetime: "2026-10-09T22:55:00+08:00"
-modDatetime: "2026-10-11T00:00:00+08:00"
+modDatetime: "2026-10-17T21:00:00+08:00"
 draft: false
 category: pt
 tags:
   - 下载器
-  - 做种
 ---
 
 PT 的日常操作都落在下载器上：qBittorrent 或 Transmission 保存任务和文件，订阅、辅种、整理和远程管理由另外几个工具接过去。

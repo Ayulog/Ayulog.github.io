@@ -6,7 +6,6 @@ pubDatetime: "2026-10-10T14:15:00+08:00"
 draft: false
 category: pt
 tags:
-  - Transmission
   - Docker
   - 下载器
 ---

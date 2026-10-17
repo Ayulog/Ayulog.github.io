@@ -8,7 +8,6 @@ draft: false
 category: subtitles
 tags:
   - OCR
-  - Subtitle Edit
   - Aegisub
   - 蓝光
 ---

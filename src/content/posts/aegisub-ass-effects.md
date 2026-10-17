@@ -3,13 +3,11 @@ title: 基于 Aegisub 的 ASS 特效字幕制作教程
 description: 用 Aegisub 的覆盖标签、矢量绘图和卡拉 OK 做 ASS 特效，并附 VSFilterMod 挂图示例。
 author: Ayulog
 pubDatetime: "2026-10-11T10:00:00+08:00"
-draft: true
+draft: false
 category: subtitles
 tags:
   - ASS
   - Aegisub
-  - 特效
-  - 卡拉 OK
 ---
 
 字幕要跟着画面移动、逐字变色，或者拿一张 PNG 当底板时，单靠 SRT 的起止时间不够，需要把定位和动画写进 ASS。ASS（Advanced SubStation Alpha）把文字、样式、时间轴、定位、绘图和动画标签放在同一个脚本里，Aegisub 负责编辑，最终画面由字幕渲染器解释；编辑器预览、播放器外挂字幕和压制工具用的渲染器不一致时，同一份 ASS 也会出现差异。

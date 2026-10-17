@@ -3,10 +3,9 @@ title: 使用大金 Scenarist BD 制作特效字幕 SUP
 description: 把 ASS 特效渲染成 BDN XML 与 PNG，经 Scenarist BD 编码、MUX，再用 tsMuxeR 取出独立 SUP 字幕。
 author: Ayulog
 pubDatetime: "2026-10-11T15:00:00+08:00"
-draft: true
+draft: false
 category: subtitles
 tags:
-  - Scenarist BD
   - SUP
   - ASS
   - BDN XML

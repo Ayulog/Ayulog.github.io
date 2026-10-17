@@ -6,8 +6,6 @@ pubDatetime: "2026-10-10T10:00:00+08:00"
 draft: false
 category: library
 tags:
-  - Vercel
-  - TMDB
   - MoviePilot
   - Emby
 ---

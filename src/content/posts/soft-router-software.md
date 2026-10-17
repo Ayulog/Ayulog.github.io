@@ -3,7 +3,7 @@ title: 软路由系统与插件清单
 description: 软路由从设备、系统到配网和插件的顺序，附 OpenWrt 与 iStoreOS 的资料入口。
 author: Ayulog
 pubDatetime: "2026-10-10T00:00:00+08:00"
-modDatetime: "2026-10-11T00:00:00+08:00"
+modDatetime: "2026-10-17T21:00:00+08:00"
 draft: false
 category: network
 tags:

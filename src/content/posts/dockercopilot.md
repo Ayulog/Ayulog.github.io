@@ -8,7 +8,6 @@ category: nas
 tags:
   - Debian
   - Docker
-  - DockerCopilot
 ---
 
 DockerCopilot 在网页里手动更新容器、清理镜像，并备份容器设置。[当前官方 README][copilot-readme]使用 bridge 网络、`12712` 端口与 `0nlylty/dockercopilot:latest`；镜像账户名开头是数字 `0`。

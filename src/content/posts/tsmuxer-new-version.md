@@ -3,13 +3,11 @@ title: 新版 tsMuxer：与 2.7.0 旧版的区别
 description: 对比 v2.19.0 与旧版 2.7.0：BDMV 打包 ISO、分层与容量选项、字幕与 Matroska 修复。
 author: Ayulog
 pubDatetime: "2026-10-11T17:00:00+08:00"
-draft: true
+draft: false
 category: diy
 tags:
   - tsMuxer
   - 蓝光
-  - BDMV
-  - ISO
 ---
 
 这里的“新版 tsMuxer”指社区维护的 [teaching-droid/tsMuxer][new-repo]，与旧仓库分属两条发布线。旧的 [justdan96/tsMuxer][old-repo] 最后公开版本是 **2.7.0**；新版仓库在 **2026 年 10 月 11 日**发布了 **v2.19.0**。新版仍保留 tsMuxer 的混流、重新封装和蓝光输出路线，另加了独立的光盘编著辅助功能，并持续修复 Matroska、字幕、音频、3D 和蓝光输出问题。

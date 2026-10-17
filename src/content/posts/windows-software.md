@@ -3,7 +3,7 @@ title: Windows 软件清单
 description: Windows 装机工具与日常软件清单，按用途分组，附自启动、远程桌面和容器环境的笔记。
 author: Ayulog
 pubDatetime: "2026-10-09T00:00:00+08:00"
-modDatetime: "2026-10-11T00:00:00+08:00"
+modDatetime: "2026-10-17T21:00:00+08:00"
 draft: false
 category: windows
 tags:

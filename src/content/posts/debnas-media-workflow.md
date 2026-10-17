@@ -9,7 +9,6 @@ tags:
   - Debian
   - DebNAS
   - Docker
-  - Emby
 ---
 
 DebNAS 的系统、磁盘和 Docker 就绪后，下载、整理和播放可以按三种方式接起来：文件留在本地 HDD；转存或离线到 115；先下载到本地，再由 MoviePilot V3 整理到网盘。后两条路线通过 CMS 生成 STRM，最后汇入 Emby。

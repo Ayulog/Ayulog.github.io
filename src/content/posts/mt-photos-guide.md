@@ -7,8 +7,6 @@ draft: false
 category: nas
 tags:
   - Docker
-  - MT Photos
-  - 照片管理
 ---
 
 用 MT Photos 管照片之前，先把应用数据、上传原件和已有图库的位置定下来；后面扫描图库、迁移磁盘和备份都靠这套目录。

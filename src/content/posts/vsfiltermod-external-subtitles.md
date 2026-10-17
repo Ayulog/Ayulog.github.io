@@ -3,12 +3,9 @@ title: PotPlayer 和 MPC-HC 挂载 VSFilterMod 加载外挂特效字幕
 description: 在 PotPlayer 或 MPC-HC 中注册并挂载 VSFilterMod，让外挂 ASS 的渐变与 PNG 挂图正常显示。
 author: Ayulog
 pubDatetime: "2026-10-11T14:00:00+08:00"
-draft: true
+draft: false
 category: subtitles
 tags:
-  - PotPlayer
-  - MPC-HC
-  - VSFilterMod
   - ASS
 ---
 

@@ -7,7 +7,6 @@ draft: false
 category: network
 tags:
   - iStoreOS
-  - 虚拟机
 ---
 
 iStoreOS 基于 OpenWrt，提供网络向导和 iStore 软件中心。把它装到软路由或 NAS 虚拟机之前，要先找到对应设备的镜像，再决定让它接在主路由后面做二级路由，还是留在同一网段做旁路由。设备、镜像和虚拟机界面会随版本变化，安装时对照对应设备的文档。

@@ -8,7 +8,6 @@ category: nas
 tags:
   - Debian
   - Docker
-  - Watchtower
 ---
 
 **截至 2026 年 10 月 10 日，Watchtower 官方仓库已归档，README 明确说明不再维护，最新发布仍为 `v1.7.1`。** 仍在用旧部署的，先确认它能连上当前的 Docker API。

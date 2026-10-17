@@ -3,12 +3,11 @@ title: 音频软件清单
 description: 按用途整理音轨提取、转换、编码与频谱检查所用的工具和文档。
 author: Ayulog
 pubDatetime: "2026-10-10T10:00:00+08:00"
-modDatetime: "2026-10-11T16:00:00+08:00"
+modDatetime: "2026-10-17T21:00:00+08:00"
 draft: false
 category: audio
 tags:
   - 音轨
-  - Dolby
 ---
 
 处理一条音轨前先确定用途：保留原轨、制作兼容副本，还是检查来源与转码痕迹。目标不同，提取、转换或编码的路径也不同，做完再核对声道、时长与同步。

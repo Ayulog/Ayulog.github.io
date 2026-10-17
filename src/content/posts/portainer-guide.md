@@ -8,7 +8,6 @@ category: nas
 tags:
   - Debian
   - Docker
-  - Portainer
 ---
 
 容器、镜像、网络、卷和 Stack 分散在几个 Compose 项目里时，Portainer CE 能把它们收进同一个页面。这里连接本机 Linux Docker Engine，沿用[官方安装文档][portainer-install]的 `lts` 镜像和 HTTPS `9443` 端口。
