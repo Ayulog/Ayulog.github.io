@@ -3,18 +3,30 @@
 @layer base {
   /* ===== Override default Tailwind Typography styles ===== */
   .app-prose {
-    @apply prose;
+    @apply prose text-[1rem] leading-[1.8] tracking-[0.01em];
 
     h1,
     h2,
     h3,
     h4,
     th {
-      @apply text-foreground mb-3;
+      @apply text-foreground;
+    }
+
+    h2 {
+      @apply border-border/70 mt-10 mb-4 border-b pb-2 text-xl font-bold tracking-tight sm:text-2xl;
     }
 
     h3 {
-      @apply italic;
+      @apply mt-7 mb-3 text-lg font-semibold sm:text-xl;
+    }
+
+    h4 {
+      @apply mt-5 mb-2 text-base font-semibold;
+    }
+
+    p {
+      @apply my-4 leading-[1.8];
     }
 
     p,
@@ -28,23 +40,24 @@
     }
 
     a {
-      @apply text-foreground hover:text-accent wrap-break-word decoration-dashed underline-offset-4 focus-visible:no-underline;
+      @apply text-accent hover:text-accent/80 wrap-break-word underline decoration-dashed underline-offset-4 focus-visible:no-underline;
     }
 
-    ul {
-      @apply overflow-x-clip;
+    ul,
+    ol {
+      @apply my-4 overflow-x-clip;
     }
 
     li {
-      @apply marker:text-accent;
+      @apply marker:text-accent my-1.5 leading-[1.75];
     }
 
     hr {
-      @apply border-border;
+      @apply border-border my-8;
     }
 
     img {
-      @apply border-border mx-auto border;
+      @apply border-border mx-auto rounded-md border;
     }
 
     img[role="button"] {
@@ -60,15 +73,15 @@
     }
 
     table {
-      @apply block max-w-full overflow-x-auto;
+      @apply my-5 block max-w-full overflow-x-auto text-sm leading-6;
 
       th,
       td {
-        @apply border-border min-w-32 border p-2;
+        @apply border-border border px-3 py-2 align-top;
       }
 
       th {
-        @apply py-1.5;
+        @apply bg-muted/40 py-2 font-semibold;
       }
 
       th[align="center"],
@@ -88,19 +101,27 @@
     }
 
     code {
-      @apply bg-muted/75 text-foreground rounded p-1 wrap-break-word before:content-none after:content-none;
+      @apply bg-muted/65 text-foreground rounded px-1.5 py-0.5 font-mono text-[0.875em] font-normal wrap-break-word before:content-none after:content-none;
     }
 
     .astro-code code {
-      @apply flex-[1_0_100%] bg-inherit p-0;
+      @apply flex-[1_0_100%] bg-inherit p-0 text-[0.875rem] leading-6;
     }
 
     blockquote {
-      @apply border-s-accent/80 wrap-break-word opacity-80;
+      @apply border-s-accent/70 bg-muted/20 my-5 rounded-e-md py-1 ps-4 pe-4 wrap-break-word not-italic opacity-90;
+    }
+
+    .callout {
+      @apply border-border bg-muted/25 my-5 rounded-lg border px-4 py-3 text-sm leading-7 shadow-none;
+    }
+
+    .callout-title {
+      @apply mb-1 font-semibold;
     }
 
     details:not(.callout) {
-      @apply text-foreground inline-block cursor-pointer select-none [&_p]:hidden [&_ul]:my-0!;
+      @apply text-foreground cursor-pointer select-none [&_p]:hidden [&_ul]:my-0!;
     }
 
     summary {
@@ -114,7 +135,7 @@
 
   /* ===== Code Blocks & Syntax Highlighting ===== */
   .astro-code {
-    @apply outline-border flex border bg-(--shiki-light-bg) text-(--shiki-light) [&_span]:text-(--shiki-light);
+    @apply outline-border my-5 flex rounded-lg border bg-(--shiki-light-bg) font-mono text-(--shiki-light) [&_span]:text-(--shiki-light);
   }
 
   html[data-theme="dark"] .astro-code {

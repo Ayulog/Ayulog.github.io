@@ -9,30 +9,26 @@ tags:
   - Docker
 ---
 
-用 MT Photos 管照片之前，先把应用数据、上传原件和已有图库的位置定下来；后面扫描图库、迁移磁盘和备份都靠这套目录。
+在 NAS 上用 MT Photos 管理家庭照片时，提前将“应用配置数据库、手机端上传目录、NAS 已有图库目录”分开挂载，后续无论扩容硬盘、迁移容器还是执行定期备份都会清晰很多。
 
-基础配置来自 [DebNAS 安装笔记](/posts/debnas-installation-notes/)。需要先装好 Linux Docker Engine 和 Compose V2，步骤见 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。本例面向 amd64，其他架构按 [MT Photos 官方安装说明](https://mtmt.tech/docs/start/install/)选择镜像。
+底层磁盘挂载与系统准备见 [DebNAS 安装笔记](/posts/debnas-installation-notes/)，其他照片与媒体工具见 [NAS 服务清单](/posts/nas-software-websites/)。
 
-其他媒体服务见 [NAS 服务清单](/posts/nas-software-websites/)。
+## 目录规划与挂载映射
 
-## 准备项目目录与三个挂载点
+确保宿主机已安装 [Docker Engine](https://docs.docker.com/engine/install/) 与 Compose V2。为 MT Photos 创建一个独立的项目目录，用于存放 `compose.yaml`、配置文件夹 `./config` 与默认上传目录 `./upload`，同时将硬盘上已有的照片目录挂载进容器：
 
-单独建一个 MT Photos 项目目录，里面保存 `compose.yaml`、`config/` 和 `upload/`。已有照片留在原位置，通过挂载交给 MT Photos。
+| 宿主机路径        | 容器内路径      | 用途说明                                             |
+| ----------------- | --------------- | ---------------------------------------------------- |
+| `./config`        | `/config`       | 保存 MT Photos 数据库、账号设置及默认缩略图缓存      |
+| `./upload`        | `/upload`       | 手机 App 备份上传的照片与视频默认保存位置            |
+| `/path/to/photos` | `/photos`       | NAS 上已有的存量照片目录（部署前替换为实际绝对路径） |
+| `/path/to/cache`  | `/config/cache` | （可选）将缩略图缓存单独挂载至 SSD 以加快浏览加载    |
 
-| 宿主机位置        | 容器内位置 | 保存内容                       |
-| ----------------- | ---------- | ------------------------------ |
-| `./config`        | `/config`  | 应用配置、数据库与默认缓存     |
-| `./upload`        | `/upload`  | 上传的照片原件                 |
-| `/path/to/photos` | `/photos`  | 已有图库，使用前替换成真实目录 |
+## Compose 部署与初始化
 
-相对路径以 Compose 项目目录为准。`/photos` 是这里给已有图库取的容器路径，不是系统要求的固定目录。已有实例迁移时，要先确认旧数据和挂载位置，避免接到新建的空目录。
-
-## 用 Compose 启动服务
-
-保存下面的配置，也可以[直接下载](/examples/debnas/mtphotos/compose.yaml)：
+在项目目录保存以下 `compose.yaml`（可直接[下载配套 Compose](/examples/debnas/mtphotos/compose.yaml)，本例默认使用 `x86_64` / `amd64` 镜像，ARM 设备请按 [MT Photos 官方安装说明](https://mtmt.tech/docs/start/install/) 选用对应架构标签）：
 
 ```yaml
-# Generic example based on the upstream MT Photos installation guide.
 services:
   mtphotos:
     image: mtphotos/mt-photos:latest
@@ -47,23 +43,25 @@ services:
       TZ: Asia/Shanghai
 ```
 
-把 `/path/to/photos` 改成照片原件所在目录，再确认应用能读写需要的目录。在项目目录中检查并启动：
+将 `/path/to/photos` 替换为实际照片目录后，启动服务并查看日志：
 
 ```bash
-docker compose config --quiet
 docker compose up -d
 docker compose logs --tail=100 mtphotos
 ```
 
-浏览器打开 `http://NAS_IP:8063`，将 `NAS_IP` 换成设备地址，按页面提示初始化。已有图库在容器里对应 `/photos`，添加图库时使用这个路径。`8063` 被占用时，只改 Compose 左侧的宿主机端口，浏览器也跟着改。
+启动后浏览器访问 `http://NAS_IP:8063`（将 `NAS_IP` 替换为设备局域网地址），按向导创建管理员账号。进入后台添加图库时，选择容器内的 `/photos`（以及 `/upload`）即可开始扫描索引。若宿主机 `8063` 端口已被占用，可修改 `ports` 左侧的宿主机端口（如 `8064:8063`）。
 
-## 缓存与备份
+## 缓存分离、备份与升级
 
-默认缩略图和缓存位于 `./config` 下。想把缓存放到另一块磁盘时，再按官方文档单独映射 `/config/cache`。基础配置没有附带 AI 服务，也没有设置自动更新。
+- **缩略图缓存分离**：缩略图默认生成在 `./config/cache` 下。若存量照片较多且 `./config` 位于机械硬盘上，可在 `volumes` 中额外增加一行 `/path/to/ssd/cache:/config/cache`，将缩略图放到 SSD 上提升时间线滑动体验。
+- **完整备份范围**：日常备份需同时涵盖 `./config`（包含相册分类、人物识别结果与系统数据库）以及 `./upload` 和 `/path/to/photos` 中的照片原件。备份 `./config` 下的数据库前建议先短暂停止 `mtphotos` 容器，确保数据一致性。
+- **版本升级**：升级前查看上游更新说明并完成备份，随后在项目目录拉取最新镜像并重建容器：
 
-备份要覆盖 `compose.yaml`、`config/`、`upload/` 和实际挂载的图库原件。只备份数据库或缩略图，不能恢复照片；只保存原件，也没有保留应用的整理状态。复制数据库前按应用要求停止写入，升级前保留配置与数据备份。
-
-`latest` 是可变标签，拉取镜像前先看上游版本说明。更新后检查图库是否正常、照片能否打开，再处理旧镜像。
+```bash
+docker compose pull mtphotos
+docker compose up -d mtphotos
+```
 
 ## 参考资料
 

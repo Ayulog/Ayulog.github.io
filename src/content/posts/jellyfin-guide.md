@@ -9,13 +9,13 @@ tags:
   - Docker
 ---
 
-Jellyfin 的服务端和官方客户端免费，账号由自己的服务器管理。Docker 部署容易卡在媒体目录权限和核显设备权限上，先把这两处配好。
+[Jellyfin][jellyfin-home] 的服务端与官方客户端完全免费，用户账号由本地服务器独立管理，硬件加速转码也不需要额外付费订阅。使用官方 Docker 镜像部署时，核心工作在于配好媒体目录读写权限与 Linux 核显设备组权限。
 
-示例面向 Linux 上的官方镜像。Windows / macOS 按官方建议使用原生安装，Docker Desktop 的路径、挂载和 GPU 行为与 NAS 不同。相关工具见 [NAS 服务清单](/posts/nas-software-websites/)。
+以下配置面向 Linux NAS 上的官方容器镜像（Windows 与 macOS 建议直接使用官方原生安装包）。相关影音工具见 [NAS 服务清单](/posts/nas-software-websites/)。
 
 ## 目录和权限
 
-媒体库使用整理后的电影、剧集目录，不重复扫描下载临时文件和做种原始目录。下面的 `/path/to/data` 是 NAS 路径占位符：
+Jellyfin 媒体库直接读取整理完成后的电影与剧集目录，不扫描下载器的临时目录和保种目录。假设宿主机数据根目录 `/path/to/data` 结构如下：
 
 ```text
 /path/to/data/
@@ -25,166 +25,159 @@ Jellyfin 的服务端和官方客户端免费，账号由自己的服务器管�
     └── tv/
 ```
 
-确认服务账户的 UID 和 GID：
+先在终端查询运行服务的 Linux 账户 UID 和 GID：
 
 ```bash
 id <service-user>
 ```
 
-把结果中的数字填入后文 `.env`。服务账户要能读取媒体文件、逐层访问父目录，读写本服务的配置和缓存目录；NAS 的共享文件夹使用 ACL 时也要核对相应权限。
+记录输出的 UID 与 GID 数字，后续填入 `.env`。该账户需要对 Jellyfin 的 `config`（配置与数据库）和 `cache`（缓存）目录拥有读写权限，并对媒体库目录及上层父目录拥有读取权限（若 NAS 共享文件夹启用了 ACL，需一并核对）。
 
-媒体统一映射为容器内的 `/data/library`，电影库填 `/data/library/movies`，剧集库填 `/data/library/tv`。示例只读挂载，允许读媒体旁已有的字幕和元数据；需要保存新字幕或资料到媒体旁时，再取消 `:ro` 并授予写权限。
+容器内统一将媒体库挂载到 `/data/library`（只读 `:ro`），电影库路径填 `/data/library/movies`，剧集库路径填 `/data/library/tv`。若希望让 Jellyfin 把新下载的字幕或元数据直接写回影片目录，再移除 `:ro` 并开放宿主机目录写权限。
 
-文件可以先按下面的基本方式命名，更细的字段见[影视资源命名](/posts/media-resource-naming/)：
+影片建议按标准结构命名（详细规则见[影视资源命名](/posts/media-resource-naming/)）：
 
 ```text
 movies/Movie Name (2024)/Movie Name (2024).mkv
 tv/Series Name (2024)/Season 01/Series Name S01E01.mkv
 ```
 
-[Jellyfin 官方说明][jellyfin-home]明确：服务端与官方客户端免费，硬件加速没有额外的订阅解锁。使用第三方播放器时，其收费仍由该应用决定。免费的只是软件本身，路径、播放与转码还要按自己的设备逐项验证。
-
 ## 使用官方 Docker 镜像
 
-在 `stacks/jellyfin` 这样的独立项目目录创建 `.env`，填入实际值：
+1. 在独立项目目录（如 `stacks/jellyfin`）创建 `.env`，填入实际 UID、GID 与数据根目录路径：
 
-```dotenv
-PUID=
-PGID=
-MEDIA_ROOT=/path/to/data
-```
+   ```dotenv
+   PUID=1000
+   PGID=1000
+   MEDIA_ROOT=/path/to/data
+   ```
 
-同目录创建 `compose.yaml`：
+2. 在同目录创建 `compose.yaml`（依据[官方容器文档][jellyfin-container]整理）：
 
-```yaml
-services:
-  jellyfin:
-    image: jellyfin/jellyfin:latest
-    restart: unless-stopped
-    user: "${PUID:?Set PUID in .env}:${PGID:?Set PGID in .env}"
-    environment:
-      TZ: Asia/Shanghai
-    volumes:
-      - ./config:/config
-      - ./cache:/cache
-      - ${MEDIA_ROOT:?Set MEDIA_ROOT in .env}/library:/data/library:ro
-    ports:
-      - "8097:8096"
-```
+   ```yaml
+   services:
+     jellyfin:
+       image: jellyfin/jellyfin:latest
+       restart: unless-stopped
+       user: "${PUID:?Set PUID in .env}:${PGID:?Set PGID in .env}"
+       environment:
+         TZ: Asia/Shanghai
+       volumes:
+         - ./config:/config
+         - ./cache:/cache
+         - ${MEDIA_ROOT:?Set MEDIA_ROOT in .env}/library:/data/library:ro
+       ports:
+         - "8097:8096"
+   ```
 
-这是依据[官方容器文档][jellyfin-container]整理的基础配置。`/config` 保存设置和数据库，`/cache` 保存缓存；两处都要允许 `user` 指定的 UID / GID 写入。官方镜像不通过 LinuxServer 的 `PUID`、`PGID` 环境变量设置运行身份。
+   注意：官方 `jellyfin/jellyfin` 镜像通过 Compose 的 `user: "UID:GID"` 指定运行身份，而非 LinuxServer 镜像的 `PUID` / `PGID` 环境变量。此处将宿主机端口设为 `8097`，避免与同机运行的 Emby（默认 `8096`）冲突。
 
-先在项目目录建立 `config`、`cache` 并赋予服务账户权限，再启动：
+3. 在项目目录创建持久化文件夹并赋予服务账户读写权限，随后启动容器：
 
-```bash
-mkdir -p config cache
-docker compose config -q
-docker compose pull
-docker compose up -d
-docker compose ps
-docker compose logs --tail=100 jellyfin
-```
+   ```bash
+   mkdir -p config cache
+   docker compose config -q
+   docker compose pull
+   docker compose up -d
+   docker compose ps
+   docker compose logs --tail=100 jellyfin
+   ```
 
-打开 `http://NAS_IP:8097`。这里仅映射手动连接所需的 HTTP 端口；如果要用客户端自动发现，可按官方说明另加 `7359:7359/udp`，并检查防火墙。需要 DLNA 时，官方容器文档要求 host 网络；这会使用实际服务端的 `8096`，与 Emby 并行运行前应解决端口冲突，且删除 `ports`。初次验证可以先手动输入地址。
+浏览器打开 `http://NAS_IP:8097` 即可进入后台。若需启用局域网客户端自动发现，可按官方文档补充映射 `7359:7359/udp`；若需使用 DLNA，则需改用 `network_mode: host` 并移除 `ports`（此时会直接占用宿主机 `8096` 端口）。
 
 ## 首次配置与媒体库
 
-按[官方初始化向导][jellyfin-wizard]完成以下步骤：
+参照[官方初始化向导][jellyfin-wizard]完成基础配置：
 
-1. 选择界面语言，创建本地管理员账号与密码。
-2. 添加“电影”库，目录填 `/data/library/movies`；添加“电视节目”库，目录填 `/data/library/tv`。
-3. 设置元数据首选语言与地区；有需要时再按库单独调整。
-4. 根据自己的网络方案设置远程连接选项。勾选允许远程连接后，公网入口、域名和端口映射仍要另外配置。
-5. 扫描少量影片，确认识别、海报、字幕和播放，再添加其余目录与普通观看用户。
+1. 选择界面显示语言（`Chinese Simplified`），创建本地管理员账号与密码。
+2. 添加媒体库：“电影”库目录填 `/data/library/movies`，“电视节目”库目录填 `/data/library/tv`。
+3. 将元数据首选下载语言设为 `Chinese`，国家/地区设为 `People's Republic of China`。
+4. 按需保持远程连接选项开启（若要从外网访问，还需另外配置反向代理或异地组网）。
+5. 完成向导后先扫描少量影片，确认标题识别、海报加载与字幕显示正常，再为家人创建日常观看的普通账号。
 
-如果上游已经生成 NFO 与图片，检查库中的本地元数据读取、图片下载和保存选项，先用一个条目验证是否沿用预期内容。本文媒体目录只读，不能让 Jellyfin 把新字幕或海报写回原目录。
-
-## Intel 核显与设备权限
-
-先确认 Linux 宿主机能看到设备，再查询实际设备组的数字 GID：
-
-```bash
-ls -l /dev/dri
-ls -ln /dev/dri/renderD128
-```
-
-只有确实存在且适用于当前 GPU 时，才使用下面示例。把设备所属组的数字填入 `.env`：
-
-```dotenv
-RENDER_GID=
-```
-
-在 `services.jellyfin` 下与 `volumes` 同级补充：
-
-```yaml
-group_add:
-  - "${RENDER_GID:?Set the render device group ID in .env}"
-devices:
-  - /dev/dri/renderD128:/dev/dri/renderD128
-```
-
-随后执行 `docker compose up -d` 重建容器。这里的 `group_add` 是为了让指定的非 root 用户访问设备；设备组名和 GID 在不同 NAS 上并不相同，要按前面 `ls -ln` 查到的数字填。多显卡环境也可能需要选择其他 `renderD*` 节点。
-
-在 Jellyfin 管理面板的转码设置中，按[官方 Intel 指南][jellyfin-intel]选择 QSV 或适用的 VA-API，设备路径与映射保持一致，并只勾选硬件实际支持的解码格式。可先运行官方镜像内的工具检查驱动：
-
-```bash
-docker compose exec jellyfin /usr/lib/jellyfin-ffmpeg/vainfo
-```
-
-AMD、NVIDIA、Rockchip 等平台分别按[硬件加速文档][jellyfin-hardware]配置，上面的示例按 Intel 核显写。HDR 色调映射、字幕烧录与特定编码可能只能部分加速；是否真的走了硬件，要看播放日志。
-
-## 客户端与自动整理
-
-先用浏览器验证，再从[Jellyfin 官方客户端目录][jellyfin-clients]选择设备对应的应用，例如桌面的 Jellyfin Media Player、Android / Android TV、iOS 或 Kodi 插件。官方目录会区分官方与第三方客户端，手机、电视和桌面要分别下载对应的包。
-
-客户端手动填写 `http://NAS_IP:8097` 和本地账号。MoviePilot 接入时选择 Jellyfin 类型，在 Jellyfin 后台按用途创建 API 密钥，填写可达地址与密钥，再验证整理后的刷新。使用宿主地址时端口是 `8097`；只有服务处于共同 Docker 网络时，才能使用 `http://jellyfin:8096`。CMS 插件、Emby 神医助手或 Emby 302 代理是否支持 Jellyfin，要看各项目自己的说明。
+若已由 MoviePilot 等上游工具生成了本地 NFO 与海报，可在媒体库设置中优先启用 NFO 读取器，避免重复在线刮削。
 
 ## 直接播放与硬件转码
 
-### 先看当前播放方式
+Jellyfin 免费提供完整的硬件加速转码支持（包含 Intel QSV、VA-API、NVIDIA NVENC、AMD AMF 及 Rockchip RKMPP 等），无需购买任何订阅。播放时服务端会根据客户端兼容度自动选择处理模式：
 
-| 播放方式                  | 服务端主要做什么                     | 需要关注什么                   |
-| ------------------------- | ------------------------------------ | ------------------------------ |
-| 直接播放（Direct Play）   | 以客户端支持的原始媒体形式提供播放   | 客户端解码、字幕支持和网络带宽 |
-| 直接串流（Direct Stream） | 保留视频编码，按需重新封装或转换音频 | 封装、音轨与客户端兼容性       |
-| 转码（Transcoding）       | 重新编码视频，可能同时处理音频、字幕 | CPU / GPU 能力、码率、临时目录 |
+| 播放方式                  | 服务端处理方式                                        | 资源消耗                       |
+| ------------------------- | ----------------------------------------------------- | ------------------------------ |
+| 直接播放（Direct Play）   | 直接把原始音视频流发给客户端解码                      | 仅占用磁盘读取与网络带宽       |
+| 直接串流（Direct Stream） | 保持视频流不变，使用 `jellyfin-ffmpeg` 转换容器或音轨 | 少量 CPU 与磁盘缓存占用        |
+| 转码（Transcoding）       | 重新编码视频画面（或将图形/特效字幕压入视频流）       | 需要 GPU 硬解或高负载 CPU 软解 |
 
-在对应服务端的播放会话、转码日志或客户端播放信息中查看实际模式和原因。视频可以直播放时，不需要为了“用上核显”强行转码。
+当视频能够直接播放时，客户端直接解码原片画质最好，无需人为触发转码。只有遇到客户端不支持的视频编码（如部分浏览器或老设备播放 HEVC / AV1）、外网播放受带宽限制主动调低码率、或客户端无法直接渲染 PGS 图形字幕而需要服务端烧录字幕时，才会进入转码流程。其中字幕烧录与部分音频转换仍会消耗一定 CPU 资源，可在后台“控制台 → 活动”或播放信息面板中查看当前会话的具体转码原因。
 
-字幕格式、音轨、客户端能力和播放质量限制都可能触发处理。比如某些客户端无法直接显示 PGS 字幕，需要服务端将字幕烧录进画面，即使启用了硬件加速，仍可能有较高 CPU 占用。
+## Intel 核显与设备权限
 
-## 播放检查和远程连接
+在官方镜像中使用非 root 用户（`user: UID:GID`）开启 Intel 核显硬解时，除了挂载 `/dev/dri` 设备节点，还必须将该用户加入宿主机渲染设备所属的用户组：
 
-在手机或电视上填写 `http://NAS_IP:8097` 和本地账号。容器内部仍使用 `8096`；只有处于共同 Docker 网络的应用，才可以连接 `http://jellyfin:8096`。
+1. **查询宿主机渲染设备的数字组 ID（GID）**：
 
-先播放一部本地影片，切换音轨与字幕，拖动进度，再退出检查续播。需要核实硬件转码时，临时降低客户端质量，查看转码日志和资源占用，随后恢复日常质量。海报只是媒体库接口的结果，视频、字幕和远程地址要另外测试。
+   ```bash
+   ls -l /dev/dri
+   ls -ln /dev/dri/renderD128
+   ```
 
-外网连接可参考 [NAS 远程访问](/posts/nas-remote-access/)。启用服务器的远程访问选项，并不会自动配置域名、反向代理或家庭网络穿透；本地媒体的外网播放也受家庭上行带宽限制。
+   在 `ls -ln` 的输出中查看第 4 列数字（即设备所属组的数字 GID，不同 Linux 发行版可能为 `105`、`107` 或 `993` 等）。
+
+2. **在 `.env` 中填入设备组 GID**：
+
+   ```dotenv
+   RENDER_GID=107
+   ```
+
+3. **在 `compose.yaml` 的 `services.jellyfin` 下补充 `group_add` 与 `devices`**：
+
+   ```yaml
+   group_add:
+     - "${RENDER_GID:?Set the render device group ID in .env}"
+   devices:
+     - /dev/dri/renderD128:/dev/dri/renderD128
+   ```
+
+4. **重建容器并检验驱动**：执行 `docker compose up -d` 重建容器后，调用镜像内置的 `jellyfin-ffmpeg` 工具核对驱动状态：
+
+   ```bash
+   docker compose exec jellyfin /usr/lib/jellyfin-ffmpeg/vainfo
+   ```
+
+5. **后台启用硬解**：在 Jellyfin 管理后台打开 **控制台 → 播放 → 转码**，按[官方 Intel 指南][jellyfin-intel]将硬件加速设为 `Intel QuickSync (QSV)` 或 `Video Acceleration API (VA-API)`，确认设备路径为 `/dev/dri/renderD128`，勾选当前核显支持的解码格式（如 H.264、HEVC、HEVC 10bit、VP9、AV1 等）与硬件编码选项后保存。其他显卡平台可参照[硬件加速文档][jellyfin-hardware]配置。
+
+验证时可播放一部影片并在客户端手动降低画质档位，观察后台转码日志与 CPU / GPU 占用，确认硬解生效后再调回原画质。
+
+## 客户端与自动整理
+
+从 [Jellyfin 官方客户端目录][jellyfin-clients]下载对应设备的应用（如桌面端 Jellyfin Media Player、Android 移动版、Android TV 电视版、iOS Swiftfin / 官方端，或第三方支持 Jellyfin 的 Infuse、VidHub、SenPlayer、iPlay 等）。
+
+- **客户端连接与播放验证**：在手机或电视客户端填入 `http://NAS_IP:8097` 和本地账号。依次测试本地影片起播、多音轨与内外挂字幕切换、进度条拖动以及退出后跨设备续播。若需外网访问，可通过异地组网或 HTTPS 反向代理接入，详见 [NAS 远程访问](/posts/nas-remote-access/)。
+- **接入 MoviePilot 自动刷新**：在 Jellyfin 后台 **控制台 → 高级 → API 密钥** 中新建一枚密钥；在 MoviePilot 的媒体服务器设置中选择 Jellyfin，填入密钥与可达地址（走宿主机端口填 `http://NAS_IP:8097`；若两个容器加入了同一个自定义 Docker 网络，则填容器内部端口 `http://jellyfin:8096`），并配好容器路径映射。
 
 ## 更新与备份
 
-保存 `compose.yaml`、`.env` 和 `config`；媒体文件另外备份，`cache` 只作缓存。数据库不要与 Emby、Plex 共用。更新前记录当前镜像版本或 digest，停止服务后备份配置：
+日常维护只需备份 `compose.yaml`、`.env` 和 `config` 目录（`cache` 为临时缓存无需备份；注意不要与 Emby、Plex 共用配置目录）。更新前先停机备份配置，再拉取新镜像：
 
 ```bash
 docker compose stop jellyfin
-# 此时备份 compose.yaml、.env 与 config
+# 此时备份 compose.yaml、.env 与 config 目录
 docker compose pull jellyfin
 docker compose up -d jellyfin
 docker compose logs --tail=100 jellyfin
 ```
 
-更新后检查账号、媒体库、插件和播放。数据库升级后，回退镜像可能还需要恢复对应版本的配置备份。
+升级后检查媒体库访问与硬解状态；由于新版本可能升级 SQLite 数据库结构，回退旧镜像时需同步恢复升级前的 `config` 备份。
 
 ## 常见问题
 
-| 现象                | 检查位置                                                               |
-| ------------------- | ---------------------------------------------------------------------- |
-| 页面打不开          | 示例宿主端口是 `8097`，检查容器日志、端口占用、防火墙                  |
-| 看不到电影目录      | 填的是容器内路径；服务账户须具有目录读取和父目录访问权限               |
-| 配置无法保存        | `config`、`cache` 的写入权限与 Compose `user` 是否一致                 |
-| 核显报权限错误      | `/dev/dri` 的实际节点、设备所属数字组、`group_add`，以及重建后是否生效 |
-| 开了硬解仍占用 CPU  | 实际转码方式、编码支持、字幕烧录与色调映射是否只能部分加速             |
-| MoviePilot 不能刷新 | Jellyfin 类型、API 密钥、网络地址和整理路径映射                        |
+| 现象                | 排查方向                                                                     |
+| ------------------- | ---------------------------------------------------------------------------- |
+| 网页无法访问        | 本例宿主机端口映射为 `8097`，检查容器运行日志、端口冲突与防火墙设置          |
+| 媒体库看不到电影    | 媒体库路径应填容器内 `/data/library/...`，检查服务账户对目录的读取权限       |
+| 设置无法保存或报错  | 检查宿主机 `config`、`cache` 目录的归属与写权限是否匹配 Compose `user`       |
+| 开启硬解后报错中断  | 核对 `/dev/dri/renderD128` 节点、数字组 `RENDER_GID` 及网卡/核显支持的编码项 |
+| 开了硬解 CPU 仍偏高 | 查看播放日志，检查是否因 PGS 字幕烧录、音频重编码或色调映射占用了 CPU        |
+| MoviePilot 不刷新   | 检查API 密钥、连接端口（宿主机 `8097` 或同网络 `8096`）及路径映射关系        |
 
 ## 参考资料
 

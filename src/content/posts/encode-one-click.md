@@ -11,121 +11,93 @@ tags:
   - ShanaEncoder
 ---
 
-片源拖进 HandBrake 或 ShanaEncoder，选一个预设，点开始，得到一份新文件。预设里已经写了缩放、帧率上限、音频转换和字幕规则，所以“一键”指的是把确认过的设置存成预设再进队列，片源、音轨和字幕仍要逐项检查。
+使用 HandBrake 或 ShanaEncoder 等图形界面工具（GUI）转码时，软件内置预设已经预先设定了缩放尺寸、帧率上限、音频重编码与字幕规则。想要压出预期效果，关键在于选定基础预设后逐项核对**画面裁边与分辨率、帧率时基、质量模式（CRF）以及音轨与字幕行为**，确认无误后再保存为个人预设批量执行。
 
-先用一份**逐行、恒定帧率的 SDR 视频**练习。隔行电视源、可变帧率录屏、HDR 和 Dolby Vision 各有额外处理要求，下面的普通转码设置对它们不成立。蓝光原盘先确认节目和播放列表，相关步骤见[蓝光原盘 Remux](/posts/blu-ray-remux/)。
+本文以**逐行扫描、恒定帧率（CFR）的 SDR 视频**为例演示完整图形转码流程（蓝光原盘分流见[蓝光原盘 Remux](/posts/blu-ray-remux/)；需要编写复杂滤镜脚本见 [VapourSynth 压制篇](/posts/encode-vapoursynth/)；编码器参数详解见[编码篇](/posts/encode-codecs/)；软件下载汇总见[压制软件与资料清单](/posts/encode-software/)）。
 
-软件与公开文档核查于 **2026 年 10 月 10 日**，下面的流程按文档整理，示例不构成实测画质结论。需要自己写滤镜脚本时接着看 [VapourSynth 压制篇](/posts/encode-vapoursynth/)，参数含义见[编码篇](/posts/encode-codecs/)，工具与资料入口在[压制软件与资料清单](/posts/encode-software/)。
+## 常用图形转码工具选型
 
-## 先选工具
+| 工具                                                                                     | 适用场景                                           | 特点与注意事项                                                          |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
+| [HandBrake](https://handbrake.fr/)                                                       | 跨平台单文件或队列视频转码                         | 视频流必定重新编码；若仅需无损换容器或增删轨道请用 MKVToolNix           |
+| [ShanaEncoder](https://shana.pe.kr/shanaencoder_download)                                | Windows 下基于 FFmpeg 的快速转码与批量队列         | 支持查看生成的完整 FFmpeg 参数，支持流复制（Stream Copy）与字幕叠加控制 |
+| [StaxRip](https://github.com/staxrip/staxrip)                                            | 串联 VapourSynth / AviSynth 脚本、编码器与封装队列 | 集成全套压制组件，适合从纯 GUI 过渡到脚本压制                           |
+| [Simple x264/x265 Launcher](https://github.com/lordmulder/Simple-x264-Launcher/releases) | 将写好的 `.vpy` / `.avs` 脚本直接交给 x264 / x265  | 轻量级编码任务队列前端                                                  |
 
-| 工具                                                                                     | 适合的起点                                       | 需要知道的事                                                 |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------ |
-| [HandBrake](https://handbrake.fr/)                                                       | 用预设完成常见视频转码                           | 会重新编码视频；只换封装时使用 MKVToolNix 或 FFmpeg 的流复制 |
-| [ShanaEncoder](https://shana.pe.kr/shanaencoder_download)                                | Windows 下组织 FFmpeg 转码与批量任务             | 要区分官方安装包与第三方绿色版、汉化包                       |
-| [StaxRip](https://github.com/staxrip/staxrip)                                            | 需要 AviSynth／VapourSynth、编码器和任务队列配合 | 集成工具较多，需要理解源滤镜、处理脚本和编码设置             |
-| [Simple x264/x265 Launcher](https://github.com/lordmulder/Simple-x264-Launcher/releases) | 将已有脚本交给 x264／x265 编码                   | 上游发行较旧，安装当前 VS 后需单独核对兼容性                 |
+## HandBrake 转码配置流程
 
-“H.264”“H.265”“AV1”是输出视频的编码格式，MKV、MP4 是容器。同样的压缩视频流放进不同容器，画质不会因为扩展名改变。HandBrake 的详细输入输出能力见[功能列表](https://handbrake.fr/features.php)。
+### 1. 载入片源与选择起始预设
 
-## HandBrake 从预设开始
+从 [HandBrake 官方下载页](https://handbrake.fr/downloads.php)安装程序，打开待转码的 MKV 或 MP4 文件。
 
-### 打开片源与选择预设
+先在右侧或顶部预设菜单中选择一个接近目标分辨率的内置预设（如 `General` 下的 `Fast 1080p30` 或 `HQ 1080p30 Surround`）。需要注意：[HandBrake 官方预设](https://handbrake.fr/docs/en/latest/technical/official-presets.html)名称中的 `1080p30` 代表分辨率上限为 1920×1080、峰值帧率上限为 30 fps，并附带默认的音轨转码与字幕规则，因此选完预设后还需按以下步骤逐页检查。
 
-从[官方下载页](https://handbrake.fr/downloads.php)获取程序，打开已经确认版本、时长和音轨的文件。第一次练习用单个 MKV 或 MP4 比直接处理整张蓝光更容易排查问题。
+### 2. 尺寸与滤镜（Dimensions & Filters）
 
-先选择接近目标设备、分辨率和帧率的内置预设，再逐页检查。预设可能带有缩放、帧率上限、音频转换和字幕选择规则，不能只看预设名称里的“1080p”。相关说明见[官方预设文档](https://handbrake.fr/docs/en/latest/technical/official-presets.html)。
+- **核对自动裁边（Cropping）**：在 **Dimensions** 页面检查上下左右的自动裁边数值。切换几个不同时间点的预览图，防止片头暗景或可变画幅（IMAX 切换）镜头被误判为黑边裁掉。
+- **保持画面宽高比（Resolution & Scaling）**：缩小分辨率时保持正确的显示宽高比（Anamorphic / Display Aspect Ratio）。裁去上下黑边的宽银幕电影（如 `1920×804`）等比缩至 720p 档位时为 `1280×536`，无需为了凑满 `1280×720` 而拉伸画面或重新补黑边。
+- **精简滤镜（Filters）**：确认片源为逐行扫描（Progressive）后，在 **Filters** 页将 `Deinterlace`（反交错）与 `Interlace Detection` 设为 `Off`；无特殊噪点或瑕疵时，保持降噪（Denoise）、锐化（Sharpen）与去色带关闭。
 
-输出文件放到新的位置，保留原片。若只是删音轨、补字幕或改章节，可直接进入[DIY 工具与封装流程](/posts/media-diy-software/)。
+### 3. 视频编码、帧率与质量（Video）
 
-### 尺寸与滤镜
+切换到 **Video** 页面，依次确认四项核心参数（官方说明见[帧率文档](https://handbrake.fr/docs/en/latest/technical/frame-rates.html)与[质量调优文档](https://handbrake.fr/docs/en/latest/workflow/adjust-quality.html)）：
 
-在 Dimensions 页面核对输出尺寸、裁边、显示宽高比和像素宽高比。自动裁边只是检测结果，至少查看开头、中间、结尾，以及黑暗画面和画幅变化处；可变画幅电影不能按一个宽银幕镜头把全片统一裁掉。
+- **编码器（Video Encoder）**：追求广泛设备兼容可选 `H.264 (x264)`；追求更高压缩率且播放端支持硬解时，可选 `H.265 10-bit (x265)` 或 `AV1 10-bit (SVT-AV1)`。若追求极高转码速度且对体积不敏感，也可尝试显卡硬件编码（NVENC、QSV、AMF）。
+- **帧率（Framerate）**：设为 **Same as source（与源相同）**。对于恒定帧率影视片源，可搭配 `Constant Framerate`（或保留 `Variable Framerate` 以透传源时间戳），切勿手动将 `23.976 fps` 改为 `24` 或 `30`。
+- **编码器预设（Encoder Preset）**：控制压缩效率与耗时的平衡。日常压制 x264 / x265 常从 `medium` 或 `slow` 起步，快速工作副本可用 `veryfast` 或 `fast`。
+- **质量模式（Quality）**：选择 **Constant Quality（恒定质量）**，通过滑块设置 RF（即 CRF）值。x264 1080p 常在 `RF 18–22` 之间取舍（数值越小画质越好、体积越大）。
 
-缩小画面时保持显示比例。裁去上下黑边后，输出未必仍是 `1920×1080` 或 `1280×720`，不要为了凑整数规格再把有效画面拉伸。滤镜默认尽量简单，只对确认存在的问题启用对应处理：逐行源不需要因为“更清晰”而打开反交错，也不默认同时开启降噪、锐化和去色带。
+### 4. 音轨、字幕与章节（Audio, Subtitles & Chapters）
 
-### 视频编码与帧率
+1. **音频（Audio）**：检查轨道列表，区分原声主音轨、配音轨与导演评论轨。若希望无损保留原片音轨（如 AC3、DTS、FLAC），在编码下拉框中选择对应的 **Passthru（直通）**；若需压小体积，可转码为 AAC 或 Opus。
+2. **字幕（Subtitles）**：重点区分**软字幕封装**与 **Burn-In（烧录硬字幕）**。勾选 `Burn-In` 会将字幕永久画进视频画面且无法关闭；若希望保留可开关的软字幕，取消勾选 `Burn-In`（注意 MP4 容器对软字幕格式限制严格，封装 ASS 或 PGS 软字幕时建议将主界面的容器格式改为 **MKV**，或压完视频后用 MKVToolNix 单独混流）。
+3. **章节（Chapters）**：保持勾选 `Create chapter markers` 以继承原片章节时间点。
 
-Video 页面主要确认编码器、帧率、质量模式和 preset：
+### 5. 短片试压与保存个人预设
 
-- **编码器**：软件 x264 适合先做兼容性练习；x265 与 SVT-AV1 可用于比较相同观看目标下的体积和耗时。选项是否可用与程序构建、平台有关。
-- **质量模式**：先用 Constant Quality 试压。它控制质量目标，不能保证最终文件大小；有明确体积预算时，再研究平均码率和多遍编码。
-- **preset**：调节速度与压缩效率。先用中等速度验证流程，再判断更慢设置是否值得等待。
-- **帧率**：保留素材的实际时间关系。`Same as source` 与 CFR／VFR／PFR 是不同层面的选择，不能看到 `23.976` 就手动改成 `24`。
+全片开压前，先将顶部范围从 `Chapters` 改为 `Seconds`，截取正片中段 30–60 秒导出试看。确认画质、体积、音轨和字幕方式均符合预期后，将范围恢复为全片，点击 **Presets → Save New Preset** 保存为自定义预设（建议在名称中标明编码器与用途，如 `x265-10bit-1080p-CRF20`），再加入队列（**Add to Queue**）批量处理。
 
-普通 CFR 片源可以使用与源一致的帧率；VFR 素材若强制 CFR，可能发生丢帧或补帧。需要兼容剪辑软件或某个设备时，应先确认它的要求。官方解释见[帧率](https://handbrake.fr/docs/en/latest/technical/frame-rates.html)与[质量设置](https://handbrake.fr/docs/en/latest/workflow/adjust-quality.html)。
+## ShanaEncoder 批量转码流程
 
-硬件编码器（如 NVENC、QSV、AMF）也会做帧间预测，并非把播放画面“录一遍”。它们适合追求吞吐、延迟或功耗的场景；画质与体积表现取决于具体硬件代际、编码格式、参数和素材，用同一测试片段比较才有意义。
+[ShanaEncoder](https://shana.pe.kr/shanaencoder_download) 是 Windows 下常用的 FFmpeg 图形前端（第三方汉化与绿色包归档见 [1265578519/ShanaEncoder](https://github.com/1265578519/ShanaEncoder)），适合需要直观配置 FFmpeg 参数并批量处理多文件的场景：
 
-### 音轨、字幕与章节
+1. **载入文件并打开快速设置（F6）**：拖入测试视频，按 **F6** 打开快速设置窗口。
+2. **配置容器、编码器与 CRF**：选择输出容器（`MKV` 或 `MP4`）与视频编码器（如 `H264 (SW: x264)` 或 `HEVC (SW: x265)`），将质量模式切换为 **CRF**（避免把 CRF 数值误填进固定码率 kbps 模式），设定速度预设（Preset）、Profile 与像素格式（如 10-bit 选 `yuv420p10le`）。
+3. **核对尺寸、帧率与字幕叠加**：
+   - 不需要改变分辨率时关闭“尺寸变更”；需要等比缩放时可将高度设为 `-1` 由软件按原片比例自动计算。
+   - 保持源片帧率，不勾选额外的帧率强转或补帧。
+   - 在“视频 / 字幕”页确认**是否勾选“将字幕叠加到视频”**：除非明确需要压制内嵌硬字幕，否则取消勾选该项，防止同目录下的同名外挂字幕被直接烧录进画面。
+4. **验证命令行并批量运行**：先用分段编码功能试压 1 分钟，查看日志面板中实际执行的 FFmpeg 命令与输出文件；确认无误后保存预设并开始批量队列。
 
-逐项检查实际选中的轨道，而不是只看语言名称。
-
-1. **音频**：分清主音轨、配音、评论和口述影像。需要保留原编码时，确认所选直通方式受输出容器支持；Auto Passthru 的回退编码器也要查看。改变声道布局前先确定播放用途。
-2. **字幕**：检查语言、默认、Forced 和 Burn In。Forced 通常用于外语对白或画面文字，并不等于“强制显示所有字幕”。Burn In 会把字幕写进画面，之后无法关闭。
-3. **章节**：确认章节是否保留，抽查跳转时间与名称。章节是时间点信息，不会自动修正因删帧或拼接造成的时间线变化。
-
-MKV 和 MP4 能容纳的字幕种类不同；图形界面可能按容器能力选择烧录或转换。必须查看队列中的最终设置。涉及 ASS 字体、特效或多轨精细整理时，视频单独压好，再通过 MKVToolNix 封装通常更便于控制。
-
-### 先试压，再加入队列
-
-选取几段具有代表性的连续片段：运动、暗部、渐变、细纹理或颗粒。可使用程序的预览功能，或按章节／时间范围输出短样片；预览一张静止截图不能代替实际编码。
-
-保持编码器与 preset 不变，先只调整质量值。比较结果满意后再保存自己的预设；名称写明编码器、输出位深和用途，避免日后把 SDR 预设误用到 HDR。
-
-批量添加前先完成一个文件的检查。片源的音轨顺序、画幅和帧率可能不同，同一批文件仍需要核对自动选择规则。正式任务开始后查看活动日志，留意编码器、滤镜、输出尺寸和异常退出信息。
-
-## ShanaEncoder 批量转码
-
-[ShanaEncoder 上游下载页](https://shana.pe.kr/shanaencoder_download)是主要入口。收藏的 [1265578519/ShanaEncoder 仓库](https://github.com/1265578519/ShanaEncoder)提供第三方整理的绿色压缩包与汉化补丁，**不是上游源码仓库**。本次核查中，上游下载页受到访问限制，因此不据第三方包推断上游最新版本。
-
-使用流程与 HandBrake 相似，但设置名称和预设内容不同：
-
-1. 添加一个测试文件，查看输入视频、音轨和时长。
-2. 在设置中确认容器、编码器、质量／码率、尺寸与帧率，不默认接受预设中的缩放或音频转换。
-3. 检查字幕是否烧录、是否混音，以及需要保留的轨道是否被选择。
-4. 输出一段短片，保存或查看程序给出的 FFmpeg 命令与日志。
-5. 确认单文件结果后，再保存预设并批量执行。
-
-FFmpeg 的选项与独立 x264／x265 命令行不是同一套写法。比如 `-crf` 与 `--crf` 所属的接口不同，不能把网上一整串 x265 参数直接粘到任意输入框里；先看该输入框接收的是完整 FFmpeg 命令，还是编码器扩展参数。
+<a id="脚本前端与其他工具"></a>
 
 ## 脚本前端与其他工具
 
 ### StaxRip 与 Simple x264/x265 Launcher
 
-[StaxRip](https://github.com/staxrip/staxrip)把输入、滤镜、视频编码、音频编码和封装组织为任务，适合想逐步接触脚本又希望保留图形界面的人。跟教程操作时，把前端和所调用组件的版本一起记下来，只写工具名对复现没有帮助。
+- **[StaxRip](https://github.com/staxrip/staxrip)**：将源滤镜分流、VapourSynth / AviSynth 脚本编辑、x264 / x265 / SVT-AV1 / 硬件编码器、音轨压制与 MKVToolNix 封装整合在同一套任务流中。适合既想使用 VapourSynth 滤镜处理画面，又习惯用 GUI 管理编码参数和任务队列的用户。
+- **[Simple x264/x265 Launcher](https://github.com/lordmulder/Simple-x264-Launcher/releases)**：专注于接收写好的 `.vpy` 或 `.avs` 脚本，通过内置管道直接送交 x264 或 x265 执行多任务队列编码（最新正式版为 3.04）。使用时需在设置中将 VapourSynth 与 Python 路径指向本机当前环境（纯命令行管道写法见 [VapourSynth 压制篇](/posts/encode-vapoursynth/#把画面交给编码器)）。
 
-[Simple x264/x265 Launcher](https://github.com/lordmulder/Simple-x264-Launcher/releases)可以接收 AviSynth／VapourSynth 脚本并管理编码任务。本次核查其最新正式发行仍为 **2024 年 7 月的 3.04**；旧环境包常把它、Python、VS 和编码器捆在一起，装好新的 VS 后仍要确认它实际调用的是哪一套。只需把 `.vpy` 送往编码器时，也可使用[VapourSynth 教程中的 `vspipe` 命令](/posts/encode-vapoursynth/#把画面交给编码器)。
+### 其他传统压制前端
 
-### 其他保留工具
+- **[Hybrid](https://www.selur.de/)**：提供极细粒度的编码器与滤镜开关面板，适合熟悉底层参数的进阶用户。
+- **[Avidemux](http://avidemux.sourceforge.net/)**（[源码仓库](https://github.com/mean00/avidemux2)）：带时间轴预览的轻量剪切与转码工具，支持按关键帧（I 帧）做无损流复制粗剪。
+- **[MeGUI](https://sourceforge.net/projects/megui/)** 与 **[小丸工具箱](https://maruko.appinn.me/)**：早期基于 AviSynth 与 x264 的经典图形前端，阅读旧压制教程时常会遇到；新建压制任务建议优先使用持续维护的 HandBrake、ShanaEncoder 或 StaxRip。
 
-- [Hybrid](https://www.selur.de/)：组合多种编码器与滤镜的前端，可分别管理音视频和过滤设置；适合已经理解容器与编码基础的人。
-- [Avidemux](http://avidemux.sourceforge.net/)／[源码](https://github.com/mean00/avidemux2)：简单剪切、滤镜和转码工具。流复制剪切受关键帧等条件限制，不能默认任意位置都精确无损。
-- [MeGUI](https://sourceforge.net/projects/megui/)：较早 AviSynth 教程中常见的前端，阅读旧流程时保留这个入口。
-- [小丸工具箱](https://maruko.appinn.me/)：将 x264、FFmpeg 等工具包装成图形界面，适合查阅旧的 H.264／AAC 流程；随包组件版本需要另行确认。
+## 成品验收检查项
 
-这些条目沿用原有收藏，不构成当前维护活跃度或画质排名。旧前端能启动，其附带编码器未必支持新格式。
+转码完成后，先用 [MediaInfo](https://mediaarea.net/en/MediaInfo) 查看输出文件规格，再在目标播放器中抽查以下项目：
 
-## 试压后检查什么
+| 检查维度 | 核对要点                                                     |
+| -------- | ------------------------------------------------------------ |
+| 时间线   | 总时长、帧率是否与源片一致，抽查片头、中段与片尾是否音画同步 |
+| 画面比例 | 画面宽高比是否正常（人物有无拉长或压扁）、黑边裁剪是否干净   |
+| 画质表现 | 暗场有无明显色带或色块跳动，运动场景与边缘细节是否符合预期   |
+| 色彩还原 | 画面亮度与对比度是否正常，有无因色彩矩阵或范围标记缺失而发灰 |
+| 音轨字幕 | 多音轨与软字幕的语言代码、默认标记是否正确，字幕是否被误烧录 |
 
-用 [MediaInfo](https://mediaarea.net/en/MediaInfo) 或 `ffprobe` 检查输出，再用目标播放器实际播放：
+## 参考资料与延伸阅读
 
-| 检查项 | 看什么                                                 |
-| ------ | ------------------------------------------------------ |
-| 时间线 | 时长、帧率是否符合预期，开头、中段、结尾是否同步       |
-| 画面   | 人脸比例、裁边、暗部、色带、细节、颗粒与运动是否异常   |
-| 色彩   | 是否发灰、偏暗、偏色，播放器是否额外启用色调映射或增强 |
-| 轨道   | 音轨和字幕的语言、默认标记、顺序与实际内容是否一致     |
-| 字幕   | 能否切换、缺不缺字体、画面边缘是否遮挡、时间轴是否同步 |
-| 播放   | 目标电视、手机或播放器是否流畅，有没有额外触发转码     |
-
-画面对比要对齐同一帧，保持相同显示尺寸、播放器和色彩处理设置；遇到运动问题再看连续播放。体积小了不一定更好，文件更大也不证明源文件的细节恢复了。
-
-## 官方文档与相关篇目
-
-- [HandBrake 官方文档](https://handbrake.fr/docs/en/latest/)：按当前程序版本查预设、视频、音频和字幕行为。
-- [FFmpeg 文档](https://ffmpeg.org/documentation.html)：核对图形前端最终调用的命令。
-- [VapourSynth 压制篇](/posts/encode-vapoursynth/)：环境搭建、最小脚本、裁边缩放与编码输出。
-- [编码篇](/posts/encode-codecs/)：x264、x265、AV1 的选择与试压参数。
-- [压制练习](/posts/encode-learning/)：建立短片基线，做单项比较并按问题查文档。
-- [清单里的学习资料](/posts/encode-software/#学习篇)：系统教程、个人博客和社区入口。
+- [HandBrake 官方文档](https://handbrake.fr/docs/en/latest/)（[内置预设说明](https://handbrake.fr/docs/en/latest/technical/official-presets.html) · [帧率说明](https://handbrake.fr/docs/en/latest/technical/frame-rates.html) · [质量调优](https://handbrake.fr/docs/en/latest/workflow/adjust-quality.html)）。
+- [FFmpeg 官方文档](https://ffmpeg.org/documentation.html)：查阅 ShanaEncoder 等前端底层调用的滤镜与编码器参数。
+- 站内关联教程：[HandBrake 与 ShanaEncoder：字幕校对用的快速压片教程](/posts/handbrake-shanaencoder-subtitle-proxy/)、[VapourSynth 压制篇](/posts/encode-vapoursynth/)、[编码篇：x264、x265 与 AV1](/posts/encode-codecs/)、[压制练习：从一段样片到文档查阅](/posts/encode-learning/)。

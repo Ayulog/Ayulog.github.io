@@ -10,171 +10,157 @@ tags:
   - 音轨
 ---
 
-成品要保留原始码流，还是要生成另一种编码？这决定后面走哪条路。只把轨道从容器中取出、或在不改变编码的情况下重新封装，属于分流和封装；把 TrueHD 解码成 PCM，再编码为 DTS、AAC 或 Dolby Digital Plus，则是一次新的有损或无损转换。两条路线的输入、依赖和验收方式不同，扩展名说明不了结果。
+处理影视音轨时，第一步是明确目标：是直接保留原盘音轨（分流与封装），还是将原始音频解码后重新编码为 FLAC、DTS、AAC 或 Dolby Digital Plus（DDP）。
 
-工具入口见[音频软件清单](/posts/audio-software/)，蓝光播放列表、分流与 Remux 的上下文见[蓝光原盘 Remux](/posts/blu-ray-remux/)。deew 的命令和依赖按项目 README 于 **2026 年 10 月 11 日**核对；QAAC 的中文参数参考 [NAZOrip 的教程](https://www.nazorip.site/archives/44/)，页面标题标注 **2026.8 更新**。版本、编码器和操作界面会变化，正式处理时先看手头版本的帮助信息。
+本文梳理从音轨识别、提取到各类编码工具的操作流程。相关工具入口汇总在[音频软件清单](/posts/audio-software/)，蓝光播放列表与原盘分流背景见[蓝光原盘 Remux](/posts/blu-ray-remux/)。
 
-## 先识别音轨
+## 第一步：用 MediaInfo 识别音轨
 
-先用 [MediaInfo](https://mediaarea.net/en/MediaInfo) 或播放器的轨道信息查看真实编码。至少记录编码名称、声道布局、采样率、位深、码率、语言、轨道延迟和容器。文件名里的 `DTS`、`Atmos` 或 `5.1` 只能作为线索，不能代替轨道信息。
+动手前先用 [MediaInfo](https://mediaarea.net/en/MediaInfo) 查看容器内音频轨的详细参数，记录**编码格式、声道布局、采样率、位深、码率、语言及轨道延迟（Delay）**：
 
-| MediaInfo 中常见的项目                                    | 处理时要关心的事情                                             |
-| --------------------------------------------------------- | -------------------------------------------------------------- |
-| DTS、DTS-HD MA、DTS:X、DTS-ES                             | DTS 核心与高清扩展是否都要保留，输出设备能否直通               |
-| Dolby Digital（AC-3）与 Dolby Digital Plus（E-AC-3、DDP） | 容器和播放设备是否支持，是否要转为另一种有损格式               |
-| Dolby TrueHD、TrueHD with Atmos                           | 是否保留无损码流；解码或转码后不会自动保留对象音频信息         |
-| LPCM / PCM                                                | 未压缩音频的声道、位深和采样率，是否需要用 FLAC 保存或重新编码 |
-| FLAC、AAC、ALAC、Opus                                     | 已经是编码后的文件，继续转为另一种有损格式通常会再损失一次     |
+| 常见音轨类型                                             | 结构特点与处理方向                                                                                   |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **DTS-HD MA / DTS:X / DTS-ES**                           | 采用“有损 DTS 核心（Core）+ 高清扩展层”结构；可完整保留，也可直接剥离出 DTS 核心                     |
+| **Dolby TrueHD / TrueHD Atmos**                          | 独立无损压缩码流（蓝光原盘中常伴随一条供旧设备兼容的 AC-3 流）；解码为 PCM 后会丢失 Atmos 对象元数据 |
+| **LPCM / PCM**                                           | 未压缩原始音频；可封装为 WAV / W64 直接保留，或无损压缩为 FLAC 减小体积                              |
+| **Dolby Digital（AC-3）与 Dolby Digital Plus（E-AC-3）** | 常见于流媒体、蓝光兼容轨或评论音轨；通常直接提取并原样封装                                           |
+| **FLAC、AAC、ALAC、Opus**                                | 常见于重编码成品或压制版；无损 FLAC 可按需转换，有损格式直接保留以避免二次损耗                       |
 
-TrueHD 与 DTS-HD MA 是完整的音频编码，两者结构并不相同。DTS-HD 音轨可以包含可独立解码的 DTS core；TrueHD 在蓝光中可能伴随 AC-3 兼容部分，但它和 DTS core 不是同一套提取语义。是否保留兼容轨，取决于成品播放器与自己的用途。
+需要特别区分蓝光中两类高清无损音轨的内部结构：**DTS-HD MA** 内部天然包含可独立剥离的 DTS Core；而 **Dolby TrueHD** 是独立的无损编码流，蓝光原盘里的 AC-3 是与之交织存放的伴随兼容轨（在 MKV 中通常拆分为独立轨道或仅保留 TrueHD）。
 
-确认输入来自同一个播放列表或同一次分流结果。视频、音频和字幕分别来自不同版本时，即使片长相同，也可能在分支接缝或片头出现延迟差异。先保存 MediaInfo 输出和原始日志，再开始转换。
+## 第二步：按目标选择处理路线
 
-## 按目标选择处理路线
+根据播放设备支持情况与压制要求，选择对应的处理路线与工具：
 
-按目标选路线，再决定工具：
+| 目标用途                                 | 处理路线                              | 所用工具                      |
+| ---------------------------------------- | ------------------------------------- | ----------------------------- |
+| 保留原始无损或源码音轨                   | 从 MPLS / MKV 直接提取并重新封装      | MKVToolNix、DGDemux、eac3to   |
+| 从 DTS-HD 提取兼容的普通 DTS             | 剥离高清扩展，仅保留内嵌 DTS Core     | MKVToolNix、eac3to（`-core`） |
+| 将 LPCM 或无损轨压缩为 FLAC              | 解码为 PCM 并无损编码为 FLAC          | eac3to、FFmpeg                |
+| 压制高质量立体声或多声道 AAC / ALAC      | 调用 Apple CoreAudio 编码器转换       | qaac                          |
+| 制作兼容的 Dolby Digital / DDP（E-AC-3） | 调用 Dolby Encoding Engine（DEE）编码 | deew + DEE                    |
 
-| 目标                                    | 建议路线                                             | 结果与代价                                                         |
-| --------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------ |
-| 播放设备支持原轨                        | 直接封装或直通                                       | 不改变音频编码；只需检查容器、轨道标记与同步                       |
-| 需要兼容 DTS 的成品                     | DTS-HD 取 DTS core，或把其他音频解码后编码为 DTS     | 取 core 不重新编码；其他来源转 DTS 会产生新的有损音轨              |
-| 保存 LPCM 但减少体积                    | 解码或分流后转 FLAC                                  | FLAC 是无损压缩，仍需核对位深、声道和采样率                        |
-| 生成 AAC 音轨                           | 用 QAAC 编码 AAC，或按用途使用 ALAC                  | AAC 有损；ALAC 用于无损保存，体积和兼容性取决于设备                |
-| 生成 Dolby Digital / Dolby Digital Plus | 准备 Dolby Encoding Engine，再用 deew 组织输入与参数 | 需要独立的 DEE、许可文件、ffmpeg 与 ffprobe；deew 本身不携带编码器 |
+## 第三步：提取、剥离核心与基础转换
 
-“兼容性更好”不是默认的转码理由。先确认目标设备真正不能播放原轨，再用一小段素材试做，比较音量、声道顺序、同步和文件信息。不要把一次转换得到的码率或声道数当成所有片源的固定规则。
+### 1. 在 MKVToolNix 中提取 DTS Core
 
-## DTS 系列：保留核心还是重新编码
+当输入源包含 DTS-HD MA 音轨，而目标成品只需要有损 DTS 核心轨时，无需使用外部编码器：
 
-### 在 MKVToolNix 中提取 DTS core
+1. 将包含 DTS-HD 音轨的源文件拖入 MKVToolNix GUI 混流器。
+2. 在轨道列表中选中该 DTS-HD 音轨，在右侧属性面板勾选 **Reduce to core（仅保留核心）**。
+3. 指定输出路径开始混流，工具会自动剥离高清扩展层，仅将内嵌的 DTS Core 封装进新 MKV。
 
-如果输入是 DTS-HD 音轨，而目标只需要有损 DTS 核心，可以在 MKVToolNix GUI 的音频属性中启用 **Reduce to core（仅保留核心）**，再进行混流。不同版本的界面文字可能略有变化，操作前确认选中的确实是 DTS-HD 音轨。
+### 2. 用 eac3to / UsEac3To 分流与转换
 
-这一步是从 DTS-HD 中取出已有的 DTS core，不是把音频重新编码成 DTS。输出后用 MediaInfo 检查编码名称、声道、采样率和码率，再与输入日志对照。需要 DTS-HD MA 或 DTS:X 的场景不要勾选该选项，否则高清扩展会被丢弃。
+[eac3to](https://forum.doom9.org/showthread.php?t=125966) 及其图形前端 [UsEac3To](https://forum.doom9.org/showthread.php?t=145574) 可根据指定的输出扩展名自动执行原样提取、核心剥离或重编码：
 
-### 用 eac3to 或 UsEac3To 转换
+```sh
+# 1. 从 DTS-HD 音轨中无损剥离出有损 DTS 核心
+eac3to input.dtshd output.core.dts -core -keepDialnorm
 
-[eac3to](https://forum.doom9.org/showthread.php?t=125966) 负责分流与音频转换，[UsEac3To](https://forum.doom9.org/showthread.php?t=145574) 是便于选择输入、输出和参数的图形前端。GUI 的基本动作是：拖入已经确认的 MKV 或播放列表，读取信息窗口中的轨道编号，选择输出格式，加入命令后运行；运行结束先看日志，再检查生成文件。
+# 2. 将 LPCM 或 TrueHD 无损转换为 FLAC（保留原始采样率与位深）
+eac3to input.lpcm output.flac
+eac3to input.thd output.flac
 
-例如，概念上可以把 TrueHD 转成 DTS：
-
-```text
+# 3. 将其他无损音轨解码并重编码为 DTS（需本机配置可用的外部 DTS 编码器）
 eac3to input.thd output.dts
-```
 
-如果源音频是 96 kHz，而目标编码器或成品要求 48 kHz，再显式加入重采样参数：
-
-```text
+# 4. 当源音轨为 96 kHz 且目标编码器要求 48 kHz 时，显式添加重采样参数
 eac3to input.thd output.dts -resampleTo48000
 ```
 
-这两条命令只说明输入、输出与重采样的关系。TrueHD 到 DTS 需要可用的 DTS 编码器，依赖、授权和参数见当前 eac3to / UsEac3To 说明；GUI 能列出轨道，编码器却可能并未安装。运行后至少检查输出的采样率、声道布局、码率和延迟。
+**操作要点**：
 
-LPCM 可以按需要转为 FLAC，例如：
+- **无头 LPCM（Raw PCM）**：若处理不含文件头的 `.pcm` / `.lpcm` 裸流，需先根据原盘 BDInfo 报告确认声道数、位深（16/24-bit）、采样率与字节序，优先在分流阶段直接输出为带文件头的 `.wav` 或 `.w64`（超过 4 GB 时使用 W64）以避免声道映射错乱。
+- **采样率保持**：除非目标编码器或设备明确限制最高 48 kHz，否则无需对 96 kHz 原声添加 `-resampleTo48000`。
 
-```text
-eac3to input.lpcm output.flac
+## 第四步：用 QAAC 编码 AAC 与 ALAC
+
+[qaac](https://github.com/nu774/qaac) 是调用 Apple CoreAudio 音频组件的命令行工具，广泛用于压制高质量有损 AAC 与无损 ALAC 音轨（详细参数说明可参考 [qaac 官方 Wiki](https://github.com/nu774/qaac/wiki) 与 [NAZOrip 的 QAAC 参数教程](https://www.nazorip.site/archives/44/)）。
+
+### 1. 环境准备与检查
+
+将与程序位数一致（64 位 `qaac64.exe` 对应 64 位 DLL）的 Apple Application Support（CoreAudioToolbox）组件放入 `QTfiles64` 目录，在终端运行以下命令确认组件加载正常：
+
+```sh
+qaac64.exe --check
 ```
 
-无头 LPCM 的声道顺序、位深和采样率需要人工确认；如果输入信息不完整，先用 MediaInfo 或原盘轨道说明补齐条件。把 LPCM 转为 FLAC 是无损压缩，把它转为 DTS 则进入有损编码路线。
+### 2. 常用编码命令
 
-## TrueHD 与 LPCM：解码后的取舍
-
-TrueHD / Atmos、DTS-HD MA / DTS:X 和 LPCM 都可能出现在蓝光中，但处理目标不同：
-
-- 需要保留原始无损音频时，优先直接分流并封装原轨，不要为了统一扩展名先转 PCM。
-- 需要兼容只支持 DTS 的设备时，先确认设备和发布目标，再把音频解码后编码为 DTS。转码后的文件不再包含原来的 Atmos 或 DTS:X 对象元数据。
-- 96 kHz 源音频不应盲目重采样。只有目标编码器、设备或发布规范明确要求 48 kHz 时，才在转换步骤加入相应重采样，并在输出中复核。
-- 只有声道数、位深和采样率都已确认时，才把无头 LPCM 当作可直接转换的输入。错误的声道顺序比体积变化更难在事后发现。
-
-旧教程里常见的“所有次世代音频统一转 DTS”是特定工作流的取舍，不是音频处理的通用规则。现在更适合先保留原轨，另外生成兼容副本，再在最终封装时明确轨道名称和用途。
-
-## 用 QAAC 编码 AAC 或 ALAC
-
-[qaac](https://github.com/nu774/qaac) 是调用 Apple 音频组件的命令行编码工具，支持 AAC 与 ALAC。使用前准备与程序位数匹配的 Apple CoreAudio 组件，运行 `--check` 确认依赖能被找到；不要把 32 位和 64 位 DLL 混放，也不要把网页教程里某一版组件当成永久要求。
-
-一个简单的 WAV 到 AAC 示例是：
-
-```text
+```sh
+# 使用 TVBR（True VBR）质量模式 91 将 WAV 编码为有损 AAC（封装在 M4A 容器中）
 qaac64.exe --tvbr 91 -o output.m4a input.wav
+
+# 使用 ALAC 无损压缩编码
+qaac64.exe --alac -o output_lossless.m4a input.wav
+
+# 通过 ffmpeg 管道将 FLAC 或其他格式直接送入 qaac 编码为 AAC
+ffmpeg -i input.flac -f wav - | qaac64.exe --tvbr 91 --ignorelength -o output.m4a -
 ```
 
-`--tvbr` 的数字是质量挡位，具体挡位、封装方式、声道映射和输入格式查当前 `qaac --help`。需要无损压缩时使用 ALAC 相关选项，不要把 AAC 的质量挡位套到 ALAC 上。输入是裸 PCM、管道或多声道文件时，必须额外确认采样率、位深、声道顺序与容器信息。
+`--tvbr` 的常用档位包括 `91`、`109`、`127` 等（数字越大码率越高），可通过 `qaac64.exe --help` 查看完整支持的码率档位与声道布局选项。
 
-[NAZOrip 的 QAAC 音频编码器命令行参数教程](https://www.nazorip.site/archives/44/)整理了依赖准备、`qaac --check`、WAV / ffmpeg 管道输入、TVBR / CVBR / ABR、ALAC 与 `--normalize` 等入口，页面在 2026 年 8 月更新过。它适合查参数含义和示例；安装包、Apple 组件、编译工具链和旧版命令仍要结合当前 qaac 发布页与自己的系统重新确认。
+## 第五步：用 deew 编码 Dolby Digital / DDP
 
-QAAC 的编码模式解决的是 AAC / ALAC 输出，不会替代蓝光音轨的分流、DTS core 提取或 Dolby Encoding Engine。处理影视音轨时，把它当成目标明确的音频编码步骤，不要把它和封装工具混为一谈。
+[deew](https://github.com/pcrlnd/deew) 是针对商业级 **Dolby Encoding Engine（DEE）** 的命令行封装工具（Wrapper），能够自动将 FLAC、WAV、DTS、TrueHD 等输入转换为 DEE 所需的中间格式与 XML 配置，并批量输出 `dd`（AC-3）、`ddp`（E-AC-3）、`ac4` 或 `thd` 音轨。
 
-## 用 deew 编码 Dolby 音频
+### 1. 安装与配置依赖
 
-[deew](https://github.com/pcrlnd/deew) 是 Dolby Encoding Engine Wrapper，为 DEE 生成输入文件与 XML，并提供批量编码用的命令行界面。当前 README 的帮助示例为 deew 3.2.1，格式选项包括 `dd`、`ddp`、`ac4` 和 `thd`；版本更新后，先看本地 `deew -h` 的输出。
+运行 deew 需要提前准备三项环境依赖：
 
-### 准备依赖
+1. **FFmpeg 与 ffprobe**：已加入系统环境变量 `PATH` 或在配置中指定路径。
+2. **Dolby Encoding Engine（DEE）**：单独获取安装，并将有效的 `license.lic` 许可证文件放入 DEE 程序目录（详见 [Dolby 官方页面](https://customer.dolby.com/content-creation-and-delivery/dolby-encoding-engine-with-ac-4)）。
+3. **安装 deew 并配置路径**：
 
-README 列出的基础依赖是：
-
-- Python（使用独立构建版时可不装）；
-- `ffmpeg` 与 `ffprobe`；
-- Dolby Encoding Engine。DEE 需要单独安装，并把 `license.lic` 放到对应的 DEE 程序目录；许可和下载入口在 Dolby 官方页面。
-
-deew 可以用发行版安装，也可以在已有 Python 环境中安装：
-
-```text
+```sh
 pip install deew
 
+# 首次运行生成并查看配置文件路径
 deew -c
 ```
 
-第一次运行会生成配置文件；`deew -c` 用于查看配置及其路径，`deew -gc` 可重新生成配置。先检查 ffmpeg、ffprobe、DEE 和许可证路径，再处理正式素材。Windows、Linux、macOS 的 DEE 支持范围不同，TrueHD 编码尤其要按 README 的平台说明确认。配置中使用完整路径时，先用小样本测试，避免 PATH 或 WSL 路径转换造成误判。
+打开生成的配置文件，填入本机 `ffmpeg`、`ffprobe` 与 `dee` 可执行文件的准确路径。
 
-### 先做一条 DDP
+### 2. 编码命令示例
 
-下面的命令来自 README 的使用示例，分别展示默认 DDP、指定码率与指定 DD：
-
-```text
+```sh
+# 1. 将 5.1 或 7.1 FLAC 默认编码为 DDP（E-AC-3）
 deew -i input.flac
 
+# 2. 指定码率为 768 kbps 编码为 DDP
 deew -b 768 -i input.flac
 
+# 3. 指定编码格式为普通 DD（AC-3），码率 448 kbps
 deew -f dd -b 448 -i input.dts
+
+# 4. 将多声道音轨下混（Downmix）为 5.1 或 2.0 立体声编码
+deew -f ddp -dm 5.1 -b 640 -i input_71.thd
+
+# 查看当前格式支持的所有有效码率档位
+deew -lb
 ```
 
-`-i` 可以接文件或目录；第一次使用建议只处理一条输入，确认输出格式、声道、码率、延迟和日志后再使用批量目录。`-b` 的有效值由 DEE 的编码格式决定，可以用 `deew -lb` 查看当前 DD / DDP 可用码率，不要直接套用旧教程中的数字。
+deew 在处理过程中会自动补偿 DEE 编码产生的起始延迟，并对 7.1 声道的环绕声道顺序做标准映射转换。
 
-需要明确输出格式时写出 `-f ddp` 或 `-f dd`；要做立体声或 5.1 下混，使用 `-dm` 前先确认下混是目标需求，而不是把源音轨错误地当成声道数不足。deew 还会处理部分采样率转换、7.1 声道交换和 DEE 的编码延迟，但这些自动行为仍需用 MediaInfo、波形或实际播放检查，不能省略验收。
+## 第六步：封装与成品验收
 
-deew 只是包装层：它不提供 Dolby 编码器，也不替代 Dolby 的许可证。没有可用的 DEE 时，命令可能能够解析输入却无法完成编码；遇到 DLL、许可证或平台错误，先按 README 和 Dolby 文档排查依赖，不要反复更改码率掩盖环境问题。
+音轨提取或重编码完成后，在封装进最终 MKV 前后执行以下验收检查：
 
-## 封装与检查
+1. **比对 MediaInfo 参数**：核对新音轨的编码格式、声道数、声道布局（如 `L R C LFE Ls Rs`）、采样率、码率与总时长是否与预期一致。
+2. **设置轨道标记**：在 MKVToolNix 中为保留的原盘无损轨与新增的兼容轨分别填写清晰的轨道名称（例如区分 `TrueHD 7.1 Atmos` 与 `DDP 5.1 兼容轨`）及准确的语言代码。
+3. **检查音画同步与延迟**：若分流日志提示存在剩余毫秒延迟，在混流时填入 `--sync`（或 GUI 的“延迟”栏）；封装后抽查片头、对白密集段落、无缝分支接缝处和片尾，确认全程音画同步。
+4. **目标设备实测**：在电视、播放器或功放上实测播放，确认源码直通（Bitstream）或解码输出正常、各声道定位无错位。
 
-音频编码结束后，先把新音轨当成独立产物检查，再交给 MKVToolNix 等封装工具：
-
-1. **核对文件信息**：记录编码、声道、采样率、位深、码率、时长和延迟。对比源轨与目标轨，确认是否发生了预期的重采样、下混或声道映射。
-2. **核对轨道来源**：视频、章节、字幕和音频尽量来自同一个播放列表或同一次处理结果。加入兼容副本时，用轨道名说明来源和编码，不要覆盖原始无损轨道。
-3. **抽查同步**：播放开头、对白密集段、音乐段和片尾；有无缝分支时要在接缝前后连续播放。出现整体偏移时先查看工具日志里的 delay / gap，再决定是否需要调整。
-4. **确认播放链路**：在实际电视、播放器、功放或软件播放器上确认是否直通、是否被转码、是否正确显示声道与 Atmos / DTS:X 标记。播放器显示一个标签不能证明整条轨道没有问题。
-5. **保留可复现记录**：保存 MediaInfo 文本、完整命令、工具版本、配置、日志和输出文件名。批量处理前先对一条样本做完这套检查。
-
-成品只需要兼容播放时，可以同时保留原始轨和新编码的兼容轨；成品只需要一个音轨时，也要在删除原轨前确认备份和回退路径。重新封装不会改变音频编码，转码则一定要在轨道名或说明中留下记录。
-
-## 常见说法与实际含义
-
-| 说法                                  | 实际含义                                                                            |
-| ------------------------------------- | ----------------------------------------------------------------------------------- |
-| “把 DTS-HD 转成 DTS”                  | 勾选 Reduce to core 是提取已有核心；输出 DTS 的其他路线可能是重新编码，需看工具日志 |
-| “TrueHD 自带 AC-3，所以一定能提 core” | TrueHD 的兼容部分不等同于 DTS core；是否单独保留要按工具输出和设备需求确认          |
-| “Atmos 还是 Atmos，转码不会丢”        | 取决于承载格式和编码器；解码成普通 PCM 或有损编码通常不会保留对象元数据             |
-| “采样率越高越好”                      | 采样率必须和目标编码器、设备与发布要求匹配；不必要的重采样只会增加变量              |
-| “输出扩展名对了就完成”                | 扩展名不说明编码是否复制、解码或重新编码，必须查看 MediaInfo 和日志                 |
-| “码率一样，音质就一样”                | 不同编码器、声道布局和源素材之间，码率只是一个维度，仍要听检与播放检查              |
+若需要进一步通过频谱图排查音频来源或检验有损转码痕迹，可继续阅读[音频篇：频谱学习](/posts/audio-spectrum-learning/)。
 
 ## 参考资料
 
-- [deew 项目 README](https://github.com/pcrlnd/deew)：安装、DEE / 许可证依赖、配置项、格式和命令行示例；页面于 2026 年 10 月 11 日核对。
-- [Dolby Encoding Engine](https://customer.dolby.com/content-creation-and-delivery/dolby-encoding-engine-with-ac-4)：DEE 的官方产品与许可入口。
-- [qaac 项目](https://github.com/nu774/qaac)：发布版、源码和当前帮助信息。
-- [QAAC 音频编码器命令行参数教程](https://www.nazorip.site/archives/44/)：依赖准备、参数说明、管道输入和 QAAC 例子；页面标题标注 2026.8 更新。
-- [eac3to](https://forum.doom9.org/showthread.php?t=125966) 与 [UsEac3To](https://forum.doom9.org/showthread.php?t=145574)：音轨分析、分流和转换入口。
-- [MKVToolNix 文档](https://mkvtoolnix.download/doc/mkvmerge.html)：混流、音频轨道属性和章节说明。
+- [deew 项目 README](https://github.com/pcrlnd/deew)：安装、DEE / 许可证依赖、配置项与命令行示例。
+- [Dolby Encoding Engine](https://customer.dolby.com/content-creation-and-delivery/dolby-encoding-engine-with-ac-4)：DEE 的官方产品与许可说明。
+- [qaac 项目](https://github.com/nu774/qaac)与 [qaac Wiki](https://github.com/nu774/qaac/wiki)：发布版、源码与完整命令行参数说明。
+- [QAAC 音频编码器命令行参数教程](https://www.nazorip.site/archives/44/)：依赖准备、参数说明、管道输入和 QAAC 示例。
+- [eac3to](https://forum.doom9.org/showthread.php?t=125966) 与 [UsEac3To](https://forum.doom9.org/showthread.php?t=145574)：音轨分析、分流和转换工具。
+- [MKVToolNix 文档](https://mkvtoolnix.download/doc/mkvmerge.html)：混流、音频轨道属性与 DTS 核心剥离说明。
 - [MediaInfo](https://mediaarea.net/en/MediaInfo)：查看容器、编码、声道、采样率和轨道元数据。
-- [音频软件清单](/posts/audio-software/)：工具与资料清单。
+- [音频软件清单](/posts/audio-software/)：音频相关工具与资料汇总。

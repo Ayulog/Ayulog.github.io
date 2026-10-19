@@ -18,9 +18,7 @@ type Props = { section: Section; category: Category };
 
 const { section, category } = Astro.props;
 const locale = Astro.currentLocale ?? config.site.lang;
-const siblings = getSectionCategories(section.slug).filter(
-  entry => entry.slug !== category.slug
-);
+const sectionCategories = getSectionCategories(section.slug);
 const posts = getSortedPosts(await getCollection("posts")).filter(
   post => post.data.category === category.slug
 );
@@ -31,8 +29,8 @@ const posts = getSortedPosts(await getCollection("posts")).filter(
   description={category.description}
 >
   <Header />
-  <nav class="app-layout mt-8 mb-1" aria-label="面包屑导航">
-    <ol class="text-muted-foreground flex flex-wrap items-center gap-x-2">
+  <nav class="app-layout mt-8 mb-2 text-sm" aria-label="面包屑导航">
+    <ol class="text-muted-foreground flex flex-wrap items-center gap-x-1.5">
       <li>
         <a href={getRelativeLocaleUrl(locale, "")} class="hover:text-accent">
           首页
@@ -46,27 +44,36 @@ const posts = getSortedPosts(await getCollection("posts")).filter(
         >
       </li>
       <li aria-hidden="true">&raquo;</li>
-      <li aria-current="page">{category.label}</li>
+      <li class="text-foreground/80" aria-current="page">{category.label}</li>
     </ol>
   </nav>
   <Main pageTitle={category.label} pageDesc={category.description}>
     {
-      siblings.length > 0 && (
+      sectionCategories.length > 1 && (
         <nav aria-label={`${section.label}分类`} class="mb-8">
-          <ul class="flex flex-wrap gap-x-6 gap-y-2">
-            {siblings.map(entry => (
-              <li>
-                <a
-                  href={getRelativeLocaleUrl(
-                    locale,
-                    `${section.slug}/${entry.slug}`
-                  )}
-                  class="hover:text-accent inline-block py-2 text-sm"
-                >
-                  {entry.label}
-                </a>
-              </li>
-            ))}
+          <ul class="flex flex-wrap gap-2">
+            {sectionCategories.map(entry => {
+              const isCurrent = entry.slug === category.slug;
+              return (
+                <li>
+                  <a
+                    href={getRelativeLocaleUrl(
+                      locale,
+                      `${section.slug}/${entry.slug}`
+                    )}
+                    aria-current={isCurrent ? "page" : undefined}
+                    class:list={[
+                      "inline-block rounded-md px-3 py-1.5 text-sm transition-colors",
+                      isCurrent
+                        ? "bg-accent text-accent-foreground font-medium"
+                        : "bg-muted/45 text-foreground/80 hover:bg-muted/80 hover:text-accent",
+                    ]}
+                  >
+                    {entry.label}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       )
@@ -75,7 +82,7 @@ const posts = getSortedPosts(await getCollection("posts")).filter(
       posts.length > 0 ? (
         <ul>
           {posts.map(post => (
-            <Card {...post} variant="h3" />
+            <Card {...post} variant="h3" showCategory={false} />
           ))}
         </ul>
       ) : (

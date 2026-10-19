@@ -23,30 +23,39 @@ export async function getStaticPaths() {
   const posts = await getCollection("posts");
   const sortedPosts = getSortedPosts(posts);
 
-  const postPaths = sortedPosts.map((post, index) => ({
-    params: { slug: getPostSlug(post.id, post.filePath) },
-    props: {
-      post,
-      // sortedPosts is newest-first, so "older" (prev) is a higher index
-      // and "newer" (next) is a lower index.
-      prevPost:
-        index < sortedPosts.length - 1
-          ? {
-              id: sortedPosts[index + 1].id,
-              title: sortedPosts[index + 1].data.title,
-              filePath: sortedPosts[index + 1].filePath,
-            }
-          : null,
-      nextPost:
-        index > 0
-          ? {
-              id: sortedPosts[index - 1].id,
-              title: sortedPosts[index - 1].data.title,
-              filePath: sortedPosts[index - 1].filePath,
-            }
-          : null,
-    },
-  }));
+  const toAdjacent = (entry: CollectionEntry<"posts"> | undefined) =>
+    entry
+      ? {
+          id: entry.id,
+          title: entry.data.title,
+          filePath: entry.filePath,
+          categoryLabel: getCategory(entry.data.category)?.label,
+        }
+      : null;
+
+  const postPaths = sortedPosts.map((post, index) => {
+    const category = post.data.category;
+    const sameCategoryPosts = category
+      ? sortedPosts.filter(item => item.data.category === category)
+      : [];
+    const catIndex = sameCategoryPosts.findIndex(item => item.id === post.id);
+
+    const prevCandidate =
+      catIndex !== -1 && catIndex < sameCategoryPosts.length - 1
+        ? sameCategoryPosts[catIndex + 1]
+        : sortedPosts[index + 1];
+    const nextCandidate =
+      catIndex > 0 ? sameCategoryPosts[catIndex - 1] : sortedPosts[index - 1];
+
+    return {
+      params: { slug: getPostSlug(post.id, post.filePath) },
+      props: {
+        post,
+        prevPost: toAdjacent(prevCandidate),
+        nextPost: toAdjacent(nextCandidate),
+      },
+    };
+  });
 
   const redirectPaths = postRedirects.flatMap(entry => {
     const target = sortedPosts.find(post => post.id === entry.to);
@@ -68,6 +77,7 @@ type AdjacentPost = {
   id: string;
   title: string;
   filePath: string | undefined;
+  categoryLabel?: string;
 } | null;
 
 type Props =
@@ -97,7 +107,11 @@ const {
   hideEditPost,
 } = post.data;
 
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
+const tocHeadings = headings.filter(
+  heading => heading.depth === 2 || heading.depth === 3
+);
+const showToc = tocHeadings.filter(heading => heading.depth === 2).length >= 2;
 const articleCategory = getCategory(post.data.category);
 const articleSection = getSectionOfCategory(post.data.category);
 
@@ -132,36 +146,39 @@ const ogImage = ogImageUrl
 >
   <Header />
 
-  <BackButton />
-
-  {
-    articleCategory && articleSection && (
-      <nav class="app-layout mt-4 mb-5 text-sm" aria-label="文章分类">
-        <ol class="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-2">
-          <li>
-            <a
-              href={getRelativeLocaleUrl(locale, articleSection.slug)}
-              class="hover:text-accent"
-            >
-              {articleSection.label}
-            </a>
-          </li>
-          <li aria-hidden="true">&raquo;</li>
-          <li>
-            <a
-              href={getRelativeLocaleUrl(
-                locale,
-                `${articleSection.slug}/${articleCategory.slug}`
-              )}
-              class="hover:text-accent"
-            >
-              {articleCategory.label}
-            </a>
-          </li>
-        </ol>
-      </nav>
-    )
-  }
+  <div
+    class="app-layout mt-6 mb-4 flex flex-wrap items-center justify-between gap-2 text-sm"
+  >
+    <BackButton />
+    {
+      articleCategory && articleSection && (
+        <nav aria-label="文章分类">
+          <ol class="text-muted-foreground flex flex-wrap items-center gap-x-1.5">
+            <li>
+              <a
+                href={getRelativeLocaleUrl(locale, articleSection.slug)}
+                class="hover:text-accent"
+              >
+                {articleSection.label}
+              </a>
+            </li>
+            <li aria-hidden="true">&raquo;</li>
+            <li>
+              <a
+                href={getRelativeLocaleUrl(
+                  locale,
+                  `${articleSection.slug}/${articleCategory.slug}`
+                )}
+                class="text-foreground/85 hover:text-accent font-medium"
+              >
+                {articleCategory.label}
+              </a>
+            </li>
+          </ol>
+        </nav>
+      )
+    }
+  </div>
 
   <main
     id="main-content"
@@ -170,12 +187,12 @@ const ogImage = ogImageUrl
   >
     <h1
       style={{ viewTransitionName: toTransitionName(post.id) }}
-      class="text-accent inline-block text-2xl font-bold sm:text-3xl"
+      class="text-accent inline-block text-2xl leading-snug font-bold sm:text-3xl"
     >
       {title}
     </h1>
 
-    <div class="my-2 flex items-center gap-2">
+    <div class="mt-2.5 flex items-center gap-2">
       <Datetime {pubDatetime} {modDatetime} {timezone} size="lg" />
       <span
         aria-hidden="true"
@@ -188,6 +205,34 @@ const ogImage = ogImageUrl
       </span>
       <EditPost {hideEditPost} {post} class="max-sm:hidden" />
     </div>
+
+    {
+      showToc && (
+        <nav
+          aria-label="本文目录"
+          data-pagefind-ignore
+          class="border-border/80 bg-muted/20 mt-6 rounded-lg border px-4 py-3 text-sm"
+        >
+          <details open>
+            <summary class="text-foreground cursor-pointer font-semibold select-none">
+              本文目录
+            </summary>
+            <ol class="border-border/70 mt-2.5 space-y-1.5 border-t border-dashed pt-2.5">
+              {tocHeadings.map(heading => (
+                <li class:list={[{ "ps-4 text-xs": heading.depth === 3 }]}>
+                  <a
+                    href={`#${heading.slug}`}
+                    class="text-foreground/80 hover:text-accent inline-block leading-6 transition-colors"
+                  >
+                    {heading.text}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </details>
+        </nav>
+      )
+    }
 
     <article
       id="article"
@@ -202,17 +247,17 @@ const ogImage = ogImageUrl
 
     <hr class="my-8 border-dashed" />
 
-    <EditPost class="sm:hidden" {hideEditPost} {post} />
-
-    <BackToTopButton />
-
-    <ul class="mt-4 mb-8 flex flex-wrap gap-4 sm:my-8">
-      {tags.map(tag => <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />)}
-    </ul>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <ul class="flex flex-wrap gap-3">
+        {tags.map(tag => <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />)}
+      </ul>
+      <div class="flex items-center gap-4">
+        <EditPost class="sm:hidden" {hideEditPost} {post} />
+        <BackToTopButton />
+      </div>
+    </div>
 
     <ShareLinks />
-
-    <hr class="my-8 border-dashed" />
 
     <AdjacentPostNav {prevPost} {nextPost} />
   </main>
@@ -273,7 +318,7 @@ const ogImage = ogImageUrl
   addHeadingLinks();
 
   function attachCopyButtons() {
-    const copyButtonLabel = "Copy";
+    const copyButtonLabel = "复制";
     const codeBlocks = Array.from(document.querySelectorAll("pre"));
 
     for (const codeBlock of codeBlocks) {
@@ -286,10 +331,10 @@ const ogImage = ogImageUrl
 
       const topClass = hasFileNameOffset
         ? "top-(--file-name-offset)"
-        : "-top-3";
+        : "top-2.5";
 
       const copyButton = document.createElement("button");
-      copyButton.className = `copy-code absolute end-3 ${topClass} rounded bg-muted border border-muted px-2 py-1 text-xs leading-4 text-foreground font-medium`;
+      copyButton.className = `copy-code absolute end-2.5 ${topClass} rounded bg-background/85 backdrop-blur-xs border border-border px-2 py-1 text-xs leading-4 text-muted-foreground hover:text-accent hover:border-accent transition-colors`;
       copyButton.innerHTML = copyButtonLabel;
       codeBlock.setAttribute("tabindex", "0");
       codeBlock.appendChild(copyButton);
@@ -308,7 +353,7 @@ const ogImage = ogImageUrl
 
       await navigator.clipboard.writeText(text ?? "");
 
-      button.innerText = "Copied";
+      button.innerText = "已复制";
 
       setTimeout(() => {
         button.innerText = copyButtonLabel;

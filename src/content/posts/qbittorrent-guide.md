@@ -11,42 +11,25 @@ tags:
   - 下载器
 ---
 
-qBittorrent 负责下载、校验和做种。装在哪台机器上，文件就由那台后端保存，浏览器只是管理入口：NAS 上用 Docker 部署，Windows / macOS 装桌面版，Debian 上跑无桌面的 nox 服务。
+qBittorrent 适合作为主力 BT / PT 下载器，支持细致的分类管理、RSS 自动订阅与外部工具联动。根据运行环境不同，NAS 上通常使用 Docker 部署，Windows 与 macOS 可直接安装桌面版，无桌面环境的 Debian / Ubuntu 服务器则可运行 `qbittorrent-nox` 服务。
 
-## 目录、挂载路径与权限
+<span id="在-nas-上使用-docker-compose"></span>
 
-单独建立项目目录，例如 `stacks/qbittorrent/`，将下文的 `compose.yaml` 与 `.env` 放在里面。`./config` 保存这个下载器的配置，下载文件另放在 NAS 数据盘。
+## 目录准备与 Docker 部署
 
-下面把 NAS 数据根目录映射到容器的 `/data`，供下载器和 MoviePilot 共用：
+在 NAS 上部署前，先建立独立的项目目录（如 `stacks/qbittorrent/`）及 `config` 子目录。为了配合 [MoviePilot](/posts/moviepilot-guide/) 实现硬链接整理，建议将 NAS 上的共享数据根目录统一映射为容器内的 `/data`（完整的目录树规划与硬链接原理见[下载目录与做种常识](/posts/nas-downloader/#共用的目录与权限准备)）。
 
-```text
-/path/to/data/
-├── downloads/
-│   ├── qbittorrent/
-│   ├── transmission/
-│   └── incomplete/
-└── library/
-    ├── movies/
-    └── tv/
-```
-
-`/path/to/data` 是待替换路径，先在 NAS 上创建实际目录。通过 `id nasuser` 查询负责写入的账户，把 `nasuser` 换成自己的账户名，并给它配置和数据目录的读写权限。不要直接使用 `0/0` 或给整个共享目录开放 `777`。
-
-在项目的 `.env` 中填写：
+通过 SSH 执行 `id nasuser`（替换为实际写入账户）查询账户的 `UID` 与 `GID`，在 NAS 权限管理中为该账户授予配置目录和数据根目录的读写权限，然后在项目目录下创建 `.env` 文件：
 
 ```dotenv
-# 实际服务账户的 UID / GID
+# 实际写入账户的 UID / GID
 PUID=
 PGID=
-# NAS 上已经存在的数据根目录
+# NAS 上已创建的数据根目录绝对路径
 MEDIA_ROOT=/path/to/data
 ```
 
-需要长期做种时，先核对站点允许的客户端版本。下文 `latest` 是可变标签，使用稳定后记录实际版本或镜像 digest。管理入口通过局域网或私有组网访问；BT 入站端口与管理端口分开配置。
-
-## 在 NAS 上使用 Docker Compose
-
-在项目中创建 `config` 目录，填好 `.env`，再保存 `compose.yaml`：
+用于 PT 站点时，请先核对站点客户端白名单所允许的 qBittorrent 版本；稳定运行后可记录并固定镜像标签或 digest。在项目目录下保存 `compose.yaml`（基于 [LinuxServer 镜像][qbt-image]）：
 
 ```yaml
 services:
@@ -68,7 +51,7 @@ services:
     restart: unless-stopped
 ```
 
-在该项目目录执行：
+在项目目录启动容器并查看初始日志：
 
 ```bash
 mkdir -p config
@@ -78,39 +61,56 @@ docker compose up -d
 docker compose logs --tail=100 qbittorrent
 ```
 
-首次登录用户名通常是 `admin`，初始临时密码从当前容器的启动日志取得。打开 `http://NAS_IP:8080`，登录后进入 **工具 → 选项 → Web UI**，立即设置独立密码。保留身份验证、CSRF 防护和主机头校验；使用反向代理时，按当前镜像与客户端文档核对域名和代理设置。
+首次启动时，容器会在日志中打印 `admin` 账号的临时随机密码。在局域网浏览器打开 `http://NAS_IP:8080`，登录后进入 **工具 → 选项 → Web UI**，修改为自定义的强密码并保存（保持启用 CSRF 防护与 Host 头部校验）。
 
-网页端口冲突时，按 [LinuxServer 镜像说明][qbt-image]同步修改 `WEBUI_PORT` 和对应映射；BT 端口改动则同步修改 `TORRENTING_PORT`、TCP / UDP 映射和路由器转发。
+若宿主机 `8080` 端口冲突，需按[镜像文档][qbt-image]同步修改 `WEBUI_PORT` 与 `ports` 映射；若修改 BT 监听端口 `6881`，同样需同步修改 `TORRENTING_PORT`、TCP / UDP 端口映射以及路由器端口转发规则。
 
-## 保存路径、分类与做种
+## WebUI 核心设置与联动
 
-在下载选项中设置：
+<span id="保存路径分类与做种"></span>
 
-| 设置                      | 本文示例                                 |
-| ------------------------- | ---------------------------------------- |
-| 默认保存路径              | `/data/downloads/qbittorrent`            |
-| 未完成任务目录            | `/data/downloads/incomplete/qbittorrent` |
-| MoviePilot 的本地媒体目标 | `/data/library` 下的电影或剧集目录       |
+### 保存路径、分类与做种
 
-先添加一个有权下载的 Linux 发行版种子，确认文件出现在 NAS 的对应目录，完成后能校验并保持做种。分类需要自动化接管时，按 MoviePilot 中约定的分类和保存目录设置；手工任务可能不会被自动整理。
+在 **工具 → 选项 → 下载** 中，按容器内的 `/data` 挂载路径配置下载目录：
 
-需要长期做种时，保留下载目录的文件名和层级。确实需要移动文件，先暂停任务，使用 **设置位置** 指向新目录，再执行 **强制重新校验**，核对完整性后恢复；不要直接删除 `.fastresume` 文件来处理路径错误。
+| 设置项                    | 推荐路径                                     |
+| ------------------------- | -------------------------------------------- |
+| 默认保存路径              | `/data/downloads/qbittorrent`                |
+| 未完成任务保存目录        | `/data/downloads/incomplete/qbittorrent`     |
+| MoviePilot 本地媒体库目标 | `/data/library/movies` 或 `/data/library/tv` |
 
-公网 BT 可根据网络环境使用 DHT、PeX 和本地发现；PT 按站点要求配置，不要向私有种子随意追加公共 Tracker，也不要公开含 Passkey 的地址。协议加密只解决链路，匿名性另算。
+配置完成后，可先添加一个 Linux 发行版官方种子测试下载，确认文件正常写入 NAS 对应目录且完成后转入做种状态。
 
-## 限速、队列与 RSS
+日常做种与维护任务时注意两点：
 
-先用默认设置跑通任务，再根据带宽、硬盘负载和连接情况调整。上传上限可从实测可用上行的约 70%—80% 试起，为其他设备留出余量；这只是起点，最终值按线路和上行实测调整。注意客户端的 `kB/s`、`KiB/s` 与套餐的 `Mbps` 单位不同。
+- **移动做种文件**：需要保种的任务应保留原始文件名与目录结构。若确需调整存储位置，先暂停任务，右键选择 **设置位置** 指向新目录，再执行 **强制重新校验**，待进度达到 `100%` 后恢复做种。
+- **公网 BT 与 PT 区分**：下载公网 BT 资源可开启 DHT、PeX 和本地节点发现；用于私有 PT 种子时客户端会自动遵循种子的私有标记，切勿向 PT 种子手动追加公共 Tracker。
 
-可从以下范围试起：全局连接数 300—800、每任务 50—100、全局上传槽 20—50、每任务上传槽 4—8、活跃下载 3—5 个。低功耗 NAS 或机械盘先取较低值；网页卡顿、丢包或磁盘持续繁忙时，优先降低上传、并发和连接数。无人做种的资源不会因为连接数增加而有数据。
+<span id="限速队列与-rss"></span>
 
-需要分时限速时配置备用速度和计划表。RSS 自动下载先建立分类、目录、大小和关键词过滤规则，再启用自动添加。桌面版搜索功能可能需要 Python 与搜索插件，只使用可信来源的插件。
+### 限速、连接数与 RSS
 
-## 不用 Docker 时的安装方法
+初次使用可先保持默认连接参数，再结合宽带实际上行、硬盘类型与设备性能微调：
 
-Windows 和 macOS 从 [qBittorrent 官方下载页][qbt-download]选择适合系统和架构的安装包。保存路径使用本机目录；桌面程序启用 Web UI 后，其他设备才能远程管理。
+- **速度限制**：上传限速可从实测可用上行带宽的 70%—80% 试起，为家庭网络其他设备留出余量（注意区分客户端的 `KiB/s`、`MiB/s` 与运营商宽带的 `Mbps` 换算）。需要分时段限速时，可启用备用速度限制并配置计划表。
+- **连接数与队列**：常见起步范围为全局最大连接数 `300–800`、单任务最大连接数 `50–100`、全局上传槽 `20–50`、单任务上传槽 `4–8`、同时活跃下载 `3–5` 个。低功耗 NAS 或机械硬盘建议取偏低值，避免高并发随机读写引发磁盘满载和 WebUI 卡顿。
+- **RSS 自动下载**：使用内置 RSS 时，先配置好分类、保存路径、体积范围与关键词过滤规则，确认命中预览无误后再开启自动添加。
 
-Debian / Ubuntu 可安装无桌面界面的 `qbittorrent-nox`：
+### 接入 MoviePilot
+
+当 qBittorrent 已能正常下载并做种后，即可在 [MoviePilot](/posts/moviepilot-guide/) 中添加下载器：MoviePilot 同样挂载 `/data` 根目录，下载来源目录填 `/data/downloads/qbittorrent`，整理目标目录填 `/data/library` 下的对应影视子目录。连接测试通过后，先用单个任务验证硬链接入库，确认原做种任务不受影响后再开启自动订阅（联动细节见[下载目录与做种常识](/posts/nas-downloader/#与-moviepilot-联动)）。
+
+<span id="不用-docker-时的安装方法"></span>
+
+## 原生安装（Windows / macOS / Debian）
+
+### Windows 与 macOS 桌面版
+
+从 [qBittorrent 官方下载页][qbt-download]获取对应系统与架构的安装包，保存路径直接选择本机磁盘目录。若需从局域网其他设备或自动化工具访问，可在 **工具 → 选项 → Web UI** 中勾选启用 Web 用户界面并设置监听端口与登录密码。
+
+### Debian / Ubuntu 无桌面服务（qbittorrent-nox）
+
+在无图形界面的 Debian / Ubuntu 服务器上，可直接通过 APT 安装 `qbittorrent-nox` 并配置专用系统用户：
 
 ```bash
 sudo apt update
@@ -120,9 +120,9 @@ sudo install -d -o qbittorrent -g qbittorrent /srv/downloads/{incomplete,complet
 sudo -u qbittorrent qbittorrent-nox --profile=/var/lib/qbittorrent
 ```
 
-安装后的版本看包管理器输出。前台首次运行时查看 Web UI 初始化信息，完成初步设置后正常停止这一实例，再配置服务，避免两套进程争用端口和配置。
+首次在前台运行时，从终端输出中获取初始临时密码，登录 WebUI 修改密码并完成基础路径设置（此时默认下载路径为本机的 `/srv/downloads/complete` 和 `/srv/downloads/incomplete`），然后按 `Ctrl + C` 正常退出前台进程。
 
-创建 `/etc/systemd/system/qbittorrent-nox.service`：
+接着创建 systemd 服务文件 `/etc/systemd/system/qbittorrent-nox.service`：
 
 ```ini
 [Unit]
@@ -145,41 +145,41 @@ ReadWritePaths=/var/lib/qbittorrent /srv/downloads
 WantedBy=multi-user.target
 ```
 
+重载配置并设置开机自启：
+
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now qbittorrent-nox
 sudo systemctl status qbittorrent-nox
 ```
 
-此安装方式的下载路径是 `/srv/downloads/complete` 和 `/srv/downloads/incomplete`，不是 Docker 示例的 `/data`。如果改变实际下载根目录，应同步核对账户权限和服务的 `ReadWritePaths`。
+若后续更改了本机下载目录，需同步调整目录所属权限以及服务文件中的 `ReadWritePaths` 白名单。
 
-## 接入 MoviePilot
+## 常见问题与维护
 
-MoviePilot 挂载与下载器相同的数据根目录，来源填 `/data/downloads/qbittorrent`，整理目标用 `/data/library` 下的电影或剧集目录。填好下载器地址与凭据后，先检查分类、一次下载和整理记录，再增加订阅。需要继续做种的文件保持原名和位置；硬链接条件见[下载目录与做种常识](/posts/nas-downloader/#与-moviepilot-联动)。
+### 备份、更新与迁移
 
-## 更新与迁移
-
-更新前核对站点白名单，记录当前镜像版本，停止服务后备份 `compose.yaml`、私有 `.env` 与整个 `config`；原生安装备份 profile。配置包含任务恢复数据，但不包含下载文件。
+更新版本前先核对 PT 站点的客户端白名单，记录当前镜像版本，停止服务后备份 `compose.yaml`、`.env` 与整个 `config` 目录（原生安装备份 `/var/lib/qbittorrent` profile 目录）：
 
 ```bash
 docker compose stop
-# 完成配置和数据备份后再更新
+# 完成配置备份后拉取并重建容器
 docker compose pull
 docker compose up -d
 ```
 
-只做备份时用 `docker compose start` 恢复。更新后检查登录、任务列表、实际版本与一次校验。迁移路径和删除数据的区别见[下载目录与做种常识](/posts/nas-downloader/#更新备份与迁移)。
+更新完成后登录 WebUI 检查版本号、任务列表及本地文件校验状态。跨设备迁移与删种注意事项见[下载目录与做种常识](/posts/nas-downloader/#更新备份与迁移)。
 
-## 排错：现象与检查位置
+### 故障排查
 
-| 现象              | 检查位置                                                      |
-| ----------------- | ------------------------------------------------------------- |
-| Web UI 打不开     | 服务状态、端口映射、防火墙、端口占用和代理域名设置            |
-| 初始密码不对      | 当前实例启动日志，是否已修改密码或连到了另一实例              |
-| 端口检测失败      | 是否检测 BT 端口，容器监听、TCP / UDP、防火墙、路由器与 CGNAT |
-| 有任务但速度很慢  | 做种者、限速、队列、连接数和磁盘空间                          |
-| 移动文件后报错    | 暂停任务，设置位置，强制重新校验；保留恢复数据                |
-| MoviePilot 不整理 | 任务分类、下载目录、共享挂载、权限与整理日志                  |
+| 现象                    | 检查位置                                                                  |
+| ----------------------- | ------------------------------------------------------------------------- |
+| Web UI 打不开           | 容器或服务状态、`WEBUI_PORT` 与端口映射、防火墙及反向代理设置             |
+| 初始密码提示错误        | 查看当前容器启动日志中的临时密码，或确认是否连到了另一个实例              |
+| Peer 端口连通性检测失败 | 检查 `6881`（或自定义端口）TCP/UDP 映射、防火墙、路由器转发及公网 IP 条件 |
+| 下载或上传速度偏慢      | 种子活跃节点数、全局/备用限速开关、队列限制、连接数与磁盘负载             |
+| 移动文件后任务报错缺失  | 暂停任务，右键“设置位置”指向新路径，再执行“强制重新校验”                  |
+| MoviePilot 无法自动整理 | 任务分类、下载目录映射、容器 `/data` 挂载一致性与文件读写权限             |
 
 ## 参考资料
 

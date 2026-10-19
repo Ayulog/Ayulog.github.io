@@ -1,23 +1,36 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { getRelativeLocaleUrl } from "astro:i18n";
 import { getPostUrl } from "@/utils/getPostPaths";
 import { toTransitionName } from "@/utils/toTransitionName";
+import { getCategory, getSectionOfCategory } from "@/data/categories";
+import config from "@/config";
 import Datetime from "./Datetime.astro";
 
 type Props = {
   variant?: "h2" | "h3";
+  showCategory?: boolean;
 } & CollectionEntry<"posts">;
 
-const { variant: Heading = "h2", id, data, filePath } = Astro.props;
+const {
+  variant: Heading = "h2",
+  showCategory = true,
+  id,
+  data,
+  filePath,
+} = Astro.props;
 
-const { title, description, ...props } = data;
+const { title, description, category: categorySlug, ...props } = data;
+const locale = Astro.currentLocale ?? config.site.lang;
+const category = showCategory ? getCategory(categorySlug) : undefined;
+const section = showCategory ? getSectionOfCategory(categorySlug) : undefined;
 ---
 
-<li class="my-6">
+<li class="my-7">
   <a
-    href={getPostUrl(id, filePath, Astro.currentLocale)}
+    href={getPostUrl(id, filePath, locale)}
     class:list={[
-      "text-accent inline-block text-lg font-medium",
+      "text-accent inline-block text-lg font-semibold sm:text-xl",
       "decoration-dashed underline-offset-4 hover:underline",
       "focus-visible:no-underline focus-visible:underline-offset-0",
     ]}
@@ -26,6 +39,25 @@ const { title, description, ...props } = data;
       {title}
     </Heading>
   </a>
-  <Datetime {...props} />
-  <p>{description}</p>
+  <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+    {
+      category && section && (
+        <a
+          href={getRelativeLocaleUrl(
+            locale,
+            `${section.slug}/${category.slug}`
+          )}
+          class="bg-muted/60 text-foreground/85 hover:text-accent rounded px-2 py-0.5 text-xs font-medium transition-colors"
+        >
+          {category.label}
+        </a>
+      )
+    }
+    <Datetime {...props} />
+  </div>
+  <p
+    class="text-foreground/85 mt-2 text-sm leading-6 sm:text-[15px] sm:leading-7"
+  >
+    {description}
+  </p>
 </li>

@@ -11,25 +11,27 @@ tags:
   - AList
 ---
 
-想让下载留在 NAS 上后台跑，用 Aria2 接收 HTTP(S)、FTP、SFTP、BitTorrent 与 Metalink 任务，AriaNg 通过 RPC 在网页里查看和控制。文件保存在运行 Aria2 的设备，关闭浏览器不会停止任务。
+Aria2 适合在 NAS 后台常驻运行，统一接管 HTTP(S)、FTP、SFTP、BitTorrent 与 Metalink 下载任务；前端配合内置的 AriaNg 网页界面，通过 RPC 接口随时查看进度、投递链接或接入 [AList](/posts/alist-guide/) 下载网盘文件。
 
-动手前先给 Aria2 建独立项目目录和要映射的下载目录，用 `id nasuser` 查询实际写入账户的 UID / GID，并授予配置与下载目录读写权限。以下配置依据 2026 年 10 月 10 日的项目文档，未在绿联设备上实机部署。
+<span id="选择镜像并部署"></span>
 
-## 选择镜像并部署
+## 目录准备与 Docker 部署
 
-这里沿用第三方项目 [superng6/docker-aria2][docker-aria2-repo]。依据下方参考资料中的 Dockerfile 与正式构建流程，使用已包含 AriaNg 的标准 `superng6/aria2:latest`，由 `WEBUI=true` 开启；旧教程中“`latest` 不含 WebUI、要选 `webui-latest`”的说法不适用于该构建。`a2b-latest` 是带额外 Peer 屏蔽功能的变体，这里先使用标准版。
+部署前先在 NAS 上为 Aria2 创建独立的项目目录（含 `config` 子目录）以及实际存放文件的下载目录。通过 SSH 执行 `id nasuser`（替换为实际写入账户）查询账户的 `UID` 与 `GID`，并在 NAS 权限设置中为该账户授予配置目录和下载目录的读写权限。
 
-在 Aria2 项目中创建 `config`，再单独创建 `.env`：
+本文使用 [superng6/docker-aria2][docker-aria2-repo] 的标准镜像 `superng6/aria2:latest`，该镜像已内置 AriaNg 前端，通过环境变量 `WEBUI=true` 即可开启（若需额外的 Peer 屏蔽功能，可改用 `a2b-latest` 标签）。
+
+在项目目录中创建 `.env` 文件，填入查到的 `UID`、`GID` 以及随机生成的 RPC 密钥（可通过密码管理器或 `openssl rand -hex 32` 生成）：
 
 ```dotenv
-# 填入实际 UID / GID
+# 填入实际写入账户的 UID / GID
 ARIA2_UID=
 ARIA2_GID=
-# 填入自己生成的随机密钥
+# 填入随机生成的 RPC 密钥
 ARIA2_SECRET=
 ```
 
-密钥可以用密码管理器生成，装有 OpenSSL 时也可以运行 `openssl rand -hex 32`。保存 `compose.yaml`：
+在同目录保存 `compose.yaml`，将 `/path/to/downloads` 替换为 NAS 上的真实下载目录路径：
 
 ```yaml
 services:
@@ -60,7 +62,7 @@ services:
     restart: unless-stopped
 ```
 
-先把 `/path/to/downloads` 替换为 NAS 上实际存在且可写的下载目录，再执行：
+创建配置子目录并启动服务：
 
 ```bash
 mkdir -p config
@@ -71,119 +73,107 @@ docker compose ps
 docker compose logs --tail=100 aria2
 ```
 
-配置检查仅验证语法，继续确认镜像拉取、启动和目录写入正常。通过绿联 Docker 等 NAS 的 Compose 界面部署时，要确认项目能读取同目录 `.env`，且 `./config` 指向该项目自己的配置目录。
+端口映射中，AriaNg 网页入口为 `http://NAS_IP:18080`，RPC 接口为 `http://NAS_IP:16800/jsonrpc`；宿主机端口冲突时可修改冒号左侧的端口号。WebUI 与 RPC 端口仅在局域网或私有组网内访问即可；若需提升 BT 下载的连通性，可在路由器和防火墙上转发 BT 监听端口（`32516/TCP` 与 `32516/UDP`，修改时需同步调整 `BTPORT` 与端口映射）。
 
-映射左侧是 NAS 端口，右侧是容器端口。AriaNg 网页使用 `http://NAS_IP:18080`，RPC 使用 `http://NAS_IP:16800/jsonrpc`。二者冲突时可改映射左侧；BT 端口保持内外一致，改动时同步修改 `BTPORT` 和 TCP / UDP 映射。
+### 镜像环境变量与持久化配置
 
-## 连接管理界面
+`superng6/aria2` 镜像支持以下常用环境变量：
 
-镜像已经包含 AriaNg，部署后打开 `http://NAS_IP:18080`。如果使用现有 Aria2 服务，下面的地址、端口和密钥换成自己的配置即可。
+| 参数        | 含义与调整方式                                             |
+| ----------- | ---------------------------------------------------------- |
+| `SECRET`    | RPC 通信密钥                                               |
+| `CACHE=64M` | 磁盘缓存大小，可根据 NAS 可用内存与磁盘负载调整            |
+| `UT=true`   | 容器启动时自动更新 BT Tracker 列表                         |
+| `RUT=true`  | 启用内置定时脚本，每天 05:00（按容器时区）自动更新 Tracker |
+| `CTU`       | 自定义 Tracker 列表订阅 URL，留空则使用镜像内置源          |
+| `FA=falloc` | 文件预分配方式，可选 `none`、`trunc`、`prealloc`、`falloc` |
+| `SMD=true`  | 保留磁力链接解析出的 `.torrent` 元数据文件                 |
 
-管理端口通过局域网或私有组网访问。BT 入站配置与 RPC 管理入口是两回事，不需要把管理端口映射到公网。
+其中 `SMD=true` 负责保存种子元数据文件，种子文件的重命名策略则由 `/config/setting.conf` 中的 `handle-torrent`（如 `backup-rename`）控制。由于在 AriaNg 网页端直接修改的运行参数在容器重启后会被配置文件覆盖，需要长期生效的设置应直接写入 `compose.yaml` 或 `/config/aria2.conf`。
 
-### 连接 RPC
+<span id="连接-ariang-与-aria2"></span>
 
-在 **AriaNg 设置 → RPC** 中填写：
+## WebUI 核心设置与任务投递
 
-| 字段     | 本文示例                           |
+<span id="连接-rpc"></span>
+
+### 连接 AriaNg 与 RPC
+
+浏览器打开 `http://NAS_IP:18080`，进入 **AriaNg 设置 → RPC** 填写连接参数：
+
+| 字段     | 填写内容                           |
 | -------- | ---------------------------------- |
 | 协议     | HTTP                               |
-| 主机地址 | NAS 局域网 IP，不含 `http://`      |
+| 主机地址 | NAS 局域网 IP（不含 `http://`）    |
 | 端口     | `16800`                            |
-| 接口路径 | `jsonrpc`，组成地址后为 `/jsonrpc` |
+| 接口路径 | `jsonrpc`（完整路径为 `/jsonrpc`） |
 | RPC 密钥 | `.env` 中 `ARIA2_SECRET` 的原始值  |
 
-密钥不加引号或 `token:` 前缀，前端会处理请求格式。看到已连接状态后，再检查全局速度和任务列表。
+由于 AriaNg 运行在当前浏览器中，RPC 请求由浏览器直接发往 NAS，因此主机地址需填写浏览器可访问的 NAS 局域网 IP；更换电脑或浏览器后需重新填入这套连接信息。若通过 HTTPS 域名访问 AriaNg，则 RPC 接口也需配置对应的 HTTPS / WSS 反向代理，以避免被浏览器的混合内容策略拦截。
 
-**RPC 请求由浏览器发出**。电脑浏览器里的 `127.0.0.1` 指向电脑，Docker 服务名 `aria2` 通常也不能由局域网浏览器解析。更换电脑或浏览器后，可能需要重新保存连接信息。
+状态显示“已连接”后，进入 **Aria2 设置 → 基本设置**，确认默认下载目录为容器内路径 `/downloads`（或 `/downloads/software` 等子目录），并先测试下载一个小文件验证写入正常。
 
-如果使用 HTTPS 域名打开 AriaNg，RPC 也应提供浏览器允许的安全连接，例如正确配置的 HTTPS / WSS 代理；HTTPS 页面直接调用 HTTP RPC 可能被混合内容策略拦截。
-
-在 **Aria2 设置 → 基本设置** 中，把下载目录设为 `/downloads`，或任务需要的 `/downloads/software` 等子目录。这是容器路径，不填 NAS 原始路径或电脑盘符。先下载一个有权访问的小文件，确认能在 NAS 找到，再增加大任务。
-
-## 添加任务
+<span id="直链种子与磁力下载"></span>
 
 ### 直链、种子与磁力下载
 
-新建任务时粘贴真实 HTTP / HTTPS 文件地址，批量提交按界面要求一行一个链接。分享页面和最终下载地址不同；得到 HTML 或立即失败时先核对链接类型。需登录的文件可能要求 Cookie、Referer 或其他请求头，也可能绑定来源 IP、User-Agent 或短期签名；电脑能下载，NAS 用同一地址未必成功。
+在 AriaNg 新建任务时，可直接粘贴真实的文件直链（一行一个链接）、`magnet:` 磁力链接，或上传 `.torrent` 种子文件。
 
-磁力链接可以直接粘贴 `magnet:`，种子则打开 `.torrent`，检查文件选择和保存位置。磁力通常先获取元数据，长时间无进展时核对在线节点、DHT / UDP 与 Tracker 状态。Tracker 帮助发现节点，不保存资源本体，增加列表不能救活无人做种的资源。
+- **直链任务**：需填入最终文件下载地址。需要登录态或防盗链校验的直链往往绑定 Cookie、Referer、User-Agent 或短期签名，建议配合下方的浏览器扩展直接把携带请求头的下载任务发往 Aria2。
+- **BT 与磁力任务**：磁力链接会先通过 DHT 与 Tracker 获取种子元数据。若长时间停留在元数据获取阶段，可检查 UDP 端口连通性、DHT 状态以及资源本身是否有在线做种节点。
 
-有可用公网入站条件时，可把路由器的 `32516/TCP` 和 `32516/UDP` 转发到 NAS，并放行防火墙；处于运营商 NAT 后时要另行判断入站条件。只验证直链下载时，不必先完成 BT 端口转发。
+<span id="浏览器扩展发送下载"></span>
 
-### 浏览器扩展发送下载
+### 浏览器扩展接管下载
 
-[Aria2 Explorer][explorer-repo] 可把浏览器下载交给 Aria2，并提供内置 AriaNg。安装入口使用项目 README 中的 Chrome / Edge 官方商店链接。
+在电脑浏览器安装 [Aria2 Explorer][explorer-repo]（从项目 README 提供的 Chrome / Edge 官方商店链接安装），可将浏览器触发的下载任务直接连同所需请求头发送给 NAS 上的 Aria2：
 
-1. 添加 RPC 服务 `http://NAS_IP:16800/jsonrpc`，填入同一密钥。
-2. 先手工发送或右键提交一个小文件，核对 NAS 中的结果。
-3. 有需要再开启自动接管，并配置域名、文件类型等过滤条件。
+1. 在扩展设置中添加 RPC 地址 `http://NAS_IP:16800/jsonrpc` 并填入 RPC 密钥。
+2. 先通过右键菜单手动投递一个小文件，确认 NAS 下载目录正常落盘。
+3. 按需开启自动接管，并设置触发接管的域名、文件大小或扩展名过滤规则。
 
-扩展可能需要把下载请求的 Cookie 交给 Aria2。只连接自己信任的服务，包含凭据的配置不要公开分享。
+<span id="通过-alist-下载网盘文件"></span>
 
-### 通过 AList 下载网盘文件
+### 配合 AList 下载网盘文件
 
-AList 已能正常浏览和下载文件时，可提供可用地址并把任务交给 Aria2。按 [AList 前端设置文档][alist-settings]：
+当 [AList](/posts/alist-guide/) 已挂载网盘并能正常浏览文件时，可将网盘文件直接推送给 Aria2 下载到 NAS 本地（参照 [AList 前端设置文档][alist-settings]）：
 
-1. 在文件列表右下角设置中填写 Aria2 RPC 链接 `http://NAS_IP:16800/jsonrpc` 和密钥。
-2. 开启复选框，选择文件或文件夹，在下载菜单中选择 **发送到 Aria2**。
-3. 回 AriaNg 查看任务，完成后在 NAS 核对文件。
+1. 点击 AList 文件列表右下角的设置图标，填入 Aria2 RPC 地址 `http://NAS_IP:16800/jsonrpc` 与密钥。
+2. 勾选需要下载的文件或文件夹，在下载菜单中选择 **发送到 Aria2**。
+3. 在 AriaNg 中查看下载进度，完成后到 NAS 下载目录核对文件。
 
-这会把网盘已有文件下载到 Aria2 所在设备。“发送成功”只表示提交成功；实际下载还受地址过期、认证头、出口 IP 和网盘限流影响，先测试单个文件。
+该方式用于将网盘已有文件拉取到 NAS 本地。若需使用 AList 后台的[离线下载][alist-offline]功能（先由 Aria2 下载外部链接，再由 AList 自动上传至目标网盘），则还需让 AList 与 Aria2 容器挂载并共享同一个临时下载目录。
 
-AList 后台的[离线下载][alist-offline]是另一条流程：提交外部链接，先下载到临时目录，再转移到选定存储。它需要 AList 读取下载结果，并正确共享临时目录和权限，光填 RPC 不够。这里只配置文件列表的“发送到 Aria2”，网盘挂载与管理继续参考 [AList 设置](/posts/alist-guide/)。
+<span id="aria2-镜像参数与持久化"></span>
 
-## Aria2 镜像参数与持久化
+## 常见问题与维护
 
-以下变量属于 `superng6/aria2` 镜像，不是所有镜像的通用字段：
+### 备份、更新与迁移
 
-| 参数        | 含义与调整方式                                                     |
-| ----------- | ------------------------------------------------------------------ |
-| `SECRET`    | RPC 密钥                                                           |
-| `CACHE=64M` | 磁盘缓存，结合可用内存与负载调整                                   |
-| `UT=true`   | 启动时更新 Tracker 列表                                            |
-| `RUT=true`  | 镜像的定时脚本在每天 05:00 更新 Tracker，按容器时区计算            |
-| `CTU`       | 可选自定义 Tracker 列表 URL，未填时使用镜像脚本中的来源            |
-| `FA=falloc` | 文件预分配方式，还支持 `none`、`trunc`、`prealloc`，按文件系统选择 |
-| `SMD=true`  | 保存磁力取得的种子元数据                                           |
-
-`SMD` 保存磁力取得的种子元数据，与自动重命名是两回事；后者由 `/config/setting.conf` 的 `handle-torrent` 等设置控制，例如 `backup-rename`。通过 AriaNg RPC 修改的选项不一定永久保存；需要长期保留的设置，核对由 Compose、`/config/aria2.conf` 还是辅助脚本负责，并在重启后查看实际值。
-
-## 备份与恢复
-
-更新前记录镜像版本或 digest，停止容器，再备份 `compose.yaml`、私有 `.env` 和整个 `config`。下载目录另行备份。
+更新或迁移前，先记录当前镜像版本，停止容器后备份 `compose.yaml`、`.env` 以及 `./config` 目录：
 
 ```bash
 docker compose stop aria2
-# 备份完成后更新
+# 完成备份后拉取新镜像并重建
 docker compose pull
 docker compose up -d
 ```
 
-仅备份不更新时，用 `docker compose start aria2` 恢复。迁移时保留容器路径 `/downloads`，不要删除未完成文件旁的 `.aria2` 控制文件，它可能关系到续传。重启后核对 RPC、任务列表与一次实际下载。
+迁移下载目录时，保持容器内挂载路径 `/downloads` 一致，并保留未完成任务旁同名的 `.aria2` 控制文件，以便重启后正常读取断点续传进度。
 
-## 常见问题
+### 故障排查
 
-### 连接问题
-
-| 现象               | 检查位置                                                       |
-| ------------------ | -------------------------------------------------------------- |
-| 网页打不开         | Web 端口、容器状态、防火墙和 18080:8080 映射                   |
-| 页面正常但未连接   | NAS 地址、16800 到 6800 的映射、防火墙、jsonrpc 路径和原始密钥 |
-| HTTPS 页面连接失败 | RPC 是否提供 HTTPS / WSS，是否被混合内容策略拦截               |
-| 换浏览器后任务不见 | 当前 RPC 配置是否仍连接同一后端                                |
-
-### 下载与容器问题
-
-| 现象                         | 检查位置                                          |
-| ---------------------------- | ------------------------------------------------- |
-| 容器退出或反复重启           | 镜像、配置目录权限、启动日志和端口冲突            |
-| 无法写入 / 找不到文件        | /downloads 映射、UID / GID、ACL、空间和配额       |
-| 磁力卡在获取元数据           | 在线节点、DHT / UDP 与 Tracker 状态               |
-| 网盘任务 403                 | 地址过期、认证头、来源 IP 和网盘限制              |
-| AList 显示发送成功但下载失败 | Aria2 任务错误、地址时效、认证头和来源 IP         |
-| 预分配失败                   | 文件系统是否支持 FA 模式、空间和配额              |
-| 重启后选项变化               | Compose 环境变量、aria2.conf 与启动脚本控制的项目 |
+| 现象                      | 检查位置                                                         |
+| ------------------------- | ---------------------------------------------------------------- |
+| AriaNg 网页打不开         | 容器运行状态、宿主机防火墙及 `18080:8080` 端口映射               |
+| 页面能打开但提示未连接    | NAS 局域网 IP、`16800:6800` 端口映射、`/jsonrpc` 路径与密钥      |
+| HTTPS 页面下 RPC 连接失败 | RPC 是否配置了 HTTPS / WSS 代理，排查浏览器混合内容拦截          |
+| 更换浏览器后看不到任务    | 浏览器本地 RPC 配置是否已填入并连接到同一个 Aria2 后端           |
+| 无法写入或找不到下载文件  | `/downloads` 映射路径、`PUID` / `PGID` 读写权限与磁盘空间        |
+| 磁力链接卡在获取元数据    | 资源是否有活跃节点、UDP 端口转发、DHT 与 Tracker 状态            |
+| 网盘或直链任务返回 `403`  | 下载链接是否过期、是否缺失 Cookie / Referer 或受出口 IP 限制     |
+| 文件预分配失败            | 宿主机文件系统是否支持当前 `FA` 预分配模式（可改用 `none` 测试） |
+| 容器重启后自定义设置失效  | 参数是否写进了 `compose.yaml` 或 `/config/aria2.conf`            |
 
 ## 参考资料
 

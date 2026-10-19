@@ -9,37 +9,34 @@ tags:
   - Docker
 ---
 
-Windows 上跑 Linux 容器分三条路线：WSLc、Docker Desktop，以及 WSL 发行版里自行安装的 Docker Engine。要不要用 Compose，是选路线时最先要回答的问题。
+在 Windows 上运行 Linux 容器，目前主要有三种方式：WSL 内置的原生容器工具（WSLc）、Docker Desktop（WSL 2 后端），以及在 Ubuntu / Debian 等 WSL 2 发行版中自行安装的 Docker Engine。是否需要图形化管理界面与 `docker compose` 多容器编排，是选择方案的主要依据：
 
-下面的版本信息沿用 **2026 年 10 月 10 日**核对的文档，未在本机逐一部署。三条路线要装的东西差别很大：
+| 方案                             | 所需安装的组件                                          | 适用场景                                                                   |
+| -------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| WSL Containers（WSLc）           | 正式版 WSL（`>= 3.0.1`，内置 `wslc.exe`）               | 在 PowerShell 中快速拉起单个 Linux 容器，无需安装 Desktop 或 Linux 发行版  |
+| Docker Desktop（WSL 2 后端）     | WSL + Docker Desktop                                    | 在 PowerShell 或终端中直接使用完整 `docker` 与 `docker compose` 及图形界面 |
+| WSL 发行版内的独立 Docker Engine | WSL 2 发行版（如 Ubuntu）+ Docker Engine / Compose 插件 | 纯命令行维护完整的 Linux Docker 环境与 `compose.yaml`，无需安装 Desktop    |
 
-| 路线                             | 需要安装什么                                                  | 适合的用法                                                            |
-| -------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------- |
-| WSL Containers（WSLc）           | 当前正式版 WSL，内置 `wslc.exe`                               | 直接在 PowerShell 运行单个 Linux 容器，无需 Desktop 或自行安装 Ubuntu |
-| Docker Desktop 的 WSL 2 后端     | WSL 与 Docker Desktop                                         | 直接在 PowerShell 使用 `docker`、`docker compose`，Ubuntu 为可选项    |
-| WSL 发行版内的独立 Docker Engine | Ubuntu、Debian 等 WSL 2 发行版及 Docker Engine / Compose 插件 | 自己管理 Linux 环境与 Docker 服务，不需要 Desktop                     |
+## WSL 3.x 与 WSLc 的适用边界
 
-## WSL 3.x 带来了什么
+微软在 **WSL 3.0.1** 正式版中推出了 [WSL Containers（WSLc）][wslc-announcement]，内置了 `wslc.exe`（及别名 `container.exe`）命令行工具，基于 WSL 2 Linux 内核直接构建、运行和管理 OCI 容器。
 
-微软在 **2026 年 9 月 29 日发布 WSL 3.0.1**，宣布 [WSL Containers 正式可用][wslc-announcement]。它内置 `wslc.exe`，也提供 `container.exe` 别名，可以直接构建、运行和管理 Linux 容器。
+使用时需注意两点：
 
-核对时，GitHub 最新正式版为 **3.0.1**，另有 **3.0.3 预发行版**。初次使用按正式版操作即可，不必为了体验容器功能切换预发行渠道。
+- **版本号区分**：`3.0.1` 是 WSL 组件包自身的版本号（通过 `wsl --version` 查看）；而具体的 Linux 发行版架构代数仍为 **WSL 2**（通过 `wsl --list --verbose` 查看显示为 `VERSION 2`）。
+- **Compose 支持范围**：当前 WSL 3.0.1 的 `wslc` 仅面向单容器操作，`wslc compose` 被微软列为后续路线图计划。如果需要使用 `docker compose up -d` 运行多容器项目（如下文的 [Compose 示例](#用-compose-测试网页服务)），请选择 **方案二（Docker Desktop）** 或 **方案三（独立 Docker Engine）**。
 
-这里的 **3.x 是 WSL 软件包的版本号**。`wsl --version` 查看软件版本，`wsl --list --verbose` 查看普通 Linux 发行版采用 WSL 1 还是 WSL 2；WSLc 官方教程仍说明其使用 WSL 2 Linux 内核。不要执行 `wsl --set-version Ubuntu 3`。
+## 前置准备：安装或更新 WSL
 
-**Compose 仍有边界。** 微软的正式发布公告将 `wslc compose` 列为后续计划。3.0.1 正式版还用不上 `docker compose up -d`，现有的 Compose 存档也不能照搬。需要下文的 [Compose 示例](#用-compose-测试网页服务)时，选择 Docker Desktop 或独立 Engine 路线。
+先按 [微软 WSL 安装文档][microsoft-wsl-install] 确认 BIOS 中已开启 CPU 虚拟化，且 Windows 已启用虚拟化平台支持。
 
-## 安装或更新 WSL
-
-先按 [Microsoft 安装说明][microsoft-wsl-install]确认 Windows 和硬件支持。WSL 2 需要 CPU 虚拟化与 Windows 虚拟化平台；如果此前为 VMware 禁用了相关组件或虚拟机管理程序，需要恢复设置并重启。
-
-未安装 WSL 时，在 **管理员 PowerShell** 中仅安装 WSL，不额外安装 Ubuntu：
+- **全新安装 WSL（不附带默认 Ubuntu 发行版）**：以管理员身份打开 PowerShell 执行：
 
 ```powershell
 wsl --install --no-distribution
 ```
 
-按提示重启。已有 WSL 时无需重复安装，在 **PowerShell** 中更新并检查：
+- **已安装 WSL 时升级至最新版**：在 PowerShell 中执行更新并核对版本：
 
 ```powershell
 wsl --update
@@ -47,40 +44,37 @@ wsl --version
 wslc version
 ```
 
-官方文档注明 WSLc 最早需要 WSL **2.9.3 或更高版本**；3.0.1 是正式可用版本。这里使用更新后的正式版。如果找不到 `wslc`，先检查软件版本和更新结果，参考[官方发布记录][wsl-releases]，不需要先安装 Docker Desktop 来补这个命令。
+确认 WSL 版本已升至 `3.0.1` 或更高版本（WSLc 最低要求 `2.9.3+`），`wslc version` 即可正常输出版本信息（详细更新日志见 [WSL GitHub Releases][wsl-releases]）。
 
-## 路线一：直接用 WSLc 测试容器
+## 方案一：使用 WSLc 直接运行单容器
 
-在 **PowerShell** 中先运行一次性测试：
+无需安装 Docker Desktop 或任何 Linux 发行版，直接在 **PowerShell** 中运行一次性容器验证环境：
 
 ```powershell
 wslc run --rm hello-world
 ```
 
-成功后再运行网页服务，先确认 `18080` 没有被其他服务占用：
+接着测试运行带端口映射的 Nginx 容器（启动前确认本机 `18080` 端口未被占用）：
 
 ```powershell
 wslc run -d --rm -p 18080:80 --name wslc-web docker.io/library/nginx:stable
 wslc container ps
 ```
 
-从 Windows 本机浏览器打开 `http://localhost:18080`，应能看到 Nginx 默认欢迎页。这一小节尚未挂载自定义 HTML，展示的是镜像内自带的页面。
-
-测试完成后停止：
+在 Windows 浏览器访问 `http://localhost:18080`，即可看到 Nginx 默认欢迎页。测试完毕后停止容器（因带有 `--rm` 参数，停止后容器会自动清理）：
 
 ```powershell
 wslc container stop wslc-web
 ```
 
-示例使用了 `--rm`，容器停止后会自动删除，适合验证环境。需要保存应用数据时，按 [WSLc 官方教程][wslc-tutorial]和[存储说明][wslc-architecture]配置 Windows 目录挂载或数据卷，再决定长期运行参数。
+若需挂载宿主机目录或创建持久化数据卷，可参照 [WSLc 官方教程][wslc-tutorial] 与 [存储架构说明][wslc-architecture] 配置参数。WSLc 使用独立的容器会话与存储空间，与下面两种方案的 Docker Engine 互不共用镜像和容器列表。
 
-WSLc 有自己管理的会话、容器和存储，与安装一套 Docker Engine 是两回事。后文的 `daemon.json`、Docker Desktop 设置与 `docker compose` 命令都属于另外两条路线。
+## 方案二：使用 Docker Desktop（WSL 2 后端）
 
-## 路线二：Docker Desktop，无需另装 Ubuntu
+需要图形化管理面板或在 Windows PowerShell 下直接运行 `docker compose` 时，可按 [Docker Desktop 安装文档][docker-desktop-windows] 安装客户端，安装时勾选 **Use WSL 2 instead of Hyper-V**。
 
-需要图形管理或直接复用 Compose 文件时，按 [Docker Desktop 系统要求与安装说明][docker-desktop-windows]安装 Desktop，选择 **WSL 2 后端**和 **Linux containers** 模式。
-
-启动后，在 **Settings → General** 中确认 **Use WSL 2 based engine**。新版支持环境可能默认开启且不显示这个选项。等待引擎就绪后，直接在 **PowerShell** 检查：
+1. 启动 Docker Desktop，在 **Settings → General** 中确认已启用 **Use the WSL 2 based engine**。
+2. 打开 **PowerShell**，验证 Docker 与 Compose 版本：
 
 ```powershell
 docker version
@@ -88,34 +82,37 @@ docker compose version
 docker info
 ```
 
-**以上步骤不要求安装 Ubuntu。** 只有希望在自己的 Ubuntu / Debian 终端中使用 Desktop 引擎时，才安装该发行版，并在 **Settings → Resources → WSL Integration** 启用集成。该发行版里不要再装一套 Engine / CLI；切换已有环境前先备份和核对数据位置。
+- **按需启用 WSL 发行版集成**：如果只在 PowerShell 中操作 Docker，无需额外安装 Ubuntu。若希望在自己的 Ubuntu / Debian 终端内调用同一个 Desktop 引擎，可在安装发行版后打开 **Settings → Resources → WSL Integration** 勾选对应发行版（此时该发行版内无需再重复安装 Docker Engine）。
+- **配置镜像加速与代理**：镜像源（Registry Mirrors）在 **Settings → Docker Engine** 的 JSON 配置中修改，网络代理在 **Settings → Resources → Proxies** 中设置。
 
-镜像加速在 Desktop 的 **Settings → Docker Engine** 中配置，代理使用 Desktop 的代理设置。在另一个 WSL 发行版中修改 `/etc/docker/daemon.json` 或重启 `docker.service`，只影响那个发行版自己的 Engine。
+## 方案三：在 WSL 发行版内安装独立 Docker Engine
 
-## 路线三：WSL 发行版内独立安装 Engine
+如果需要使用完整的 `docker compose`，但不想安装 Docker Desktop，可以在 WSL 2 发行版内部直接安装原生的 Linux Docker Engine：
 
-如果需要完整的 `docker compose`，又不想使用 Desktop，可在 **管理员 PowerShell** 中安装一个受支持的发行版，例如：
+1. 在管理员 PowerShell 中安装 Ubuntu（或 Debian）：
 
 ```powershell
 wsl --install -d Ubuntu
 ```
 
-按提示重启并打开 Ubuntu，完成 Linux 账户初始化。用 `wsl --list --verbose` 确认它运行在 **VERSION 2**；已有 WSL 1 发行版需先备份，再用 `wsl --set-version Ubuntu 2` 转换，发行版名称按列表输出替换。
+2. 完成 Linux 账户初始化后，在 PowerShell 中运行 `wsl --list --verbose` 确认其 `VERSION` 为 `2`（若为 `1`，先执行 `wsl --set-version Ubuntu 2` 转换）。
+3. 进入 Ubuntu 终端，确认已启用 [systemd 支持][microsoft-wsl-systemd]，然后参照 [Docker Engine Ubuntu 官方安装指南][docker-engine-ubuntu] 配置官方 APT 源，安装 `docker-ce`、`docker-ce-cli`、`containerd.io` 与 `docker-compose-plugin`。
+4. 配置镜像加速或守护进程参数时，直接编辑发行版内的 `/etc/docker/daemon.json`，随后执行 `sudo systemctl restart docker` 生效。
 
-在 Ubuntu 内按 [Docker Engine 的 Ubuntu 官方文档][docker-engine-ubuntu]配置软件源并安装 Engine、CLI 和 Compose 插件；Debian 则用其对应文档，软件源按发行版分开写。检查 [systemd][microsoft-wsl-systemd] 是否启用后，再管理 Docker 服务。独立 Engine 默认通常需要 `sudo docker ...`，后续 Docker 命令按实际账户权限执行。
+## 使用 Docker Compose 部署与验证
 
-这条路线不需要 Desktop，也不必同时为该发行版开启 Desktop 集成。Docker 服务、镜像、卷与网络均由自己维护；Docker 服务自动启动只覆盖发行版内部，Windows 不会因此启动这个 WSL 发行版。
+以下流程适用于 **方案二（Docker Desktop）** 与 **方案三（独立 Docker Engine）**。
 
-## 项目目录与访问方式
+### 1. 选择项目存放目录
 
-使用 Desktop 且直接在 PowerShell 操作时，可在自己选定的 Windows 可写目录下创建项目：
+- **Docker Desktop（PowerShell 操作）**：可在 Windows 本地磁盘工作目录下创建项目：
 
 ```powershell
 New-Item -ItemType Directory -Force .\demo-web\html
 Set-Location .\demo-web
 ```
 
-使用 WSL 发行版终端时，优先将项目放在 Linux 文件系统中：
+- **WSL 独立 Engine（或通过 WSL 终端操作）**：建议将项目存放在 Linux 原生文件系统（如 `~/docker/`）下，以获得更好的磁盘 I/O 性能与完整的文件权限支持：
 
 ```bash
 mkdir -p ~/docker/demo-web/html
@@ -123,11 +120,13 @@ cd ~/docker/demo-web
 explorer.exe .
 ```
 
-`explorer.exe .` 会在 Windows 文件资源管理器中打开当前 Linux 目录。WSL 发行版通过 `/mnt/c/` 使用 Windows 文件也可以，但频繁读写时需注意性能、权限和文件事件行为差异。上面两段目录建议对应 Desktop 与独立 Engine 两条路线；WSLc 使用自己的存储与挂载机制。
+（执行 `explorer.exe .` 可直接在 Windows 资源管理器中打开当前 Linux 目录。）
 
-### 用 Compose 测试网页服务
+<span id="用-compose-测试网页服务"></span>
 
-以下示例用于 Docker Desktop 或独立 Engine，Compose 的基础用法可看 [官方入门](https://docs.docker.com/compose/gettingstarted/)。在刚才创建的 `demo-web` 项目中，将下面的内容保存为 `html/index.html`：
+### 2. 用 Compose 测试网页服务
+
+在 `demo-web` 目录下创建 `html/index.html`：
 
 ```html
 <!doctype html>
@@ -139,7 +138,7 @@ explorer.exe .
 </html>
 ```
 
-在 `demo-web` 中保存 `compose.yaml`：
+在 `demo-web` 根目录下创建 `compose.yaml`（更多编排语法见 [Docker Compose 官方入门](https://docs.docker.com/compose/gettingstarted/)）：
 
 ```yaml
 services:
@@ -156,11 +155,9 @@ services:
         max-file: "3"
 ```
 
-端口只绑定本机回环地址，`./html` 按 Compose 文件所在目录解析。先保存网页再启动容器；挂载空目录会遮住 Nginx 自带的欢迎页。
+在 `compose.yaml` 所在目录依次执行校验与启动命令：
 
-在项目目录中依次执行，前一步报错时先处理，再继续：
-
-```text
+```bash
 docker compose config --quiet
 docker compose pull
 docker compose up -d
@@ -168,13 +165,12 @@ docker compose ps
 docker compose logs --tail=50 web
 ```
 
-浏览器打开 `http://localhost:18080`，应看到“Docker 已运行”。修改 `html/index.html` 并刷新，确认挂载生效。测试结束后在同一目录运行 `docker compose down`，本地网页文件会保留。
+在 Windows 浏览器访问 `http://localhost:18080`，确认页面显示“Docker 已运行”；修改 `html/index.html` 后刷新浏览器，即可验证目录挂载实时生效。测试结束后执行 `docker compose down` 停止并移除容器。
 
-### 从本机与局域网访问
+### 3. 本机访问、局域网访问与后台生命周期
 
-WSLc 和 Desktop 的上述网页端口可从 Windows 本机通过 `http://localhost:18080` 访问。独立 WSL Engine 在默认 localhost 转发配置下也可先测试这个地址。局域网其他设备的访问还要看对应路线的网络模式、端口发布和 Windows 防火墙，本机能打开只是第一步。
-
-电脑关机或休眠会中断服务，容器重启策略管不到 Windows 本身。Desktop 的“登录时启动”只在用户登录后启动应用；WSLc、独立 Engine 和 Desktop 的生命周期也各不相同。需要长期运行时，按所选路线分别配置启动与恢复机制，NAS 的常开做法在这里用不上。
+- **访问范围**：上方示例将端口绑定在 `127.0.0.1:18080`，仅限 Windows 本机通过 `localhost` 访问。如需让局域网其他设备访问，需将端口映射改为 `18080:80`、放行 Windows 防火墙，并根据 WSL 网络模式（NAT 或 Mirrored 镜像网络，详见 [WSL 网络说明][microsoft-wsl-networking]）核对局域网可达性。
+- **后台生命周期**：容器的 `restart: unless-stopped` 策略仅在对应的容器引擎运行期间生效。Windows 关机、休眠，或关闭全部 WSL 终端触发 WSL 实例自动回收时，容器也会随之停止；需要随系统登录自启时，可结合 Docker Desktop 的登录自启选项或 [Windows 自启动方法](/posts/windows-app-startup/)配置。
 
 [microsoft-wsl-install]: https://learn.microsoft.com/windows/wsl/install
 [microsoft-wsl-commands]: https://learn.microsoft.com/windows/wsl/basic-commands

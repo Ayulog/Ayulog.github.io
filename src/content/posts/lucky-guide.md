@@ -11,13 +11,13 @@ tags:
   - Lucky
 ---
 
-Lucky 把 DDNS、证书和反向代理放在同一个界面里。有公网入口时，可以用它给照片或媒体服务配一个 HTTPS 地址；没有公网入口的话，先看 [NAS 远程访问](/posts/nas-remote-access/)，DDNS 本身不能打通连接。
+Lucky 将动态域名（DDNS）、ACME 自动证书与 Web 反向代理整合在同一个单文件服务中。当家庭宽带具备公网 IPv4 或公网 IPv6 时，可以用它为内网的相册、影音或文件服务统一配置 HTTPS 域名入口。
 
-部署使用 Linux Docker Engine 和 Compose V2；还没有 Docker 的话，先看 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。其他工具收在 [NAS 服务清单](/posts/nas-software-websites/)。
+部署前若尚未确认宽带是否具备公网入口，可先参考 [NAS 远程访问：网络条件与方案选择](/posts/nas-remote-access/)；更多容器服务见 [NAS 服务清单](/posts/nas-software-websites/)。
 
 ## Docker 部署
 
-在自己的应用目录中建一个 Lucky 项目，把下面保存为 `compose.yaml`，也可以[下载同一份配置](/examples/debnas/lucky/compose.yaml)。
+以下配置基于 Linux Docker Engine 与 Compose V2（安装方法见 [Docker 官方文档](https://docs.docker.com/engine/install/)）。在应用目录中新建 `lucky` 文件夹，保存 `compose.yaml`（或下载 [Compose 示例](/examples/debnas/lucky/compose.yaml)）：
 
 ```yaml
 # Generic Linux host-network example based on the upstream Lucky guide.
@@ -30,11 +30,10 @@ services:
       - ./config:/app/conf
 ```
 
-配置保存在项目下的 `config/`。旧教程中的 `/goodluck` 不适用于这里的镜像；迁移前先导出旧配置，按当前路径放好。
+- **数据目录**：`gdy666/lucky:v2` 镜像的容器内配置路径为 `/app/conf`，映射后所有设置与申请到的证书均保存在项目下的 `./config` 目录中。
+- **网络与端口安全**：使用 `network_mode: host` 便于 Lucky 直接读取宿主机的公网 IPv6 地址并监听转发端口。启动前请确认路由器与 NAS 防火墙（含 IPv4 与 IPv6）未向公网放行默认管理端口 `16601`，管理后台仅限内网或组网 VPN 访问。
 
-本例用 host 网络，端口直接开在 Linux 宿主机上，Compose 的 `ports:` 不再限制监听范围。启动前在路由器和设备防火墙中确认管理端口 `16601` 只允许可信内网或私有组网访问，IPv4 和 IPv6 都要检查。这组网络功能不需要 Docker socket。
-
-在项目目录启动：
+在项目目录校验并启动容器：
 
 ```bash
 docker compose config --quiet
@@ -42,73 +41,50 @@ docker compose up -d
 docker compose logs --tail=100 lucky
 ```
 
-打开 `http://NAS_IP:16601`，将 `NAS_IP` 换成设备的局域网地址。按初始化提示改掉默认账号密码，设置后台安全入口，再配置下面的功能。
+启动后在局域网浏览器访问 `http://NAS_IP:16601`（`NAS_IP` 替换为 NAS 局域网 IP），首次登录后立即修改默认管理员账号与密码，并按需设置后台安全入口（URL 路径前缀）。
 
 ## 方案一：公网 IPv4 + DDNS + Lucky 反向代理
 
-以一个照片 Web 服务为例，假设：
+以对外发布内网相册服务为例，假设环境参数如下（实际操作时请替换为自己的域名与端口）：
 
-- NAS 的固定局域网地址记为 `NAS_IP`，Lucky 也运行在这台 NAS 上。
-- 照片应用已经能通过 `http://NAS_IP:2342` 在内网访问，并已配置登录认证。
-- 对外使用自己的域名，示例用 `photos.example.com` 占位。
-- 选择 TCP `18443` 作为对外 HTTPS 端口，并确认未被占用、运营商允许入站。
+- **NAS 局域网地址**：`NAS_IP`（已在路由器 DHCP 中绑定静态租约），Lucky 与相册服务均运行在该主机上。
+- **内网后端地址**：`http://NAS_IP:2342`（已开启登录认证）。
+- **外部访问域名与端口**：`photos.example.com`，对外 HTTPS 端口选用 TCP `18443`。
 
-这些地址和端口只是示例，实际填写前换成自己的配置。
+按以下顺序在 Lucky 后台与路由器中完成配置：
 
-```text
-外部浏览器 → 家庭公网 IPv4:18443 → 路由器端口映射
-           → Lucky HTTPS:18443 → 内网照片服务:2342
-```
+1. **配置 DDNS 动态域名**：在 Lucky 的 **动态域名** 模块中添加任务，选择域名所在的 DNS 托管服务商（如 Cloudflare、阿里云、腾讯云 DNSPod），填入对应权限的 API 凭据，将 `photos.example.com` 的 **A 记录** 绑定到家庭宽带的公网 IPv4。
+2. **申请 ACME 证书**：在 **SSL 证书** 模块中添加证书，申请方式选择 `ACME`，验证方式选 **DNS-01**（复用上一步的 DNS 服务商 API 凭据）。DNS-01 通过添加 TXT 记录完成域名所有权验证，无需在家庭宽带开放 80 端口，到期前会自动续签。
+3. **添加 Web 反向代理规则**：在 **Web 服务** 模块中添加主规则，监听类型勾选 `IPv4`，监听端口填 `18443` 并开启 **TLS**（自动匹配上面申请的证书）。接着在主规则下添加一条**子规则**：
+   - **前端地址（域名）**：`photos.example.com`
+   - **后端地址**：`http://NAS_IP:2342`
+4. **配置路由器端口映射**：在拨号主路由的端口转发（Port Forwarding）设置中，将外部 WAN 口的 TCP `18443` 映射到 `NAS_IP:18443`，并确认 NAS 本机防火墙允许该端口入站。
+5. **外网验证**：断开手机 Wi-Fi，使用移动数据网络访问 `https://photos.example.com:18443`，验证 HTTPS 证书有效、页面正常加载且可登录上传。
 
-按下面顺序配置，排错会比较清楚。
-
-1. **固定 NAS 的内网地址。** 在路由器中做 DHCP 地址保留，避免 NAS 重启后端口映射指向旧地址。先确认 Lucky 所在环境能访问照片应用。
-2. **配置 DDNS。** 在 Lucky 或 ddns-go 中选择域名的 DNS 托管商，填入具备必要权限的 API 凭据，将 `photos.example.com` 的 A 记录更新为家庭公网 IPv4。DNS 托管商不一定就是购买域名的注册商。
-3. **申请证书。** 在 Lucky 的证书模块中，为 `photos.example.com` 配置 ACME 证书。使用 DNS-01 验证时，通过 DNS 记录证明域名控制权，不要求家里开放入站 80 端口；按所选 DNS 服务商配置验证权限，并检查自动续期。
-4. **添加 Web 反向代理规则。** 监听 IPv4 TCP `18443`，启用 TLS 并选用上面的证书；前端域名填 `photos.example.com`，后端地址填 `http://NAS_IP:2342`。
-5. **设置端口映射与防火墙。** 在持有公网 IPv4 的路由器上，把外部 TCP `18443` 转发到 `NAS_IP:18443`，同时允许 NAS 接收该端口的连接。这里开放的是 HTTPS 服务入口，不是 Lucky 管理端口。
-6. **从外网验证。** 手机关闭 Wi-Fi，使用移动网络打开 `https://photos.example.com:18443`，检查证书、登录、图片加载和文件上传。
-
-证书对应的是域名，使用 `18443` 这类非默认 HTTPS 端口仍可正常验证证书，但访问时要写出端口。普通浏览器访问 HTTPS 默认使用 `443`，A / AAAA 记录不会替你指定 `18443`。
-
-初次排查可先使用 DNS 服务商的“仅 DNS”解析方式，确认直接连接家庭入口的链路可用。若另外启用 CDN 或代理，需要再核对其端口、协议和使用限制。
-
-后续增加媒体库，可以再配置一个域名和一条反向代理子规则。多个 HTTP(S) 应用可以共用一个入口端口，由反向代理按域名分发；SMB 等协议不能直接套用这种 Web 子规则。
-
-示例中 Lucky 到后端使用 HTTP，仅适合可信内网；如果这段连接跨越不可信网络，也应启用并正确验证后端 HTTPS。某些应用还需要设置外部访问地址、可信代理或 WebSocket 支持，以应用自己的反向代理文档为准。
+> [!TIP]
+> 后续新增影视库（如 Jellyfin）或其他 Web 服务时，无需再开新端口：只需为新子域名（如 `media.example.com`）添加 DDNS 记录、申请包含该域名的证书（或申请 `*.example.com` 通配符证书），然后在同一个 `18443` Web 主规则下新增一条反向代理子规则即可。部分应用需在其自身后台配置可信反向代理（Trusted Proxies）或开启 WebSocket 支持（Lucky 子规则默认已开启 WebSocket 透传）。
 
 ## 方案二：公网 IPv6 + DDNS + Lucky
 
-只有公网 IPv6 时，也可以让 Lucky 接收 IPv6 请求，再转给只监听内网 IPv4 的 Web 应用：
+当家庭宽带没有公网 IPv4、但具备可用的公网 IPv6 时，可以让 Lucky 监听公网 IPv6 端口，再将请求反向代理给仅监听内网 IPv4 的后端容器。
 
-```text
-具备 IPv6 的客户端 → Lucky 所在设备的公网 IPv6:18443
-                  → Lucky 反向代理 → 内网 IPv4 照片服务:2342
-```
+沿用上一节的 ACME 证书与后端地址，仅需调整以下三处：
 
-沿用上面的证书和后端配置，主要调整三处：
+1. **更新 AAAA 记录**：在 Lucky 的 **动态域名** 模块中启用 IPv6，将 `photos.example.com` 的 **AAAA 记录** 更新为 Lucky 所在宿主机的公网 IPv6 地址（`2000::/3` 范围的全球单播地址）。
+2. **启用 IPv6 监听**：在 **Web 服务** 主规则中勾选 `IPv6` 监听，端口仍设为 `18443` 并开启 TLS。
+3. **放行 IPv6 入站防火墙**：在路由器 IPv6 防火墙（通信规则）及 NAS 本机防火墙中，精确放行发往该 NAS、目标端口为 TCP `18443` 的入站连接。
 
-1. 将域名的 **AAAA 记录**更新为 Lucky 所在设备的可达 IPv6，核实获取到的不是容器内部地址或另一台设备的地址。
-2. 在 Lucky Web 规则中启用 IPv6 监听，并选择对应证书。
-3. 在路由器 IPv6 防火墙和 NAS 防火墙上，允许发往这台设备 TCP `18443` 的入站连接。
+通过公网 IPv6 直连时，外部访问设备同样需要具备 IPv6 网络（国内三大运营商的 4G/5G 移动数据网络通常默认支持 IPv6）。若家庭宽带无公网 IPv4，切勿为该域名同时添加指向运营商内网地址的 A 记录，以免双栈客户端优先尝试不通的 IPv4 路径。
 
-常见的家庭原生 IPv6 网络不需要 IPv4 那样的 NAT 端口映射，但仍然需要精确放行防火墙。不要为了测试把整个 IPv6 防火墙关闭。
+## 备份、更新与版本说明
 
-这种方式解决的是“外部 IPv6 访问内部 IPv4 服务”，不会让只有 IPv4 的客户端自动获得 IPv6 连接能力。外部网络不支持 IPv6 时，仍需组网或一个能同时连接两侧的中转入口。
-
-如果同一个域名同时配置 A 与 AAAA，要分别验证两条路径。没有可用公网 IPv4，就不要把运营商共享出口地址写入 A 记录当成直连入口。
-
-## 备份与更新
-
-备份 `compose.yaml` 和整个 `config/`，其中包含 DNS 凭据和证书私钥。也可以使用 Lucky 自带的配置导出功能。镜像标签 `v2` 会随上游更新，长期运行时可在验证兼容后固定版本或摘要；更新前先看发布说明，再拉取镜像并按原 Compose 重建。
-
-同一个域名的同类记录只交给一个 DDNS 工具更新。已经在 Lucky 中配置了 DDNS，就不必再让 ddns-go 写同一条 A 或 AAAA 记录。
-
-Lucky 仓库的源码公开到 `1.4.10`，后续版本暂无继续开源计划。当前版本的功能以[官方安装说明](https://lucky666.cn/docs/install)为准；需要尝试 STUN 时，另看[远程访问笔记](/posts/nas-remote-access/#方案四lucky-stun适合愿意折腾的环境)。
+- **配置备份**：日常备份只需保留 `compose.yaml` 与整个 `config/` 目录（也可在 Lucky 网页端的 **设置 → 备份与恢复** 中导出压缩包）。目录内包含 DNS API 密钥与证书私钥，请妥善保存在私有存储中。
+- **避免重复配置 DDNS**：同一个域名的同一类记录（A 或 AAAA）只需交由一个工具维护；已在 Lucky 中配置了 DDNS，就无需再用 `ddns-go` 更新同一记录。
+- **版本与开源说明**：Lucky 的 GitHub 仓库源码公开至 `1.4.10`，后续 `v2` 版本以预编译镜像和二进制形式发布，具体功能变更以 [官方安装与更新文档](https://lucky666.cn/docs/install) 为准。若需在 NAT1 环境下尝试 STUN 内网穿透，可参考 [NAS 远程访问中的 Lucky STUN 说明](/posts/nas-remote-access/#方案四lucky-stun适合愿意折腾的环境)。
 
 ## 参考资料
 
-- [Lucky 安装与升级](https://lucky666.cn/docs/install)
-- [动态域名](https://lucky666.cn/docs/modules/ddns)、[Web 服务](https://lucky666.cn/docs/modules/web)、[SSL 证书](https://lucky666.cn/docs/modules/ssl)
+- [Lucky 官方文档：安装与升级](https://lucky666.cn/docs/install)
+- [Lucky 模块说明：动态域名（DDNS）](https://lucky666.cn/docs/modules/ddns)、[Web 服务（反向代理）](https://lucky666.cn/docs/modules/web)、[SSL 证书](https://lucky666.cn/docs/modules/ssl)
 - [Lucky GitHub 仓库](https://github.com/gdy666/lucky)
-- [Let's Encrypt 验证方式](https://letsencrypt.org/docs/challenge-types/)
+- [Let's Encrypt：验证方式（Challenge Types）](https://letsencrypt.org/docs/challenge-types/)

@@ -98,19 +98,19 @@ export const sections: readonly Section[] = [
   {
     slug: "setup",
     label: "折腾",
-    description: "系统、网络、存储与下载。每条教程记录一个具体流程或软件。",
+    description: "Windows、NAS、软路由、容器部署与 PT 下载。",
     categories: ["windows", "nas", "network", "pt"],
   },
   {
     slug: "media",
     label: "影音",
-    description: "媒体库、字幕、音频、蓝光与压制。从找片到成片的分工记录。",
+    description: "媒体库、字幕、音轨、蓝光原盘 DIY 与视频压制。",
     categories: ["library", "subtitles", "audio", "diy", "encode"],
   },
   {
     slug: "notes",
     label: "随笔",
-    description: "不归入教程的零散记录。",
+    description: "平时生活、阅读和其他零散记录。",
     categories: ["life"],
   },
 ];

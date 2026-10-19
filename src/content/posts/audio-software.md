@@ -10,42 +10,42 @@ tags:
   - 音轨
 ---
 
-处理一条音轨前先确定用途：保留原轨、制作兼容副本，还是检查来源与转码痕迹。目标不同，提取、转换或编码的路径也不同，做完再核对声道、时长与同步。
+处理影视与音乐音轨时，通常会根据成品要求选择保留原始无损码流、提取内嵌核心、转换为 FLAC，或是重新编码为 AAC、Dolby Digital Plus（E-AC-3）等兼容格式。以下按工作环节整理常用工具与教程入口。
 
-## 从识别来源到封装验收
+## 音轨处理基本流程
 
-1. **识别来源。** 记录音轨编码、声道、采样率、时长与延迟，确认它属于目标节目的哪个版本。
-2. **选择处理方式。** 能满足播放要求时保留原轨；需要核心、无损转换或兼容编码时，再明确要保留和改变的内容。
-3. **先处理一条音轨。** 提取或编码后核对日志与输出信息，再决定是否处理剩余任务。
-4. **按问题补做分析。** 怀疑来源或转码痕迹时，按一致的参数观察频谱，并结合来源和测量结果判断。
-5. **封装与验收。** 写清语言、轨道名称与默认标记，回看开头、中段和结尾，检查音画同步及目标设备播放。
+1. **识别音轨参数**：使用 MediaInfo 查看编码格式、声道布局、采样率、位深、时长与延迟，确认其对应的影片版本。
+2. **确定处理路线**：优先保留原盘无损轨（TrueHD / DTS-HD MA / LPCM）；有设备兼容或体积要求时，再选择剥离 DTS Core、转 FLAC 或压制有损兼容轨。
+3. **提取与编码转换**：使用 eac3to、DGDemux、qaac 或 deew 执行分流与编码，检查运行日志与输出文件信息。
+4. **声谱与质量排查**：怀疑音源经历过有损转码或上采样时，使用固定 FFT 参数查看声谱图并结合抓轨/编码记录核实。
+5. **混流封装与验收**：在 MKVToolNix 中填写准确的语言代码、轨道名称与延迟值，混流后抽查片头、中段、分支接缝与片尾的音画同步。
 
-## 相关文章
+## 本站教程入口
 
-- [音频处理篇：音轨识别、提取与编码](/posts/audio-processing/)：按目标选择原轨保留、DTS core、无损转换、QAAC 或 deew 编码，最后封装检查。
-- [音频篇：频谱学习](/posts/audio-spectrum-learning/)：读懂坐标与 FFT，使用固定参数比较频谱，区分观察线索与可下的结论。
+- [音频处理篇：音轨识别、提取与编码](/posts/audio-processing/)：涵盖 MediaInfo 音轨识别、DTS Core 剥离、FLAC 无损转换，以及使用 qaac、deew 编码 AAC 与杜比音轨的完整步骤。
+- [音频篇：频谱学习](/posts/audio-spectrum-learning/)：解析声谱图（Spectrogram）的频率坐标、dBFS 标尺与 STFT 分辨率设置，辨析有损低通截断、编码斑块与母带特征。
 
 ## 音轨提取与转换
 
-- **[eac3to](https://forum.doom9.org/showthread.php?t=125966)**：音视频分流与音频转换工具，可查看轨道信息、提取音轨和章节、处理延迟、重采样以及转换音频格式。Doom9 原帖保留说明，并指向新版本发布入口；格式支持与依赖条件随所用版本而不同。
-- **[UsEac3to](https://forum.doom9.org/showthread.php?t=145574)**：eac3to 的图形前端，便于选择文件、组织命令和查看帮助；仍需要理解并填写 eac3to 参数。下载时一起核对原帖中的 eac3to 版本要求。
-- **[AudioMuxer](https://www.videohelp.com/software/AudioMuxer)**：面向音频转换与影音封装的 Windows 工具，可处理多声道音频，并生成 DVD、MKV 等输出。VideoHelp 已标为停止开发；[SurroundByUs 原发布帖](http://www.surroundbyus.com/sbu/viewtopic.php?p=788#p788)在本次整理时返回 404，保留作旧资料入口。
+- **[eac3to](https://forum.doom9.org/showthread.php?t=125966)**：经典的蓝光播放列表分析、音视频分流与音频转换命令行工具，支持提取原始音轨、剥离 DTS Core、校正延迟、重采样及转换为 FLAC / WAV / AC-3 / DTS 等格式（视频与原盘分流用法见[蓝光原盘 Remux](/posts/blu-ray-remux/#eac3to-与-useac3to分析与音轨分流)）。
+- **[UsEac3To](https://forum.doom9.org/showthread.php?t=145574)**：eac3to 的图形界面前端，方便直观选择轨道编号、输出扩展名与常用参数，并支持联动 `mkvmerge` 直接混流（下载时注意匹配对应的 eac3to 版本）。
+- **[AudioMuxer](https://www.videohelp.com/software/AudioMuxer)**：面向多声道音频转换与影音封装的经典 Windows 工具（已归档停更），支持处理多声道 WAV / FLAC / DTS 并封装至 MKV 或 DVD 结构。
 
-如果只是保留原有音轨并调整轨道顺序、语言或默认标记，可接着看 [DIY 清单中的 MKVToolNix](/posts/media-diy-software/#提取与封装)。
+若只需在现有容器中调整音轨顺序、修改语言标签或勾选 `Reduce to core` 提取 DTS 核心，可直接使用 [蓝光与媒体工具清单中的 MKVToolNix](/posts/media-diy-software/#提取与封装)。
 
-## AAC 与 Dolby 编码
+## AAC 与 Dolby 编码工具
 
-- **[qaac](https://github.com/nu774/qaac)**：调用 Apple 音频组件的 AAC / ALAC 命令行编码工具。项目仓库提供源码和发布版本，安装依赖、质量模式和多声道处理可查下面的官方 Wiki。使用前核对当前 README 中的编码模式与组件版本说明。
-- **[deew](https://github.com/pcrlnd/deew)**：Dolby Encoding Engine 的命令行封装，负责输入转换、配置生成和批量编码等步骤。需要 FFmpeg、ffprobe，以及另行准备的 Dolby Encoding Engine 和相应许可；deew 本身不包含 Dolby 编码器，具体参数与依赖以项目 README 为准。
+- **[qaac](https://github.com/nu774/qaac)**：调用 Apple CoreAudio 组件的命令行音频编码器，支持高质量有损 AAC（TVBR / CVBR / ABR）与无损 ALAC 编码，广泛用于压制立体声及多声道音轨。
+- **[deew](https://github.com/pcrlnd/deew)**：针对商业级 Dolby Encoding Engine（DEE）的命令行封装工具，配合 FFmpeg、ffprobe 与已授权的 DEE 环境，可将 FLAC、WAV、TrueHD、DTS 等音轨批量编码为合规的 Dolby Digital（AC-3）、Dolby Digital Plus（E-AC-3）、AC-4 或 TrueHD。
 
-## 文档与教程
+## 参考文档与进阶资料
 
-- **[eac3to Wiki](https://en.wikibooks.org/wiki/Eac3to)**：包含功能说明、使用方式、技术解释和 FAQ，适合查分流、格式转换与延迟处理的概念。部分内容基于旧版本，需要对照当前发布说明。
-- **[qaac Wiki](https://github.com/nu774/qaac/wiki)**：查具体选项时的主要入口，涵盖输入输出格式、编码器配置、采样率转换、混音矩阵和章节等内容。
-- **[QAAC 音频编码器命令行参数教程](https://www.nazorip.site/archives/44/)**：NAZOrip 的中文教程，页面署名 A@NAZOrip，包含安装依赖、命令行参数和音频处理说明。
-- **[压制软件与资料清单](/posts/encode-software/)**：收录 iAvoe 的 x264 / x265 / QAAC / ffprobe 教程、通用压制指南与论坛。音频与视频一起处理时，可从那里查完整流程和 FFmpeg 入口。
+- **[eac3to Wiki](https://en.wikibooks.org/wiki/Eac3to)**：整理了 eac3to 的核心功能、输入输出格式支持、延迟处理机制与常用参数说明。
+- **[qaac Wiki](https://github.com/nu774/qaac/wiki)**：qaac 官方文档，详述 Apple CoreAudio 依赖提取、质量档位、采样率转换、多声道混音矩阵与管道输入用法。
+- **[QAAC 音频编码器命令行参数教程](https://www.nazorip.site/archives/44/)**：由 A@NAZOrip 整理的中文指南，包含运行环境配置、`qaac --check` 校验、FFmpeg 管道联动及常用压制参数示例。
+- **[压制软件与资料清单](/posts/encode-software/)**：汇总 FFmpeg、x264 / x265 编码器、VapourSynth 滤镜及 iAvoe 等压制教程，适合音视频联合压制时查阅。
 
-## 相关分类
+## 相邻分类清单
 
-- [字幕软件清单](/posts/subtitle-software/)：字幕编辑、识别、翻译和时间轴同步。
-- [蓝光与媒体工具清单](/posts/media-diy-software/)：原盘检查、轨道提取、重新封装、章节和 HDR 元数据。
+- [蓝光与媒体工具清单](/posts/media-diy-software/)：原盘检查、播放列表分流、MKV Remux、章节编辑与杜比视界元数据处理。
+- [字幕软件清单](/posts/subtitle-software/)：字幕编辑、OCR 识别、时间轴对齐与蓝光 SUP 图形字幕渲染。

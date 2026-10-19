@@ -22,8 +22,8 @@ const t = useTranslations(locale);
 
   <Breadcrumb />
 
-  <Main pageTitle={t.pages.tagsTitle} pageDesc={t.pages.tagsDesc}>
-    <ul class="flex flex-wrap gap-6">
+  <Main pageTitle={t.pages.tagsTitle}>
+    <ul class="flex flex-wrap gap-4 sm:gap-6">
       {tags.map(({ tag, tagName }) => <Tag {tag} {tagName} />)}
     </ul>
   </Main>

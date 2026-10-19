@@ -10,87 +10,61 @@ tags:
   - Docker
 ---
 
-1Panel 把应用商店、容器、网站、数据库和备份收进一个面板，装应用时省去一部分手写配置；镜像来源、端口和数据目录仍要自己看清。官方安装脚本和社区容器镜像的安装位置、数据目录与升级方式不同，先确定面板跑在哪里再动手。
+1Panel 提供了可视化的 Linux 服务器管理、应用商店、容器编排、网站反代与定时备份功能。在 NAS 上部署 1Panel V2 有两种常见路径：自建 Debian 等标准 Linux 系统可直接使用官方脚本安装在宿主机；绿联、极空间、飞牛等不便改动底层系统的品牌 NAS，则可使用社区维护的 Docker 镜像 `moelin/1panel` 部署。
 
-文中的 `NAS_IP` 换成设备地址，管理页面放在可信局域网或私有组网内，两种方式各自使用独立的数据目录和端口。返回 [NAS 服务清单](/posts/nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/docker-management/)。
+同类容器面板的对比见 [NAS 服务清单](/posts/nas-software-websites/)，通用的容器备份与升级原则见 [Docker 应用维护](/posts/docker-management/)。
 
-## 开始之前
+## 方式一：Linux 宿主机直接安装
 
-两种方法选一种：
+### 运行官方安装脚本
 
-- 自建 Debian 等受支持的 Linux 主机：使用官方安装脚本，面板直接运行在宿主机上。
-- 已有 Docker 的 NAS：可评估社区镜像 `moelin/1panel`。品牌 NAS 的 Docker 引擎由厂商套件管理，官方 Linux 安装脚本面向自建系统。
-
-## 方法一：在 Linux 上直接安装
-
-### 系统要求
-
-[官方在线安装文档][panel-install]支持基于 Debian、RedHat 的主流 Linux 发行版，包括部分国产系统；架构列有 `x86_64`、`aarch64`、`armv7l`、`ppc64le`、`s390x` 和 `riscv64`。建议可用内存大于 1 GB，并能访问互联网。面板跑起来之后，装应用还要看该镜像自己发布了哪些架构。
-
-以下命令以 Debian 为例，在目标 NAS 的 SSH 终端中用 root 执行；普通管理员先运行 `sudo -i`。安装过程会写入系统服务、安装目录和网络配置，已有 Docker 的主机要保留现有数据及引擎配置。
-
-### 下载并运行安装脚本
-
-先安装下载工具：
+在 Debian 等 Linux 主机上以 `root` 权限执行以下命令（普通管理员可先执行 `sudo -i`），安装基础下载工具并运行 [1Panel 官方 V2 在线安装脚本][panel-install]：
 
 ```bash
-apt update
-apt install -y curl ca-certificates
-```
-
-使用官方 V2 在线安装脚本，下载成功后再运行：
-
-```bash
+apt update && apt install -y curl ca-certificates
 curl -fL https://resource.fit2cloud.com/1panel/package/v2/quick_start.sh -o 1panel-quick-start.sh
 bash 1panel-quick-start.sh
 ```
 
-如果下载失败，先处理网络问题，不要继续执行第二行。按脚本提示选择安装目录、端口、安全入口和管理员账号。默认安装目录为 `/opt`，面板数据放在其下的 `1panel/`；使用其他磁盘时填稳定挂载的绝对路径。
-
-没有 Docker 时，按安装器提示决定是否安装；已有 Docker 时先核对检测结果，不要重复安装或覆盖已有 `daemon.json`。品牌 NAS 使用厂商提供的容器套件，跳到下面的 Docker 方法。
-
-安装结束后，终端会打印访问地址，形式为：
+跟随终端交互提示依次设置安装目录（默认 `/opt`，面板数据存放在 `/opt/1panel/`）、监听端口、安全入口（Entrance）以及管理员账号密码。安装完成后，终端会输出面板访问地址：
 
 ```text
 http://NAS_IP:实际端口/实际安全入口
 ```
 
-端口和入口看安装输出的最后几行，不一定与下面 Docker 示例中的 `10086` 相同。若有防火墙，只允许需要访问面板的局域网或私有组网地址连接该端口。
+### 常用 `1pctl` 命令行操作
 
-### 查看状态与修改账号
-
-在宿主机终端执行：
+宿主机直接安装后，可在终端通过 [1pctl 命令行工具][panel-cli] 查看运行状态、找回安全入口或修改登录信息：
 
 ```bash
+# 查看核心服务、Agent 状态与面板版本
 1pctl status core
 1pctl status agent
 1pctl version
+
+# 查看面板访问地址与账户信息
 1pctl user-info
-```
 
-忘记访问入口时查看 `user-info`。修改用户名、密码或端口使用交互命令：
-
-```bash
+# 交互式修改管理员用户名、密码或监听端口
 1pctl update username
 1pctl update password
 1pctl update port
+
+# 重启全部面板服务
+1pctl restart all
 ```
 
-需要重启面板时执行 `1pctl restart all`；完整用法见 [1pctl 命令行工具][panel-cli]。`update` 修改面板配置，版本升级在 Web 控制台中点击“检查更新”。升级前备份面板和应用数据。
+### 宿主机安装注意事项
 
-## 方法二：使用社区 Docker 镜像
+- **环境与硬件要求**：官方安装脚本支持主流 Debian / RedHat 系发行版（含 `x86_64`、`aarch64` 等架构），建议可用内存大于 1 GB。
+- **已有 Docker 环境处理**：若宿主机已按 [Docker 官方 Debian 文档][docker-debian] 安装了 Docker Engine，运行安装脚本时保留现有 Docker 配置与 `/etc/docker/daemon.json`，无需重复安装。
+- **访问范围控制**：1Panel 具备完整的宿主机管理权限，建议仅在局域网或私有组网中访问对应端口。
 
-需要 Linux Docker Engine 和 Compose V2。自建 Debian 的安装步骤见 [Docker 官方 Debian 文档][docker-debian]；品牌 NAS 使用厂商容器套件提供的 Compose 或项目功能。以下命令都在保存 `compose.yaml` 的项目目录执行。
+## 方式二：Docker 容器部署（社区镜像）
 
-下面使用 [okxlin/docker-1panel][panel-image] 提供的社区容器镜像 `moelin/1panel`，它不附带 1Panel 或 NAS 厂商的机型兼容性承诺；容器里的系统监控读到的范围也与宿主机管理不同。
+### 编写 Compose 与启动容器
 
-挂载 `/var/run/docker.sock` 后，面板可以操作宿主机 Docker，具有很高的主机权限；追加 `:ro` 也不会把 Docker API 变成只读。
-
-旧教程的 `koryking/1panel`、`PANEL_PORT`、`PANEL_BASE_DIR` 属于其他部署示例。已有 V1 的部署要按迁移流程处理，改标签换成 V2 不算升级。
-
-### Compose 部署与路径约定
-
-示例固定使用维护者文档列出的 `v2.2.2`（2026-10-10 核对）。在 NAS 创建项目和数据目录，将以下保存为 `compose.yaml`：
+在不便直接运行宿主机安装脚本的 NAS 上，可使用 [okxlin/docker-1panel][panel-image] 维护的社区镜像 `moelin/1panel`。在 NAS 上创建项目目录与数据目录（以下以 `/volume1/docker/1panel/data` 为例），保存 `compose.yaml`：
 
 ```yaml
 services:
@@ -116,50 +90,42 @@ services:
         max-file: "3"
 ```
 
-先修改管理员名、安全入口和实际数据路径。`/volume1/docker/1panel/data` 是示例，其他 NAS 按实际存储路径修改。`ENTRANCE` 只填路径片段，不加前后 `/`。首次启动时 `PASSWORD` 留空会生成随机密码并输出到日志，分享日志时遮盖凭据。
-
-`BASE_DIR` 与挂载左右两侧保持同一个宿主机真实路径。面板通过宿主机 Docker 创建应用，绑定挂载源路径由宿主机解释；随意把它映射成容器内另一条 `/data`，容易让应用读到空目录。
-
-示例用 Linux host 网络，不再配置 `ports:`。确认 `10086` 未被占用；需要修改时更改 `PORT`，浏览器也使用实际端口。
+在项目目录启动容器，并从启动日志中获取初始密码：
 
 ```bash
-docker compose config --quiet
 docker compose up -d
 docker compose logs --tail=100 1panel
 ```
 
-初始化完成后访问 `http://NAS_IP:10086/nas-panel-entry`，使用配置的用户名与日志生成的密码。检查容器列表和数据路径，再安装一个测试应用，确认实际挂载与访问正常。
-
-需要查看版本或入口时，在 NAS 终端执行：
+初始化完成后，浏览器访问 `http://NAS_IP:10086/nas-panel-entry` 登录。后续如需在终端调用 `1pctl`，可通过 `docker exec` 执行：
 
 ```bash
 docker exec -it 1panel-v2 1pctl version
 docker exec -it 1panel-v2 1pctl user-info
 ```
 
-## 应用商店与第三方模板
+### 容器部署关键参数说明
 
-先用内置商店完成一次部署：查看应用来源和版本，填写端口、账号及数据位置，确认数据库等依赖，再检查部署日志和应用页面。面板端口 `10086` 与应用自身端口分开设置。
+- **`BASE_DIR` 与路径一致性**：`BASE_DIR` 环境变量与 `volumes` 挂载的左右两侧必须填写**完全相同的宿主机绝对路径**（如 `/volume1/docker/1panel/data:/volume1/docker/1panel/data`）。因为 1Panel 通过宿主机 `/var/run/docker.sock` 创建应用商店容器，保持内外路径一致才能让子容器准确挂载到宿主机数据目录。
+- **初始凭据与安全入口**：`ENTRANCE` 仅填写路径字符（不带前后 `/`）；首次启动时若 `PASSWORD` 留空，容器会自动生成随机密码并打印在日志中。容器完成初始化落盘后，再次修改 YAML 中的账号、密码或入口变量不会覆盖已有数据库，需在面板设置中或通过 `docker exec -it 1panel-v2 1pctl update ...` 修改。
+- **网络与端口**：示例采用 `host` 网络模式，面板监听端口直接由 `PORT` 变量控制（默认 `10086`），修改前确认宿主机该端口未被占用。
 
-应用数据可能放在面板目录，也可能在其他绑定目录或命名卷中，装完看容器的实际挂载。原有容器能在面板里看见，但它们仍属于原来的部署，不会因此变成商店应用。
+## 应用商店与本地应用模板导入
 
-需要第三方模板时，可参考 [okxlin/appstore 的 `localApps` 分支][panel-appstore]。按上面的 Docker 示例，本地应用目录为：
+在 1Panel 应用商店安装软件时，确认应用的外部端口、数据库依赖及挂载目录后再提交部署。需要注意：宿主机原有的其他 Docker 容器虽然会显示在 1Panel 的“容器”列表中，但并不属于“已安装应用”，仍应通过原 Compose 目录维护。
 
-```text
-/volume1/docker/1panel/data/1panel/resource/apps/local/
-```
+如需补充第三方应用商店模板，可导入 [okxlin/appstore 的 `localApps` 分支][panel-appstore]：
 
-直接安装且使用默认目录时，对应 `/opt/1panel/resource/apps/local/`；其他情况按实际安装目录查找。
+1. 定位本地应用模板目录：宿主机默认安装路径为 `/opt/1panel/resource/apps/local/`，上方 Docker 部署路径为 `/volume1/docker/1panel/data/1panel/resource/apps/local/`。
+2. 下载 `localApps` 分支压缩包并解压，将其中 `apps/` 目录下的各个应用文件夹直接放入 `local/` 目录内（结构为 `local/<应用名>/...`）。
+3. 进入 1Panel 应用商店点击“更新应用列表”，即可在“本地”分类下查看并安装导入的模板。
 
-核对实际目录并备份已有模板后，下载该分支 ZIP，把 `apps` 内的各应用目录放进 `local/`，最终应是 `local/应用目录/...`，不要多套一层仓库目录。刷新本地应用列表后，逐项检查需要的应用再安装。
+## 版本升级、备份与登录排错
 
-模板更新和已安装应用的镜像升级是两步操作。同名模板可能覆盖自己改过的内容；第三方商店的模板仍要自己保证镜像仓库连得上。
+### 升级面板版本
 
-## 更新、备份与登录排错
-
-直接安装使用面板内的“检查更新”；Docker 方式按下面的方法更新镜像。
-
-社区镜像维护者建议拉取新镜像并重建，避免在容器内直接升级面板二进制。先阅读目标版本说明，备份 Compose、`data/1panel/` 与各应用实际数据，再修改为确认兼容的版本标签：
+- **宿主机直接安装**：在 1Panel Web 控制台右下角或系统设置中点击“检查更新”直接升级。
+- **Docker 容器部署**：社区镜像推荐通过更换镜像标签并重建容器的方式升级（不要在容器内直接升级二进制文件）。先备份面板目录与应用数据，将 `compose.yaml` 中的镜像版本号修改为目标版本后执行：
 
 ```bash
 docker compose pull 1panel
@@ -167,12 +133,10 @@ docker compose up -d 1panel
 docker compose logs --tail=100 1panel
 ```
 
-固定标签下仅执行 `pull` 不会跳到另一个版本；`1pctl update` 用于修改用户名、密码、端口等配置，不是版本升级命令。
+### 数据备份与登录排错
 
-页面打不开，先核对 IP、端口、安全入口和协议，再看初始化日志及防火墙。已有数据后，改 Compose 里的 `USERNAME`、`PASSWORD`、`ENTRANCE` 不会覆盖已有的账号设置，优先在面板内修改，或按维护者给的恢复说明操作。`RESET=true` 会强制重新配置，用完记得去掉。
-
-备份面板目录时，还要覆盖商店应用的数据库、卷和外部文件。停掉 1Panel 容器后，商店应用仍在运行并写入数据，文件级备份要按各数据库自己的方式安排。
-原始部署笔记参考磕巴白菜的 [1Panel](https://hi.keba.host/archives/ugreen-1panel)，参数按下列上游资料核对。
+- **备份范围**：除备份 `1panel/` 面板自身数据外，还需一并备份应用商店所创建容器的数据库与外部挂载卷。注意停止 `1panel-v2` 容器并不会停止由它部署的业务容器，备份数据库前应单独暂停对应业务服务或使用面板自带的应用备份功能。
+- **登录排错**：若面板页面无法打开，依次核对 URL 末尾是否带上了正确的 `ENTRANCE` 安全入口、HTTP/HTTPS 协议是否匹配、宿主机防火墙是否放行端口。若容器版忘记登录信息且需要强制重置为环境变量配置，可临时添加环境变量 `RESET=true` 启动一次，重置生效后立即移除该变量。
 
 ## 参考资料
 
@@ -181,6 +145,7 @@ docker compose logs --tail=100 1panel
 - [okxlin/docker-1panel 社区镜像][panel-image]
 - [okxlin/appstore 本地应用模板][panel-appstore]
 - [Docker Engine 在 Debian 上的安装说明][docker-debian]
+- 磕巴白菜：[绿联 NAS 部署 1Panel 笔记](https://hi.keba.host/archives/ugreen-1panel)
 
 [panel-install]: https://docs.fit2cloud.com/1panel/installation/online-installation
 [panel-cli]: https://docs.fit2cloud.com/1panel/installation/cli

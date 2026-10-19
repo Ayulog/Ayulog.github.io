@@ -10,21 +10,13 @@ tags:
   - Docker
 ---
 
-**截至 2026 年 10 月 10 日，Watchtower 官方仓库已归档，README 明确说明不再维护，最新发布仍为 `v1.7.1`。** 仍在用旧部署的，先确认它能连上当前的 Docker API。
+Watchtower 通过监控容器当前使用的镜像标签（如 `latest`），在远程仓库发布新镜像层时自动发送通知或按原创建参数重建容器。需要注意，[Watchtower 官方仓库][watchtower-repo]目前已归档停止维护（停留在 `v1.7.1`）。若在现有 NAS 上继续使用 Watchtower，建议默认开启“标签白名单”与“仅监控模式”，避免数据库或 PT 下载器在无人值守时被意外重启。
 
-Watchtower 检查的是容器正在使用的镜像引用：写 `example/app:1.2.3` 就盯着 `1.2.3`，不会自己换成 `1.2.4`；写 `latest` 才跟着该标签走。重建时它照抄容器现有配置，原 Compose 和大版本迁移仍由自己处理。
+其他容器管理与更新工具见 [NAS 服务清单](/posts/nas-software-websites/)，通用的手动更新与数据备份流程见 [Docker 应用维护](/posts/docker-management/)。
 
-返回 [NAS 服务清单](/posts/nas-software-websites/)；工具怎么选、升级前要备份什么，见 [Docker 管理工具与维护笔记](/posts/docker-management/)。
+## Compose 部署：标签白名单与仅监控模式
 
-## 开始之前
-
-需要 Linux Docker Engine 和 Compose V2。还没装好时，先看 [Docker 官方安装文档](https://docs.docker.com/engine/install/)。每个工具放在独立目录中，下面的命令都在它自己的 Compose 项目目录执行。
-
-文中的 `NAS_IP` 换成设备地址。管理页面只放在可信局域网或私有组网内；挂载 `/var/run/docker.sock` 后，工具就能操作宿主机 Docker，追加 `:ro` 也不会把 Docker API 变成只读。
-
-## 先用标签白名单和仅监控
-
-在独立项目中创建：
+确保宿主机已安装 [Docker Engine](https://docs.docker.com/engine/install/) 与 Compose V2。新建独立的 Watchtower 项目目录，保存以下 `compose.yaml`：
 
 ```yaml
 services:
@@ -47,30 +39,31 @@ services:
         max-file: "3"
 ```
 
-这表示每天北京时间 **03:00** 检查明确启用的容器，发现更新后记录结果，暂不重建业务容器。普通定时模式没有 Web 页面，无需映射端口或使用 host 网络。
-
-Watchtower 的 cron 是六段，依次为“秒、分、时、日、月、星期”。若改为每小时轮询，应删除 `WATCHTOWER_SCHEDULE`，再设 `WATCHTOWER_POLL_INTERVAL: "3600"`；定时和间隔不能同时配置。未显式设置时，默认轮询间隔是 24 小时。
-
-在要检查的**目标应用原 Compose**中合并：
+在需要纳入监控的**目标业务容器 `compose.yaml`** 中添加启用标签，并执行 `docker compose up -d` 重新部署该业务容器使标签生效：
 
 ```yaml
 labels:
   com.centurylinklabs.watchtower.enable: "true"
 ```
 
-重新部署目标服务，标签才会应用到容器；只保存文件或执行 `docker restart` 不会更新创建参数。PT 下载器可以明确写成 `"false"`。示例开启白名单，没有启用标签的容器不会被选中。
-
-然后启动 Watchtower，检查日志中是否有 API、权限或定时错误：
+随后在 Watchtower 目录启动服务并检查日志：
 
 ```bash
-docker compose config --quiet
 docker compose up -d
 docker compose logs --tail=100 watchtower
 ```
 
-## 立即检查、通知与自动更新
+核心参数与运行机制说明：
 
-要立即执行一次，在 Watchtower 项目目录运行：
+- **白名单与仅监控**：`WATCHTOWER_LABEL_ENABLE: "true"` 限制仅检查带有 `enable: "true"` 标签的容器（PT 下载器等敏感服务可不加标签或显式设为 `"false"`）；`WATCHTOWER_MONITOR_ONLY: "true"` 表示仅检查更新并记录日志/发送通知，不自动重启业务容器。
+- **定时表达式**：`WATCHTOWER_SCHEDULE` 使用 6 位 Cron 格式（秒 分 时 日 月 星期），上方 `"0 0 3 * * *"` 代表每天凌晨 03:00 执行。若改用固定秒数间隔轮询（如 `WATCHTOWER_POLL_INTERVAL: "3600"`），需先删掉 `WATCHTOWER_SCHEDULE`。
+- **镜像标签跟随逻辑**：Watchtower 仅检查容器当前声明的那个标签是否有新 Digest。若容器固定为 `example/app:1.2.3`，它只会检查 `1.2.3` 是否被重推，不会自动跨版本跳到 `1.2.4`。
+
+## 手动单次检查、消息通知与开启自动更新
+
+### 立即触发一次检查
+
+如需立刻测试监控范围是否配置正确，可先暂停常驻容器，使用 `--run-once` 临时运行一次单次检查，完毕后再恢复常驻实例：
 
 ```bash
 docker compose stop watchtower
@@ -78,9 +71,11 @@ docker compose run --rm watchtower --run-once --monitor-only --label-enable
 docker compose up -d watchtower
 ```
 
-先停常驻实例，避免同时处理同一批容器。`--run-once` 本身会尝试更新，上面明确保留 `--monitor-only` 才不会重建业务容器。**仅监控仍可能拉取新镜像**，占用流量与磁盘；以后手动执行原项目的 `up -d` 时，也要注意本地标签可能已指向新镜像。
+注意单次运行时务必带上 `--monitor-only`，否则 `--run-once` 会直接更新命中的容器。
 
-通知可按[官方通知文档][watchtower-notifications]配置 Shoutrrr。将实际通知 URL 放到项目目录的 `notification-url.txt`，在现有 Compose 中合并：
+### 配置 Shoutrrr 消息通知
+
+Watchtower 支持通过 Shoutrrr 发送邮件、Telegram、Bark 或 Webhook 通知（详见 [官方通知文档][watchtower-notifications]）。将通知地址写入项目目录下的 `notification-url.txt`，并在 `compose.yaml` 中通过 Compose `secrets` 挂载传入：
 
 ```yaml
 services:
@@ -95,24 +90,24 @@ secrets:
     file: ./notification-url.txt
 ```
 
-保留原有 `environment` 项，只添加新变量，不要重复写两个同名键。通知 URL 可能包含令牌或密码；Compose secrets 在这里通过文件传入内容，并不自动加密宿主机源文件。
+### 按需启用自动重建与旧镜像清理
 
-确认目标范围、兼容性和恢复流程后，才把 `WATCHTOWER_MONITOR_ONLY` 改成 `"false"` 并重建 Watchtower。需要继续只监控的单个服务，可同时设置启用标签和 `com.centurylinklabs.watchtower.monitor-only: "true"`。
+确认白名单范围与备份流程稳妥后，若希望让 Watchtower 自动重建白名单内的无状态容器，可将全局 `WATCHTOWER_MONITOR_ONLY` 改为 `"false"`（若其中个别白名单容器仍只想收通知、不自动重建，可在该业务容器上单独添加标签 `com.centurylinklabs.watchtower.monitor-only: "true"`）。如需在更新成功后自动删除替换下来的旧镜像，可额外添加环境变量 `WATCHTOWER_CLEANUP: "true"`。
 
-第一次更新后，检查应用页面、日志和数据。`WATCHTOWER_CLEANUP: "true"` 会清理更新前的旧镜像，上面的初始配置不启用；故障时先停止 Watchtower，再按应用流程恢复旧镜像和匹配的数据备份。
+## Docker API 版本兼容与排错
 
-## API 兼容问题
+参考 [Watchtower 参数文档][watchtower-arguments]，`v1.7.1` 默认使用较早的 Docker API 版本 `1.24` 发起请求。在新版 Docker Engine 上启动时，若日志报错 `client version 1.24 is too old. Minimum supported API version is ...`：
 
-[官方参数文档][watchtower-arguments]记录默认 API 版本为 `1.24`。若出现 `client version ... is too old`，同时检查 `docker version` 的服务端支持范围。
-
-`DOCKER_API_VERSION` 可以指定请求版本，但不会升级 Watchtower 内置客户端，不能把某个数字当作所有 NAS 通用的修复。归档版本无法稳定工作时，通过应用自己的 Compose 手动更新即可，不必为了旧工具改变 Docker 的安全设置。
-原始部署笔记参考磕巴白菜的 [Watchtower](https://hi.keba.host/archives/ugreen-watchtower)，参数按下列上游资料核对。
+1. 在宿主机执行 `docker version`，查看 Server 端显示的 `API version` 与 `Min API version`。
+2. 在 Watchtower 的 `environment` 中添加 `DOCKER_API_VERSION` 变量（例如设为宿主机支持的最低版本 `"1.44"`），重建容器后观察日志是否恢复正常。
+3. 若因上游归档导致后续与新版 Docker 引擎出现协议不兼容，建议停用 Watchtower，改用 Dockge、DockerCopilot 或原项目的 `docker compose pull && docker compose up -d` 维护更新。
 
 ## 参考资料
 
 - [Watchtower 官方仓库][watchtower-repo]
 - [参数说明][watchtower-arguments]
 - [通知说明][watchtower-notifications]
+- 磕巴白菜：[绿联 NAS 部署 Watchtower 笔记](https://hi.keba.host/archives/ugreen-watchtower)
 
 [watchtower-repo]: https://github.com/containrrr/watchtower
 [watchtower-arguments]: https://containrrr.dev/watchtower/arguments/

@@ -10,156 +10,151 @@ tags:
   - 频谱
 ---
 
-频谱图适合回答一个具体问题：**某段音频在什么时间出现了哪些频率成分，能量大致如何分布**。它能帮助我们发现低通截断、异常噪声、削波和可疑的转码痕迹，但一张图无法证明文件是无损、来自哪一个母带，或听感会更好。
+在音频整理与压制验收中，频谱图（准确而言是**声谱图，Spectrogram**）用于直观展示**音频信号在时间轴上的频率分布与各频段相对能量**，常用于排查有损编码低通截断、局部编码斑块、异常底噪或伪高采样率（上采样）线索。
 
-旧版教程里的 Audacity 2.3.3 界面和固定参数只适用于当时的版本，不能直接当作今天的安装说明。频谱的参数含义按公开文档于 **2026 年 10 月 11 日**核对，操作前先看本机软件帮助。音轨提取、转换和封装见[音频处理篇：音轨识别、提取与编码](/posts/audio-processing/)，工具入口见[音频软件清单](/posts/audio-software/)。
+关于音轨提取、格式转换与重编码流程，见[音频处理篇：音轨识别、提取与编码](/posts/audio-processing/)，相关工具汇总在[音频软件清单](/posts/audio-software/)。
 
-## 先分清三种图
+## 波形图、单帧频谱与声谱图
 
-“频谱”在播放器、编辑器和教程里可能指三种不同的显示方式：
+音频软件中常见的三种图形视图分别展示不同维度的信号特征：
 
-| 显示                  | 横轴 | 纵轴       | 适合回答的问题                       |
-| --------------------- | ---- | ---------- | ------------------------------------ |
-| 波形图                | 时间 | 振幅       | 有没有静音、瞬态、削波和整体动态变化 |
-| 单帧频谱              | 频率 | 幅度或功率 | 这一小段声音由哪些频率组成           |
-| 声谱图（spectrogram） | 时间 | 频率       | 哪些频率在什么时候出现，能量如何变化 |
+| 视图名称              | 横轴 | 纵轴       | 主要观察内容                           |
+| --------------------- | ---- | ---------- | -------------------------------------- |
+| 波形图（Waveform）    | 时间 | 振幅       | 整体动态包络、静音段、瞬态峰值与削波   |
+| 单帧频谱（Spectrum）  | 频率 | 幅度或功率 | 某一时刻或选定片段内的频率成分与基频   |
+| 声谱图（Spectrogram） | 时间 | 频率       | 全轨频率成分随时间的变化及相对能量分布 |
 
-重点是第三种。声谱图把音频切成许多短片段，对每个片段做傅里叶变换，再把结果按时间排列。颜色或亮度通常表示相对能量，具体含义取决于软件使用的幅度标尺、色阶和参考值。Adobe Audition 将它称为 Spectral Frequency Display，Audacity 手册则直接称为 Spectrogram。
+日常所说的“看频谱”主要指第三种**声谱图**（Adobe Audition 称为 Spectral Frequency Display，Audacity 称为 Spectrogram）。声谱图将连续音频切分为大量短片段，对每个片段做傅里叶变换（STFT），并按时间顺序排列成二维图像，用像素的颜色或明暗代表该时频网格内的相对能量。
 
-频谱图不是照片，也不是“音质评分”。同一段音频只要改变窗口、FFT 大小、频率轴或色阶，就可能得到外观差异很大的图片。因此比较两张图时，先把设置记录下来。
+由于声谱图的视觉呈现直接受窗口函数、FFT 大小、频率轴缩放方式和色阶范围影响，对比不同音频文件时，需要先将分析软件的显示参数固定一致。
 
-## 读懂频谱图的坐标
+## 声谱图的坐标与能量标尺
 
-### 时间轴与频率轴
+### 时间轴与奈奎斯特频率上限
 
-横轴通常是秒，纵轴是赫兹或千赫兹。采样率为 `f_s` 时，数字音频可表示的最高频率受奈奎斯特频率限制，约为 `f_s / 2`：
+声谱图的横轴为时间（秒），纵轴为频率（Hz / kHz）。根据奈奎斯特采样定理，采样率为 $f_s$ 的数字音频可记录的最高频率上限为 $f_s / 2$：
 
-| 采样率   | 理论上限  |
-| -------- | --------- |
-| 44.1 kHz | 22.05 kHz |
-| 48 kHz   | 24 kHz    |
-| 96 kHz   | 48 kHz    |
+| 采样率   | 理论频率上限（$f_s / 2$） |
+| -------- | ------------------------- |
+| 44.1 kHz | 22.05 kHz                 |
+| 48 kHz   | 24 kHz                    |
+| 96 kHz   | 48 kHz                    |
 
-这是可表示的频率范围；文件的有效内容未必延伸到上限。采样之前的抗混叠滤波器、母带制作和编码器低通策略都会影响高频形状；超过一半采样率的内容不能靠“保存成更高采样率”恢复。
+纵轴刻度通常提供**线性（Linear）**与**对数（Logarithmic）**两种模式：
 
-有些工具默认用对数频率轴，有些用线性轴。线性轴便于看高频是否有整齐的边界，对数轴更接近人耳对低频区域的观察习惯。文章或报告中应写明使用了哪一种，否则两张图不宜直接横比。
+- **线性频率轴**：高低频等距排列，最适合观察 16–24 kHz 高频区域的低通截断边界与上采样特征。
+- **对数频率轴**：将低频与中频区域展开，更贴合人耳对音高（八度）的听觉感受，适合观察乐器基频与人声泛音。
 
-### 颜色、dBFS 与响度
+### 颜色标尺（dBFS）与响度指标
 
-数字音频的 `dBFS` 以满刻度为参考，0 dBFS 是数字峰值上限，普通样本的数值通常是负数。频谱图的颜色往往表示某个时频格的相对能量，颜色更亮只说明该格在当前标尺下更强。
+声谱图的颜色色阶通常以数字满刻度 **dBFS（Decibels relative to Full Scale）** 为基准，以 `0 dBFS` 为数字采样最大值，常规信号分布在负值区间（如 `-120 dBFS` 至 `0 dBFS`）。色阶中颜色越亮的区域，代表该时频点在当前量程下的能量越强。
 
-这和 `dB SPL`、RMS、真峰值或 `LUFS` 不是一回事：
+在音频分析中，以下几个能量与响度指标各司其职：
 
-- **dBFS** 描述数字样本相对于满刻度的位置；
-- **RMS** 描述一段信号的平均能量；
-- **真峰值** 用重建后的连续波形估计峰值，可能高于采样点峰值；
-- **LUFS** 按标准化响度模型测量节目响度，不能从频谱颜色直接读出。
+- **dBFS**：单点或单频格相对于数字满刻度的幅度位置；
+- **RMS**：一段音频信号的均方根平均能量；
+- **真峰值（True Peak，dBTP）**：经重建滤波器还原后的连续模拟波形峰值；
+- **集成响度（LUFS）**：依据 [ITU-R BS.1770](https://www.itu.int/rec/R-REC-BS.1770) / [EBU R 128](https://tech.ebu.ch/publications/r128) 标准加权计算的节目主观响度。
 
-所以不要用“整张图很亮”推断专辑响度很高，也不要把频谱的颜色范围当成动态范围。需要响度或动态范围时，单独使用符合 ITU-R BS.1770 / EBU R 128 的测量工具。
+若需要评估整轨响度或动态范围，应结合专门的电平表与响度测量工具，而非仅凭声谱图色阶的整体明暗判断。
 
-## FFT、STFT 与分辨率取舍
+## FFT 窗口长度与时频分辨率
 
-### FFT 只分析一段信号
+声谱图底层采用短时傅里叶变换（STFT）：用窗口函数截取长度为 $N$ 的采样点计算 FFT，再按一定重叠率滑向下一帧（详见 [SciPy `signal.stft` 参数说明](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html)）。采样率为 $f_s$ 时，频率网格间隔约为：
 
-FFT 把一段时域样本分解成许多频率成分。若采样率为 `f_s`，选取 `N` 个点计算 FFT，频率网格间隔可近似写成：
+$$\Delta f \approx \frac{f_s}{N}$$
 
-```text
-Δf ≈ f_s / N
+在调整声谱图参数时，需要在**频率分辨率**与**时间分辨率**之间做取舍：
+
+- **增大 FFT Size（如 4096、8192）**：频率网格更密，高频截断线、谐波横线和编码斑块边界更清晰；但单帧跨越的时间变长，瞬态鼓点在横向上会被拉宽。
+- **减小 FFT Size（如 512、1024）**：时间定位更敏锐，适合定位瞬态爆音与切点；但频率纵向细节变粗。
+- **窗口函数（Window Function）**：Blackman-Harris、Hann、Hamming 等窗口通过调整主瓣宽度与旁瓣衰减来抑制频谱泄漏（Spectral Leakage）。日常排查转码痕迹常选用旁瓣抑制较好的 Blackman-Harris 或 Hann 窗口，配合 2048 或 4096 的 FFT Size。
+
+## 声谱图的观察顺序与常见特征
+
+查看一条音轨的声谱图时，建议按以下顺序由整体到局部排查：
+
+1. **核对基础属性**：先用 MediaInfo 查看采样率、位深、声道数、编码格式与码率，确定纵轴理论上限。
+2. **浏览全轨轮廓**：在全轨视图下观察高频延伸是否连贯，不同乐段之间是否存在突兀的横向断层。
+3. **放大典型片段**：分别框选鼓点镲片（高频瞬态丰富）、强人声乐段与安静尾奏放大查看，结合边缘形状判断。
+
+### 1. 截断（Cutoff）与隔断（Shelf）
+
+- **低通截断（Low-pass Cutoff）**：在某一固定频率（如 16 kHz、18.5 kHz、20 kHz）上方能量呈一刀切消失。这常见于 MP3、AAC、AC-3 等有损编码器的预设低通滤波，也可能源于录音或母带制作阶段添加的硬件/软件低通滤波器。
+- **高频隔断（Shelf）**：在某一频率上方整体能量明显台阶式衰减，但仍残留部分高频信号或直达上限的填充能量。
+
+### 2. 频域斑块与空洞（编码伪影）
+
+有损心理声学编码器在码率受限时，会根据掩蔽效应舍弃人耳不易察觉的时频块。在声谱图放大视图中，这类舍弃常表现为高频区域边缘整齐的**矩形黑块（空洞）**或与乐器谐波走向无关的**孤立块状斑点**。相比单纯的高频高度，这类规则块状空洞是辨别有损转无损（Transcode）更直接的特征。
+
+### 3. 上采样（Upsampling）与伪高解析度线索
+
+当一个标称 88.2 kHz 或 96 kHz 的音频文件，其全部有效频率成分与底噪都在 22.05 kHz 或 24 kHz 处整齐截止、上方完全空白，或者在 22.05 kHz / 24 kHz 上方出现上下对称的镜像频谱（混叠镜像）时，往往提示该文件可能由 44.1 kHz 或 48 kHz 音源上采样或转换而来。
+
+## 录音与母带特征的辨析
+
+声谱图上的某些视觉现象属于正常的录音、合成器或母带处理特征，排查时需与有损转码伪影区分开：
+
+| 声谱图现象                         | 常见成因辨析                                                         |
+| ---------------------------------- | -------------------------------------------------------------------- |
+| 高频在 19–21 kHz 附近自然平滑滚落  | 模拟磁带母带、老电影光学声轨、话筒频响或母带工程师主动设置的低通滤波 |
+| 整张图像颜色偏暗                   | 古典乐、爵士乐或电影大动态对白轨平均电平较低，属于正常高动态录制     |
+| 贯穿全频段的垂直亮线               | 强瞬态打击乐，或局部采样点发生削波失真（Clipping，可切回波形图确认） |
+| 约 15.6 kHz / 15.7 kHz 处的细横线  | 早期录音室 CRT 监视器的行频扫描干扰（PAL 15625 Hz / NTSC 15734 Hz）  |
+| 22 kHz 以上存在一层均匀雾状能量    | DSD 转 PCM 或高解析度母带降位深时引入的超声波量化噪声 / 噪声整形     |
+| 电子乐中仅部分音色存在整齐高频边界 | 编曲中混用了 44.1 kHz 采样音源与高采样率合成器轨                     |
+
+因此，判断一份无损音频是否为真无损，应将**声谱图细节（尤其是放大后的时频块结构）、发行版母带背景、抓轨日志（EAC / XLD Log）与无损校验库（AccurateRip / CTDB）**结合起来综合核实。
+
+## 常用频谱查看与生成工具
+
+### 1. Audacity：本地手动查看与局部放大
+
+Audacity 提供直观的声谱图与选区频谱分析功能（详见 [Spectrogram View][audacity-view]、[Spectrogram Settings][audacity-settings] 与 [Plot Spectrum][audacity-plot] 手册）：
+
+1. 导入音频文件后，点击左侧轨道名称下拉菜单，切换为 **Spectrogram（频谱图）**。
+2. 在声谱图设置中，将 **Scale（刻度）** 设为 **Linear（线性）**，最高频率设为文件采样率的一半（如 48 kHz 文件设为 `24000 Hz`），**Window size** 设为 `2048` 或 `4096`，**Window type** 设为 `Blackman-Harris`。
+3. 框选高潮乐段或可疑片段，放大时间轴观察高频边缘与纹理细节。
+
+### 2. Adobe Audition：波形与声谱同屏对照
+
+在 [Adobe Audition][audition-doc] 的波形编辑器（Waveform Editor）中，可按快捷键 `Shift + D` 切换频谱显示，或同时分栏显示上方波形图与下方声谱图。通过右键频谱纵轴可快速切换线性/对数坐标与 FFT 分辨率，适合长音轨的流畅拖动与细节排查。
+
+### 3. Spek 与 FFmpeg：快速预览与批量生成归档图
+
+- **Spek**：轻量级独立声谱图预览工具，拖入音频文件即可快速渲染全轨线性声谱图。
+- **FFmpeg 滤镜**：适合在命令行或自动化脚本中用固定参数批量输出声谱图 PNG（详见 [`showspectrumpic` 滤镜文档][ffmpeg-pic]与 [`showspectrum` 文档][ffmpeg-spec]）：
+
+```sh
+# 生成带坐标轴与图例的双声道分离声谱图（FFT 窗口 4096，Hann 窗）
+ffmpeg -i input.flac -lavfi "showspectrumpic=s=1920x1080:mode=separate:win_func=hann:scale=log" spectrum.png
 ```
 
-`N` 越大，频率网格越密，但这一帧覆盖的时间越长，瞬态定位会变差。反过来，较小的 `N` 能更快显示鼓点、爆破音等变化，却不容易分开相邻的低频音。
+## 规范的频谱核查流程
 
-声谱图使用的是短时傅里叶变换（STFT）：用窗口函数取出一帧，计算 FFT，再按重叠比例移动到下一帧。这里有三个容易混淆的参数：
+在整理或分享音频、记录频谱检验结果时，可遵循以下五步：
 
-- **窗口长度**决定实际观察时长，也决定频率分辨能力；
-- **FFT size** 决定频率网格的采样密度，零填充可以让曲线更平滑，但不会凭空增加真实分辨率；
-- **重叠率与 hop size** 决定时间采样的密度，作用不在频率分辨率上。
-
-Hann、Hamming、Blackman-Harris 等窗口会改变主瓣宽度和旁瓣，作用是控制谱泄漏。窗口没有绝对的“最好”，应该根据要观察的是稳定音高、瞬态还是噪声来选。固定一个窗口和 FFT size 后再比较文件，结论才有可重复性。
-
-## 先看整体，再看可疑细节
-
-打开频谱后，可以按下面的顺序观察：
-
-1. **确认文件条件。** 先记录采样率、位深、声道、时长、编码格式和来源。采样率决定纵轴上限，编码和来源决定后续判断的背景。
-2. **看整轨趋势。** 观察高频是否贯穿整首、不同段落是否有明显边界，先不要因为一个短暂的空白区下结论。
-3. **检查代表片段。** 选择鼓点、镲片、强人声、安静尾奏和片头片尾分别放大。单看一段静音或单个短小的 intro 很容易误判。
-4. **再看边缘形状。** 记录低通截断是平滑滚落还是刀切式消失，截断上方是否还有噪声或规则的块状痕迹。
-5. **回到原始证据。** 把频谱观察和容器信息、编码日志、可信来源、波形与听感放在一起，不能用图片替代文件校验。
-
-## 频谱能提示什么
-
-### 截断与隔断
-
-**截断（low-pass cutoff）** 是某一频率以上的能量快速减少或消失；**隔断（shelf）** 更像在某个频率处整体降低，高频仍可能保留。两者都可能来自有损编码，也可能来自母带工程师有意使用的低通处理。
-
-典型的有损编码可能在高频留下整齐边界、边界附近的块状纹理或编码噪声，但“边界在 20 kHz”本身不是判定规则。编码器参数可以改变低通位置，母带也可能在 20 kHz 以下自然滚落；某些 AAC 或 MP3 设置还可能不呈现明显的固定截断。
-
-### 斑块与局部异常
-
-频谱中出现与音频轮廓无关、边缘整齐的矩形斑块，或只在部分片段出现规则纹理，可能提示曾经经过有损编码。它比“高频少了一点”更值得放大检查，但仍要排除窗口、色阶、噪声和显示缩放造成的假象。
-
-### 上采样的线索
-
-如果一个 88.2 kHz 文件的有效内容几乎只到 22 kHz，外观上会像 44.1 kHz 内容被重新保存为更高采样率。这只能说明“值得核对来源”，频谱本身还不足以证明上采样：原始母带可能本来就有低通，数字化链路也可能在高频没有有效内容。
-
-上采样不会找回已经被有损编码丢掉的细节，只会扩大文件和理论频率范围。需要转换时，应保留原文件信息，并在输出中记录重采样步骤。
-
-## 最容易误判的情况
-
-频谱教程中的案例常把很多现象列为“异常”，但它们未必是有损证据。实际检查时尤其注意下面几类：
-
-| 现象                      | 其他可能的解释                                       |
-| ------------------------- | ---------------------------------------------------- |
-| 高频在 19–21 kHz 附近结束 | 可能是有损低通，也可能是母带制作或录音本来如此       |
-| 频谱整体很暗              | 可能只是古典、爵士或尾奏录得较轻，颜色还受色阶影响   |
-| 垂直的亮色爆发            | 可能是削波或强瞬态；削波与有损编码是两回事           |
-| 水平线、锯齿和奇怪谐波    | 可能来自乐器、录音设备、显示方式或母带处理           |
-| 高频有一层雾状噪声        | 可能是抖动或噪声整形，也可能掩盖其他问题             |
-| 只有几秒出现块状纹理      | 可能是局部素材、噪声或拼接来源，需结合整轨和原始版本 |
-
-完整频谱看起来“很漂亮”，与它是否经过有损编码是两件事；频率较窄的无损母带同样如此。频谱分析的结论应该写成“与某种处理相符”或“需要进一步核对”，不要写成脱离来源的绝对认证。
-
-## 用工具生成可比较的图
-
-### Audacity：适合手动查看
-
-Audacity 的 [Spectrogram View](https://manual.audacityteam.org/man/spectrogram_view.html) 与 [Spectrogram Settings](https://manual.audacityteam.org/man/spectrogram_settings.html) 手册解释频率轴、FFT size、窗口和色阶；[Plot Spectrum 手册](https://manual.audacityteam.org/man/plot_spectrum.html)适合查看一段选区的单帧频谱。它适合入门和局部放大：
-
-1. 导入一份工作副本，确认项目采样率与源文件一致。
-2. 在轨道显示中切换到 Spectrogram，先用默认值确认能正常观察，再按目标调整频率范围、FFT size 和窗口。
-3. 选取同一时间段比较不同文件，并把设置和截图一起保存。
-4. 使用 Plot Spectrum 查看某个片段的峰值、基频和谐波，不要把单帧曲线当成整首歌的统计结果。
-
-旧教程里常见的 1024 点、Blackman-Harris、固定增益等组合可以作为一次实验的起点，但不是通用标准。不同版本的选项名称和默认值会变化，若要复现旧图，应把版本、窗口、FFT size、频率轴和色阶都写进记录。
-
-### Adobe Audition：适合连续观察与放大
-
-[Adobe Audition 的频谱显示说明](https://helpx.adobe.com/audition/using/displaying-audio-waveforms-spectral-frequency.html)介绍 Waveform Editor 在波形和频谱显示之间切换，以及频率范围、FFT Size、Window Function 和 Spectral Resolution 等设置。它适合连续拖动选区、放大局部纹理和同时对照波形，但商业软件的界面、版本和授权要看 Adobe 当前页面。
-
-### FFmpeg：适合批量生成
-
-[FFmpeg `showspectrum`](https://ffmpeg.org/ffmpeg-filters.html#showspectrum) 和 [`showspectrumpic`](https://ffmpeg.org/ffmpeg-filters.html#showspectrumpic) 可以把频谱生成为视频或单张图片。它们适合在批处理时固定参数、生成可归档的结果。使用时至少记录输入采样率、FFT 窗口、频率缩放、颜色模式和输出尺寸；不同参数生成的图片不能直接用于结论比较。
-
-实时柱状频谱（例如 foobar2000 的 Spectrum Analyzer）更适合播放时观察能量变化，是另一种显示方式，替代不了声谱图的全轨检查。
-
-## 一套可复查的检查流程
-
-把频谱分析当作取证的一部分，可以按这份清单做：
-
-1. **保存源文件和信息。** 记录文件哈希、MediaInfo 输出、采样率、位深、编码、来源和获取日期。
-2. **固定显示条件。** 记录软件版本、频率轴、FFT size、窗口、重叠率、色阶、dB 范围和图片尺寸。
-3. **查看全轨与局部。** 至少检查开头、主体、安静段、强瞬态和结尾，避免只看一张缩略图。
-4. **列出候选解释。** 对截断、隔断、斑块、噪声或上采样分别写出“编码器、母带、录音和显示设置”几种可能。
-5. **交叉核对。** 与可信的同版本文件、编码日志、无损校验和听感比较；需要响度时另测 RMS、真峰值和 LUFS。
-6. **保留不确定性。** 不能确认时，写“无法仅凭频谱确定”，不要用自动检测器的单一结果替代人工判断。自动工具可以筛选样本，但不应被当成质量认证。
+1. **留存文件元数据**：保存文件的哈希值与 MediaInfo 完整报告（采样率、位深、声道数、编码器版本）。
+2. **统一渲染参数**：使用线性频率轴、固定 FFT Size（如 2048 / 4096）与统一动态量程生成全轨声谱图。
+3. **全轨加局部双图配合**：除全轨总览图外，截取 3–5 秒高频丰富的局部放大图，以便看清是否存在有损编码块状伪影。
+4. **结合多维证据判断**：对照同曲目的其他发行版本、抓轨日志与校验信息，区分母带固有低通与后天有损转码。
 
 ## 参考资料
 
-- [Audacity：Spectrogram View](https://manual.audacityteam.org/man/spectrogram_view.html) 与 [Spectrogram Settings](https://manual.audacityteam.org/man/spectrogram_settings.html)：声谱图坐标、频率轴、FFT、窗口和显示参数。
-- [Audacity：Plot Spectrum](https://manual.audacityteam.org/man/plot_spectrum.html)：FFT、频率分辨率、窗口函数和选区频谱。
-- [Audacity：Sample Rates](https://manual.audacityteam.org/man/sample_rates.html)：采样率、奈奎斯特频率和混叠基础。
-- [Adobe Audition：Displaying audio waveforms and spectral frequency](https://helpx.adobe.com/audition/using/displaying-audio-waveforms-spectral-frequency.html)：频谱显示和编辑器设置。
-- [FFmpeg filters：showspectrum](https://ffmpeg.org/ffmpeg-filters.html#showspectrum) 与 [showspectrumpic](https://ffmpeg.org/ffmpeg-filters.html#showspectrumpic)：生成频谱视频和图片的滤镜文档。
-- [SciPy：signal.stft](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html)：STFT 的窗口、`nperseg`、`nfft` 和重叠参数。
-- [ITU-R BS.1770](https://www.itu.int/rec/R-REC-BS.1770) 与 [EBU R 128](https://tech.ebu.ch/publications/r128)：节目响度、真峰值和响度范围的测量边界。
+- [Audacity：Spectrogram View][audacity-view] 与 [Spectrogram Settings][audacity-settings]：声谱图坐标、频率轴、FFT、窗口和显示参数。
+- [Audacity：Plot Spectrum][audacity-plot] 与 [Sample Rates][audacity-sr]：FFT 频率分辨率、窗口函数、采样率与奈奎斯特频率。
+- [Adobe Audition：Displaying audio waveforms and spectral frequency][audition-doc]：波形与声谱图切换及编辑器参数设置。
+- [FFmpeg filters：showspectrum][ffmpeg-spec] 与 [showspectrumpic][ffmpeg-pic]：批量生成频谱视频和图片的滤镜文档。
+- [SciPy：signal.stft][scipy-stft]：STFT 的窗口、`nperseg`、`nfft` 和重叠参数定义。
+- [ITU-R BS.1770][itu-bs1770] 与 [EBU R 128][ebu-r128]：节目响度、真峰值和响度范围测量标准。
+
+[audacity-view]: https://manual.audacityteam.org/man/spectrogram_view.html
+[audacity-settings]: https://manual.audacityteam.org/man/spectrogram_settings.html
+[audacity-plot]: https://manual.audacityteam.org/man/plot_spectrum.html
+[audacity-sr]: https://manual.audacityteam.org/man/sample_rates.html
+[audition-doc]: https://helpx.adobe.com/audition/using/displaying-audio-waveforms-spectral-frequency.html
+[ffmpeg-spec]: https://ffmpeg.org/ffmpeg-filters.html#showspectrum
+[ffmpeg-pic]: https://ffmpeg.org/ffmpeg-filters.html#showspectrumpic
+[scipy-stft]: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html
+[itu-bs1770]: https://www.itu.int/rec/R-REC-BS.1770
+[ebu-r128]: https://tech.ebu.ch/publications/r128

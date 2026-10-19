@@ -17,6 +17,7 @@ import {
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/utils/transformers/fileName";
+import { rehypeExternalLinks } from "./src/utils/transformers/externalLinks";
 import { unpublishedPostLinks } from "./src/utils/transformers/unpublishedPostLinks";
 import config from "./astro-paper.config";
 
@@ -46,7 +47,10 @@ export default defineConfig({
         remarkToc,
         [remarkCollapse, { test: "Table of contents" }],
       ],
-      rehypePlugins: [rehypeCallouts],
+      rehypePlugins: [
+        rehypeCallouts,
+        [rehypeExternalLinks, { siteUrl: config.site.url }],
+      ],
     }),
     shikiConfig: {
       themes: { light: "min-light", dark: "night-owl" },

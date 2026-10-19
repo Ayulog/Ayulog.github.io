@@ -12,48 +12,25 @@ tags:
   - Docker
 ---
 
-从系统安装开始，先装 Debian 和 DebNAS，再依次接上数据盘、文件共享和 Docker 应用，最后用重启、备份恢复与故障取证确认这套系统能救回来。
+用 Debian 搭建家用 NAS 时，按“底层系统与 SSH → 数据盘挂载与局域网共享 → Docker 容器部署 → 备份与重启验证”的顺序推进，能避免后期因路径混乱或挂载失效推倒重来。DebNAS 脚本在此基础上提供了现成的系统初始化、Cockpit 管理与容器环境配置。
 
-软件选型、各软件的安装记录和其他 NAS 流程集中在 [NAS 服务清单](/posts/nas-software-websites/)。后面的 Compose 是安装完成后的可选验证样例，挂载、备份和故障取证用来检查这套系统能否恢复，不必一次部署全部应用。
+完整的软件选型见 [NAS 服务清单](/posts/nas-software-websites/)，下载器设置见 [PT 工具清单](/posts/pt-software/)。文中 `/path/to/...` 为宿主机路径占位符，`./config` 等相对路径均以各自 Compose 文件所在目录为基准。
 
-示例中的 `/path/to/...` 需要换成实际路径，`./config` 等相对路径以 Compose 文件所在目录为准。系统支持范围与安装入口核对于 **2026 年 10 月 9 日**。
+## 系统安装与 DebNAS 初始化
 
-## 准备基础环境
+### 安装 Debian 12 / 13
 
-先按用途分清几类数据，硬件型号和容量由实际需求决定：
+DebNAS 当前支持 **Debian 12（`bookworm`）与 Debian 13（`trixie`）的 amd64 环境**。安装流程可参考 [DebNAS 的 Debian 最小化安装教程](https://kekylin.github.io/debnas-docs/guide/debian-minimal-installation/) 和 [Debian 13 amd64 安装指南](https://www.debian.org/releases/trixie/amd64/)：
 
-| 内容             | 规划重点                             |
-| ---------------- | ------------------------------------ |
-| 系统与软件       | 安装介质、系统盘、远程登录和更新方式 |
-| 应用配置与数据库 | 持久化目录、权限和一致性备份         |
-| 下载、媒体与照片 | 容量、共享、容器路径和原件备份       |
-| 云盘挂载         | 本地缓存、挂载恢复以及上传完成的确认 |
-| 备份             | 独立存放位置、版本保留和恢复演练     |
+1. 从 Debian 官方下载安装镜像并校验，使用 Rufus 或 Etcher 制作启动盘（注意区分 DVD 完整镜像与需要联网取包的 netinst 镜像）。
+2. 安装前确认系统盘容量与型号，建议先断开已有数据的硬盘，待系统装好后再接回。
+3. 设置主机名与日常账户（下文以 `nasuser` 为例）。分区时仅格式化系统盘，已有数据盘后续直接按原文件系统挂载。
+4. 组件选择阶段勾选 `SSH server` 和 `standard system utilities`，无头 NAS 无需安装桌面环境。
+5. 安装完成后拔出启动盘重启，在本地控制台确认获取到的局域网 IP。
 
-先让 SSH、磁盘和共享稳定，再逐个加入容器、远程访问和自动化维护。不要把所有组件一次装完后才开始核对数据去了哪里。
+### 验证 SSH 远程登录
 
-## 先安装 Debian
-
-### 准备系统与安装介质
-
-DebNAS 文档当前支持 **Debian 12 / 13 的 amd64 环境**；其它发行版或架构应先核对支持范围。
-
-基础系统参考 [DebNAS 的 Debian 最小化安装教程](https://kekylin.github.io/debnas-docs/guide/debian-minimal-installation/) 和 [Debian 13 amd64 安装指南](https://www.debian.org/releases/trixie/amd64/)。从 Debian 官方获取安装镜像并核对校验信息，使用 Rufus 或 Etcher 制作启动盘。
-
-安装前区分系统盘和数据盘。“使用整个磁盘”会重新分区，应核对容量与型号；有数据的硬盘可以先断开，装好后再接回。不要把教程截图中的设备编号当成自己的目标盘。
-
-### 安装时要确定的几项设置
-
-1. 设置主机名与账户，公开示例用 `nasuser` 表示日常使用的普通账户。
-2. 分区时选实际系统盘；已有数据分区后续按原文件系统挂载，不需要重新格式化。
-3. 无桌面 NAS 可以选择 SSH server 和 standard system utilities，桌面环境按用途决定。
-4. 完成安装后移除安装介质，重启，并在本地控制台确认网络地址。
-
-DebNAS 的 DVD 安装教程与 netinst 镜像的联网取包条件不同；软件源中的系统代号要与安装版本对应，例如 Debian 13 为 `trixie`，Debian 12 为 `bookworm`。
-
-### 先把远程登录跑通
-
-在 NAS 上检查系统与网络：
+在 NAS 本地终端检查系统版本、架构、网卡地址与 SSH 服务状态：
 
 ```bash
 cat /etc/os-release
@@ -63,59 +40,39 @@ ip route
 systemctl status ssh --no-pager
 ```
 
-确认系统与架构符合要求，能够看到实际 LAN 地址和默认路由。从电脑连接：
+确认网络正常后，从局域网电脑连接 NAS：
 
 ```bash
 ssh nasuser@NAS_IP
 ```
 
-`NAS_IP` 与账户名均需替换。需要管理员权限时按系统配置使用 `sudo` 或 `su -`。在路由器里为 NAS 设置 DHCP 地址保留，有助于稳定管理入口；网络调整时保留本地控制台入口。
+建议在路由器中为 NAS 绑定 DHCP 静态地址保留，固定局域网访问入口。日常操作使用普通账户，需要管理权限时通过 `sudo` 或 `su -` 提权。
 
-## 运行 DebNAS 初始化环境
+### 运行 DebNAS 初始化脚本
 
-以 [DebNAS 快速开始](https://kekylin.github.io/debnas-docs/guide/getting-started/) 为准。以下是 NAS 的 Bash 命令示例。
-
-切换到 root，缺少下载工具时再安装：
+切换至 root 账户并确保已安装 `wget` 与证书组件，随后运行 [DebNAS 快速开始](https://kekylin.github.io/debnas-docs/guide/getting-started/) 提供的安装入口（GitHub 或 Gitee 二选一）：
 
 ```bash
 su -
-command -v wget
-apt update
-apt install wget ca-certificates
-```
+apt update && apt install -y wget ca-certificates
 
-文档中的 GitHub 入口为：
-
-```bash
+# GitHub 入口
 bash <(wget -qO- https://raw.githubusercontent.com/kekylin/debnas/main/install.sh) -s github@main
-```
 
-需要 Gitee 入口时，选择下面这一条：
-
-```bash
+# Gitee 入口（备选）
 bash <(wget -qO- https://gitee.com/kekylin/debnas/raw/main/install.sh) -s gitee@main
 ```
 
-两条入口选择一个即可。它们会下载并运行项目代码，运行前可阅读 [安装脚本源码](https://github.com/kekylin/debnas/blob/main/install.sh)，了解将修改的内容；`main` 是持续更新的分支。
+运行前可查阅 [安装脚本源码](https://github.com/kekylin/debnas/blob/main/install.sh) 了解具体改动。进入交互菜单后按需执行系统初始化与组件安装，使用时注意以下事项：
 
-进入菜单后按需要完成初始化。一键配置可能调整网络管理方式；**切换到 NetworkManager 后，IP 可能变化**。SSH 断开时先到路由器或本地控制台确认地址。
+- **网络切换与 IP 变化**：初始化过程若将网络管理切换为 NetworkManager，网卡 IP 可能发生改变。一旦 SSH 断开，请到路由器后台或本地控制台查看新地址。
+- **管理入口**：安装 Cockpit 与 Portainer 后，默认访问地址分别为 `https://NAS_IP:9090` 和 `https://NAS_IP:9443`。后续如需再次调出菜单，直接重新运行上述命令即可。
 
-后续重新进入菜单仍以文档入口为准；打开菜单不需要重做整套初始化，也不需要依赖永久的 `debnas` 命令。旧教程里的软件源、扩展和镜像加速地址要按当前系统重新核对。
+## 磁盘挂载、目录规划与共享
 
-若安装对应组件，常见管理入口为：
+### 按 UUID 挂载数据盘
 
-```text
-Cockpit：  https://NAS_IP:9090
-Portainer：https://NAS_IP:9443
-```
-
-实际访问方式取决于部署配置。每完成一阶段，检查服务并重启验证网络、磁盘和应用能否恢复。
-
-## 磁盘、目录与共享
-
-### 先固定挂载，再安装应用
-
-用下面的命令确认设备、文件系统和挂载关系，`/path/to/data` 代表自行选择的数据盘挂载点：
+先查看磁盘分区、文件系统类型与 UUID，确认数据盘状态（以 `/path/to/data` 作为挂载点示例）：
 
 ```bash
 lsblk -o NAME,SIZE,FSTYPE,UUID,MOUNTPOINTS,MODEL
@@ -123,68 +80,46 @@ findmnt --mountpoint /path/to/data
 df -hT /path/to/data
 ```
 
-持久化挂载优先使用文件系统 UUID。以下只是 `/etc/fstab` 的**格式示例**，UUID、路径、文件系统与参数均需根据实际分区填写：
+在 `/etc/fstab` 中使用 UUID 固定挂载关系，替换实际的 UUID、挂载路径与文件系统类型：
 
 ```text
 UUID=REPLACE_WITH_DATA_UUID /path/to/data ext4 defaults 0 2
 ```
 
-是否允许缺盘继续启动，要结合服务依赖决定。应用启动前应核对挂载来源，避免在硬盘未挂载时把数据写进系统盘上的同名空目录。修改挂载配置后，在可接管的控制台环境执行 `systemctl daemon-reload`、`mount -a`，再用 `findmnt` 检查。
+保存后依次执行 `systemctl daemon-reload` 和 `mount -a`，再用 `findmnt` 确认挂载成功。务必在数据盘完成持久化挂载后再启动 Docker 容器，防止硬盘未挂载时容器将数据写入系统盘的同名空目录。
 
-### 通用目录示例
+### 通用目录规划
 
-| 路径形式             | 用途                                         |
-| -------------------- | -------------------------------------------- |
-| `/opt/stacks/<app>/` | Dockge 官方示例中的 Compose 项目目录         |
-| `./config`、`./data` | 各 Compose 项目自己的配置与持久化数据        |
-| `/path/to/data`      | 下载和本地媒体，媒体篇统一映射为容器 `/data` |
-| `/path/to/photos`    | 已有照片目录                                 |
-| `/path/to/cloud`     | CloudDrive2 等工具准备好的云盘挂载           |
-| `/path/to/strm`      | CMS 生成的 STRM                              |
-| `/path/to/backups`   | 独立选择的备份目的地                         |
+为便于后续维护与备份，建议将 Compose 项目配置与大容量媒体、照片、备份数据分开存放：
 
-**所有 `/path/to/...` 都是占位符，部署前必须替换。** `./config` 等相对路径通常以主 Compose 文件所在目录为基准；不要把同一个相对目录误认为不同项目自动共享的数据目录。
+| 路径形式             | 用途说明                                         |
+| -------------------- | ------------------------------------------------ |
+| `/opt/stacks/<app>/` | Dockge 默认管理的 Compose 项目目录               |
+| `./config`、`./data` | 各 Compose 项目内部的配置与数据库目录            |
+| `/path/to/data`      | 下载与本地媒体根目录，媒体容器统一映射为 `/data` |
+| `/path/to/photos`    | 照片图库目录                                     |
+| `/path/to/cloud`     | CloudDrive2 等工具的本地云盘挂载点               |
+| `/path/to/strm`      | CMS 生成的本地 STRM 目录                         |
+| `/path/to/backups`   | 独立存放的归档备份目录                           |
 
-Compose 所在位置与 Docker Engine 的 `data-root` 是两件事。应用换镜像时能否保留数据，取决于具体的绑定挂载和命名卷，而不只是项目目录所在位置。
+业务目录按实际运行账户的 UID/GID 授权；由 root 定时执行的系统维护脚本应归属 root 且禁止普通账户修改。
 
-用户与共享目录按实际 UID/GID 授权；需要 root 执行的维护脚本由 root 管理，普通账户不应能替换脚本及其父目录。
+### 配置 Samba 与 Tailscale 共享
 
-### Samba 与 Tailscale
-
-Samba 提供文件共享；需要从外部设备访问时，可选择 Tailscale 或其它组网工具。Exit Node、子网路由和远程 SSH 都是独立功能，按用途启用。
-
-共享名称使用中性的 `media` 举例：
+局域网文件共享通过 Samba 提供，外网访问可搭配 Tailscale 等私有组网工具（以共享名 `media` 为例）：
 
 ```text
-局域网：   \\NAS_LAN_IP\media
-私有组网： \\NAS_TAILSCALE_IP\media
+局域网访问：   \\NAS_LAN_IP\media
+私有组网访问： \\NAS_TAILSCALE_IP\media
 ```
 
-按实际接口和访问范围设置 Samba，保存后用 `testparm -s` 检查，再从客户端测试新建、读取、重命名与删除。Linux 权限、Samba 账户和挂载权限都应匹配。
+修改 `/etc/samba/smb.conf` 后，运行 `testparm -s` 校验配置语法，再从客户端测试新建、读取、重命名和删除文件，确保 Linux 目录权限与 Samba 账户权限一致。
 
-## Docker 与应用管理
+### Docker 网络与日志轮转
 
-### Compose 统一管理，数据位置单独核对
+跨项目互通的容器（如媒体工作流组件）建议加入同一个自定义 bridge 网络，在容器间通过“服务名 + 容器内部端口”（如 `http://emby:8096`）通信；局域网设备访问时则使用 `NAS_IP` 加宿主机映射端口。
 
-可以使用 Dockge 管理 Compose，或使用 Portainer 管理 Docker 环境；应用的最终配置应保存在可备份的文件中，避免面板操作与文件内容脱节。
-
-跨项目互通时，媒体篇示例使用外部 `media` bridge 网络。数据库等内部依赖仍可留在各项目的默认网络中。同一用户自定义网络内使用服务名和**容器监听端口**访问，例如 `http://emby:8096`；电脑访问时使用 `NAS_IP` 与宿主机发布端口。
-
-媒体应用的完整示例见 [媒体服务 Compose](/posts/debnas-media-workflow/#媒体服务-compose)。这里只统一约定示例路径，不固定 Docker IP，也不要求全部安装。
-
-### 应用逐个加入
-
-每次只接入一个应用，先核对持久化目录、端口、权限与日志，再加入下一项。应用选型和教程按用途收在 [NAS 服务清单](/posts/nas-software-websites/)；下载器的版本、目录与任务设置收在 [PT 工具清单](/posts/pt-software/)。
-
-媒体应用要核对共享文件的容器内路径，照片应用要区分原件、上传目录与缓存，网络应用要记录监听端口和访问范围。下方验证样例保留这些安装时需要检查的配置细节。
-
-跨盘整理时，应区分复制、移动和硬链接。出现 `EXDEV` 时先检查源与目标是否跨文件系统，再决定用复制还是移动。
-
-### 更新和日志也要管理
-
-升级前记录镜像版本、备份数据，并查看迁移说明。数据库升级后，回退镜像不一定能回退数据；自动更新范围与维护时间应按自己的恢复能力决定，示例不预设自动更新标签。
-
-Docker 日志轮转可在 `/etc/docker/daemon.json` 中配置。下面是容量示例，应合并到已有 JSON，保留原有网络等设置：
+为防止容器日志无限增长占满系统盘，可在 `/etc/docker/daemon.json` 中合并日志轮转配置（保留文件中已有的镜像源或网络参数）：
 
 ```json
 {
@@ -196,28 +131,22 @@ Docker 日志轮转可在 `/etc/docker/daemon.json` 中配置。下面是容量�
 }
 ```
 
-按 [Docker 日志文档](https://docs.docker.com/engine/logging/drivers/json-file/)，调整后需重启 Docker；默认值用于新建容器，已有容器需要按原 Compose 重新创建并核对。
+参考 [Docker 日志文档](https://docs.docker.com/engine/logging/drivers/json-file/)，修改后需重启 Docker 服务，且新规则仅对新建容器生效，已有容器需重建后才会应用。
 
 ## 配套 Compose：管理、照片与网络
 
-以下五份示例用于系统安装后验证容器管理、照片目录和网络入口。首次配置某个软件时，先读对应的独立教程，再回来核对本机路径和端口。示例参考官方安装文档，保留应用标准容器目录和常用端口，宿主机数据位置改为通用形式。它们适合作为新建配置的起点；迁移已有实例时，应先把旧数据放到选定的持久化位置，再切换挂载，直接用空目录会覆盖旧实例。
+以下五份 Compose 配置用于验证容器面板、照片库与网络入口。媒体工作流的另外五份配置（MoviePilot V3、qBittorrent、Transmission、CMS、Emby）见 [媒体服务 Compose](/posts/debnas-media-workflow/#媒体服务-compose)，也可直接[下载全部 10 份 Compose 示例](/examples/debnas-compose.zip)。
 
-[下载全部 10 份 Compose 示例](/examples/debnas-compose.zip)。MoviePilot V3、qBittorrent、Transmission、CMS 和 Emby 放在 [媒体服务 Compose](/posts/debnas-media-workflow/#媒体服务-compose)。Mihomo 另附基础应用配置模板。
+每个项目保存在独立目录中，修改路径与凭据后启动。同时部署多个服务时需留意宿主机端口冲突：
 
-**默认端口并不保证各软件同时安装时互不冲突。** 例如 MetaCubeXD 的 `8080` 与 qBittorrent WebUI 默认端口重复，Mihomo 控制器的 `9090` 与 Cockpit 重复。需要同时部署时，可以把 MetaCubeXD 的宿主机映射改成 `8081:80`，或调整 Mihomo 控制器的宿主机端口，并同步修改访问地址与 CORS 来源。qBittorrent 是需要单独处理的例外：修改其 WebUI 端口时，按镜像文档同时修改 `WEBUI_PORT` 与映射两侧；BT 端口也要与 `TORRENTING_PORT` 保持一致。
-
-每个项目放在独立目录。补齐占位路径和应用配置后，可在项目目录执行 `docker compose config --quiet` 检查，再启动并查看日志。配置语法通过只是启动前的检查，路径权限、网络和业务功能仍要在启动后验证。
+- MetaCubeXD 默认的 `8080` 与 qBittorrent WebUI 冲突，可将 MetaCubeXD 改为 `8081:80`。
+- Mihomo 控制器默认的 `9090` 与 Cockpit 冲突，可修改控制器映射端口并同步更新 `allow-origins`。
 
 ### Dockge
 
-详细操作见 [Dockge 部署与管理](/posts/dockge-guide/)。
-
-采用 [Dockge 官方 Compose](https://github.com/louislam/dockge/blob/master/compose.yaml) 的 `5001` 端口、`./data` 和 `/opt/stacks`。后者是上游示例目录，**绑定挂载左右两侧必须为同一个绝对路径**，并与 `DOCKGE_STACKS_DIR` 一致。
-
-[下载 Dockge Compose](/examples/debnas/dockge/compose.yaml)
+详细说明见 [Dockge 部署与管理](/posts/dockge-guide/)。配置文件可[点击下载](/examples/debnas/dockge/compose.yaml)，参考 [Dockge 官方 Compose](https://github.com/louislam/dockge/blob/master/compose.yaml)：
 
 ```yaml
-# Generic example based on the upstream Dockge Compose file.
 services:
   dockge:
     image: louislam/dockge:1
@@ -232,25 +161,20 @@ services:
       DOCKGE_STACKS_DIR: /opt/stacks
 ```
 
-访问 `http://NAS_IP:5001`，完成账户初始化。Dockge 和下面的 Portainer 挂载 Docker socket，用于管理 Docker；给该挂载加 `:ro` 只改变挂载标志，通过 socket 仍能创建、停止和删除容器。
+启动后访问 `http://NAS_IP:5001` 创建管理员账户。注意 `/opt/stacks:/opt/stacks` 挂载左右两侧必须为相同的宿主机绝对路径，且与 `DOCKGE_STACKS_DIR` 保持一致。
 
 ### Portainer
 
-详细操作见 [Portainer CE 部署与管理](/posts/portainer-guide/)。
-
-采用 [Portainer CE 官方安装文档](https://docs.portainer.io/start/install-ce/server/docker/linux) 的 `lts` 镜像和 HTTPS `9443` 端口，使用命名卷保存 `/data`。Edge Agents 需要的 `8000` 可按用途加入；基础示例不启用旧版 HTTP `9000`。
-
-[下载 Portainer Compose](/examples/debnas/portainer/compose.yaml)
+详细说明见 [Portainer CE 部署与管理](/posts/portainer-guide/)。配置文件可[点击下载](/examples/debnas/portainer/compose.yaml)，参考 [Portainer CE 官方安装文档](https://docs.portainer.io/start/install-ce/server/docker/linux)：
 
 ```yaml
-# Generic example based on the upstream Portainer CE installation guide.
 services:
   portainer:
     image: portainer/portainer-ce:lts
     restart: always
     ports:
       - 9443:9443
-      # Add 8000:8000 only when using Edge Agents.
+      # 如需使用 Edge Agents，再取消注释 8000:8000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
@@ -258,18 +182,13 @@ volumes:
   portainer_data:
 ```
 
-访问 `https://NAS_IP:9443`，按对应版本的首次设置流程初始化。备份时别漏掉命名卷里的数据库；Compose 项目名变化也可能创建新的卷，迁移前要核对实际卷名。
+启动后访问 `https://NAS_IP:9443` 完成初始化。Portainer 的自身数据保存在命名卷 `portainer_data` 中，备份和迁移时需一并包含该卷，并保持 Compose 项目名不变。
 
 ### MT Photos
 
-详细操作见 [MT Photos 图库设置](/posts/mt-photos-guide/)。
-
-参考 [MT Photos 官方安装说明](https://mtmt.tech/docs/start/install/)，保留 `8063`、`/config` 和 `/upload`；已有照片用 `/path/to/photos:/photos` 举例。`/photos` 是自选图库目录，并非系统必需目录。
-
-[下载 MT Photos Compose](/examples/debnas/mtphotos/compose.yaml)
+详细说明见 [MT Photos 图库设置](/posts/mt-photos-guide/)。配置文件可[点击下载](/examples/debnas/mtphotos/compose.yaml)，参考 [MT Photos 官方安装说明](https://mtmt.tech/docs/start/install/)（amd64 架构）：
 
 ```yaml
-# Generic example based on the upstream MT Photos installation guide.
 services:
   mtphotos:
     image: mtphotos/mt-photos:latest
@@ -284,18 +203,13 @@ services:
       TZ: Asia/Shanghai
 ```
 
-访问 `http://NAS_IP:8063`。配置数据库与缩略图默认落在 `./config`，上传原件位于 `./upload`。需要将缓存单独放到其它磁盘时，再按官方文档映射 `/config/cache`。本例面向 amd64；其它架构按官方说明选择相应镜像，不附带 AI 服务或自动更新策略。
+替换 `/path/to/photos` 后启动，访问 `http://NAS_IP:8063`。数据库与默认缩略图保存在 `./config`，手机端上传原件保存在 `./upload`；如需将缩略图缓存单独放到 SSD，可按官方文档额外映射 `/config/cache`。
 
 ### Lucky
 
-详细操作见 [Lucky 的 DDNS 与反向代理](/posts/lucky-guide/)。
-
-参考 [Lucky 官方安装说明](https://lucky666.cn/docs/install)，Linux 使用推荐的 host 网络，配置保存到 `./config:/app/conf`。初始管理入口通常为 `http://NAS_IP:16601`，代理监听、证书和 DDNS 规则需在自己的实例中设置。
-
-[下载 Lucky Compose](/examples/debnas/lucky/compose.yaml)
+详细说明见 [Lucky 的 DDNS 与反向代理](/posts/lucky-guide/)。配置文件可[点击下载](/examples/debnas/lucky/compose.yaml)，参考 [Lucky 官方安装说明](https://lucky666.cn/docs/install)：
 
 ```yaml
-# Generic Linux host-network example based on the upstream Lucky guide.
 services:
   lucky:
     image: gdy666/lucky:v2
@@ -305,18 +219,13 @@ services:
       - ./config:/app/conf
 ```
 
-host 模式直接使用宿主机网络，不再写 `ports`；后续规则中启用的监听也会直接占用宿主机端口。本例只保留基础网络功能，需要通过 Lucky 管理 Docker 时再核对 Docker socket 挂载要求。
+Linux 下推荐使用 `host` 网络模式，无需编写 `ports` 映射，添加的转发或反向代理规则会直接监听宿主机端口。启动后访问 `http://NAS_IP:16601` 配置 DDNS、证书与反向代理。
 
 ### Mihomo 与 MetaCubeXD
 
-详细操作见 [Mihomo 配置](/posts/mihomo-docker/)。
-
-Mihomo 示例采用普通 bridge 网络下的显式代理，MetaCubeXD 使用官方独立面板镜像。对应入口为代理 `7890`、控制器 `9090`、面板 `8080`。这是用于说明连接关系的端口组合；Mihomo 监听端口由应用配置决定，并不存在必须沿用的端口值。
-
-[下载 Mihomo 与 MetaCubeXD Compose](/examples/debnas/mihomo/compose.yaml) · [下载应用配置模板](/examples/debnas/mihomo/config.example.yaml)
+详细说明见 [Mihomo 配置](/posts/mihomo-docker/)。配置文件可下载 [Compose 示例](/examples/debnas/mihomo/compose.yaml) 与 [应用配置模板](/examples/debnas/mihomo/config.example.yaml)：
 
 ```yaml
-# Basic explicit-proxy example; prepare ./config/config.yaml before starting.
 services:
   mihomo:
     image: docker.io/metacubex/mihomo:latest
@@ -333,11 +242,9 @@ services:
       - 8080:80
 ```
 
-在该项目目录新建 `config` 文件夹，将模板保存为 `config/config.yaml`：
+在项目目录中新建 `config/config.yaml`，写入基础启动配置并替换代理账号、密码、`secret` 及局域网 `NAS_IP`：
 
 ```yaml
-# Copy to ./config/config.yaml and replace every REPLACE_* value.
-# This direct-only example contains no subscription, provider, or proxy node.
 mixed-port: 7890
 allow-lan: true
 bind-address: "*"
@@ -355,68 +262,35 @@ rules:
   - MATCH,DIRECT
 ```
 
-**启动前替换代理用户名、代理密码和控制器 secret，并把 `NAS_IP` 改为浏览器实际使用的地址。** 此模板仅含 `DIRECT` 规则，用于验证代理与面板连接；没有订阅、节点或个人规则，实际用途需要自己补充。
+启动后在浏览器打开面板 `http://NAS_IP:8080`，控制器地址填写浏览器可达的 `http://NAS_IP:9090` 并输入 `secret`。如需配置 TUN 模式或透明代理，再参考 [Mihomo 官方文档](https://wiki.metacubex.one/) 补充相应网络与设备权限。
 
-打开 `http://NAS_IP:8080`，填入控制器 `http://NAS_IP:9090` 和自己设置的 secret。连接由浏览器发起，因此应填浏览器能访问的地址，不能填仅 Docker 内部可解析的 `mihomo`。如果改了面板端口，也要修改 `allow-origins` 中的完整来源地址。
+## 进阶维护、备份与故障排查
 
-这些入口面向受控网络；根据实际使用范围限制访问。基础显式代理不需要共享宿主机 PID/IPC、`cap_add: ALL` 或 TUN 设备。需要透明代理/TUN 时，另按 [Mihomo 文档](https://wiki.metacubex.one/)配置路由、设备和最小所需权限。
+### CloudDrive2 挂载与容器恢复
 
-## CloudDrive2 挂载踩坑
+使用 CloudDrive2 挂载云盘（如 `/path/to/cloud`）供容器读写时，需要注意两点：
 
-CloudDrive2 可以采用官方支持的服务或容器方式部署。配置、临时缓存和云盘挂载分开规划，示例挂载点统一记为 `/path/to/cloud`，不包含具体账号或网盘目录名。
+1. **挂载恢复与容器可见性**：Docker 绑定挂载默认采用 `rprivate` 传播模式（详见 [Docker bind mounts](https://docs.docker.com/engine/storage/bind-mounts/)）。当宿主机上的 FUSE 挂载中断并重连后，已运行的容器往往无法直接读取新挂载点。可在挂载服务恢复并确认目录可读后自动重启依赖容器，或按需配置共享挂载传播（如 `rshared`）。检查挂载就绪的脚本需设置超时时间，超时则终止后续任务，避免媒体库扫描把空目录误判为文件删除。
+2. **后台上传确认**：文件写入挂载目录后会先落入本地缓存，再由后台异步上传至网盘。判断文件是否已安全上云，需结合 CloudDrive2 上传任务列表与网盘远端文件大小确认。
 
-### 宿主机恢复挂载，容器未必同步恢复
+### 防火墙、系统更新与持久日志
 
-Docker bind mount 默认使用 `rprivate` 传播。宿主机的 FUSE 挂载重建后，已有容器不一定自动看到新的挂载；表现取决于绑定的是挂载点还是父目录，以及挂载传播设置。原理见 [Docker bind mounts](https://docs.docker.com/engine/storage/bind-mounts/)。
+- **防火墙规则**：参考 [Docker 防火墙文档](https://docs.docker.com/engine/network/packet-filtering-firewalls/)，Docker 发布端口时会直接操作转发链，可能绕过宿主机 firewalld 的常规区域限制。配置安全策略时需同时检查宿主机监听与容器映射端口（含 IPv4 与 IPv6），并在局域网、私有组网和外网分别实测可达性。
+- **脚本与更新**：若使用 OliveTin 等网页工具触发维护动作，应通过限定参数的固定脚本执行。内核或系统更新后按需安排重启窗口。
+- **持久化日志与脚本检查**：确认 systemd-journald 已开启持久化存储，以便重启后通过 `journalctl --list-boots` 查看历史日志。部署从网页复制的 Shell 脚本或 systemd unit 前，可先用以下命令排查 BOM 头、CRLF 换行或语法错误：
 
-可以先等待目标挂载就绪，再重启依赖它的容器；也可以按需要配置并验证挂载传播。就绪检查要核对来源并实际读取目录，路径存在并不够。失效 FUSE 的读取可能阻塞，检查命令也要有超时。
+```bash
+head -n 3 /path/to/scripts/example.sh
+file /path/to/scripts/example.sh
+bash -n /path/to/scripts/example.sh
+systemd-analyze verify /etc/systemd/system/example.service
+```
 
-若等待步骤放在 systemd 的 `ExecStartPost`，服务启动超时应覆盖该步骤。超时后记录失败，不继续刷新媒体库，避免把空目录当成媒体已经消失。
+### 两级备份与恢复验证
 
-### 复制结束，仍要确认云端结果
+日常备份可分为本地归档与异地上传两级，备份任务应与容器自动更新任务错开并互斥：
 
-文件复制到云盘挂载目录后，写入可能先进入本地缓存，再由后台上传。确认完成应结合上传任务状态、远端文件大小，以及独立重新下载后的校验结果。
-
-要确认云端已保存完整数据，需要在挂载目录之外独立读取或校验。
-
-## 把日常维护做成固定流程
-
-### 脚本与操作入口
-
-如需 OliveTin 等网页操作入口，让它调用范围明确的包装脚本。限制动作与参数，不要把网页输入直接拼进任意 Shell 命令；脚本与权限设计另按实际用途维护。
-
-可以把维护事项分为系统更新、容器更新、挂载检查、备份和日志检查。定时任务的时间、互斥和失败处理由实际业务决定，公开示例不预设某台机器的运行计划。
-
-### 防火墙要覆盖宿主机与容器
-
-分别检查宿主机监听和 Docker 发布端口，并从局域网、私有组网与外部网络测试实际可达范围。需要同时考虑 IPv4 和 IPv6。
-
-[Docker 防火墙文档](https://docs.docker.com/engine/network/packet-filtering-firewalls/)说明，Docker 与 firewalld 集成时有相应 zone 和转发策略。宿主机某个 zone 没有开放端口时，容器端口仍可能通过 Docker 的转发规则暴露。规则要与当前 iptables / nftables 后端配合；修改远程入口时保留可用控制台。
-
-### 系统更新、温度与日志
-
-自动安全更新和自动重启是不同设置。根据可用性要求安排维护窗口，更新内核后确认是否需要重启。
-
-温度检查按实际传感器的 `type` 确认来源，不硬编码某台机器的 `thermal_zone` 编号。限频、功耗和风扇策略依赖硬件与驱动，不给所有 NAS 套用统一阈值。
-
-要在重启后排查故障，应确认 journald 已启用持久日志，并设置适合磁盘容量的保留上限。用 `journalctl --list-boots` 验证能否读取前一次启动记录。
-
-## 两级备份与恢复
-
-### 第一级：应用数据到独立存储
-
-先盘点 Compose、`.env`、数据库、命名卷、系统服务与共享配置。容器镜像可以重新下载，应用状态不行；没有手工绑定目录时，命名卷中的数据同样要备份。
-
-需要一致性的数据库，可使用数据库本身的备份工具，或在维护窗口内干净停止相关服务后复制数据。只有实际使用了相应文件系统能力，才能把备份称为原子快照。
-
-备份流程至少包括：
-
-1. 检查目标挂载、可用空间和需要保护的数据。
-2. 取得一致的数据副本，恢复暂停的服务并确认健康状态。
-3. 生成归档及校验文件，检查本次备份成功。
-4. 按自己制定的保留策略清理旧版本。
-
-对于 systemd 管理的备份服务，可以让它依赖实际备份挂载点。下面是需替换路径的 unit 片段：
+1. **第一级（本地独立存储）**：盘点各项目的 Compose、`.env`、应用配置、数据库、Docker 命名卷及系统服务文件。含数据库的应用先调用自带导出工具或短暂停止容器，再打包归档并生成 SHA256 校验文件，确认无误后恢复服务并按保留策略清理旧归档。若使用 systemd 定时备份，可在 unit 中声明挂载依赖：
 
 ```ini
 [Unit]
@@ -424,54 +298,20 @@ RequiresMountsFor=/path/to/backups
 After=local-fs.target
 ```
 
-脚本仍需检查挂载来源，避免备份写进错误磁盘。备份和更新任务应明确互斥，仅错开时间并不够。
+2. **第二级（上传至云端）**：将已生成的本地归档包加密后上传至云盘，无需再次暂停业务容器。上传完成后核对远端文件大小，并定期抽样下载到隔离目录做恢复演练，验证数据库与权限均能正常还原。
 
-### 第二级：完成的备份到云端
+### 整机失联排查与硬件 Watchdog
 
-上传已经完成的本地归档，通常不需要为上传再次暂停应用：
+当设备运行数日后出现 LAN、SSH 与 Web 页面同时失联时，可按以下方向定位并配置恢复手段：
 
-```text
-本地归档和校验通过
-→ 上传到云端
-→ 确认远端文件完整
-→ 独立下载并校验
-→ 验证当前备份可用后再清理旧版本
-```
+| 故障现象                        | 排查重点                                    |
+| ------------------------------- | ------------------------------------------- |
+| 本地控制台可用，网络无法访问    | 检查网卡状态、IP 地址、路由表、监听与防火墙 |
+| 仅个别网页失效，SSH 仍可登录    | 检查对应容器状态、反向代理配置与服务日志    |
+| 日志在某时刻中断，随后自启      | 检查电源供电、主板硬件记录与前次内核日志    |
+| 日志留有 panic、OOM 或 I/O 报错 | 保存报错前后的完整日志上下文，定位故障组件  |
 
-配置归档可能包含凭据，可以在上传前加密并单独保管恢复密钥。媒体与照片原件是否纳入备份要明确写出，配置备份不包含原件。
-
-定期在隔离位置恢复应用，核对权限、数据库与关键数据。SHA256 有助于发现文件变化，数据库和业务的恢复仍要实际演练。
-
-## 运行几天后整机失联
-
-遇到 LAN、SSH 与网页一起无法访问时，先区分网络、服务、系统和供电故障。按下面的现象缩小范围，再查看对应日志。
-
-| 观察                         | 下一步                             |
-| ---------------------------- | ---------------------------------- |
-| 本地控制台可用，网络访问失败 | 检查地址、链路、路由、监听和防火墙 |
-| 单个网页失败，SSH 可用       | 检查对应服务、容器、反向代理与日志 |
-| 日志突然停止，随后重新启动   | 核对供电、重启原因、硬件和内核记录 |
-| 有 panic、OOM 或 I/O 报错    | 保存完整上下文，再定位相关组件     |
-
-`last -x` 的 `crash` 和磁盘的非正常关机计数都只是线索。没有日志可能是来不及落盘，`pstore` 为空时也要继续查；网卡型号或单条 ASPM 提示同样不能直接定因。
-
-下一轮排查一次改变一个变量，同时记录系统、内核与相关服务版本，保留对照条件。
-
-## 硬件 watchdog 与故障取证
-
-### 用硬件 watchdog 增加恢复机会
-
-硬件 watchdog 需要设备、驱动和固件支持。先查看本机是否存在相应设备，再参考 [systemd-system.conf(5)](https://manpages.debian.org/trixie/systemd/systemd-system.conf.5.en.html) 的 `RuntimeWatchdogSec` 说明设置超时，并检查实际生效值。
-
-watchdog 的作用是：在超时期间没有收到喂狗信号时，硬件尝试复位。网络单独失效但 systemd 仍正常运行时，可能继续喂狗；供电中断或部分硬件故障也不一定能靠它恢复。因此不把固定时间自动重启当成所有失联场景的保证。
-
-### 留心跳，异常时抓现场
-
-可以定期记录时间、运行时长、负载与关键服务状态，异常时保存网卡、路由、监听、Docker 和近期系统日志。采集命令需要总超时预算，并优先把关键内容落盘；FUSE 或磁盘异常时，读取目录本身也可能卡住。
-
-网关不响应 ping 可能只是 ICMP 策略；网关可达时，业务也可能已经异常。结合外部监控与本地记录判断。
-
-重启后先查看上一次启动：
+系统重启后，可通过以下命令提取上一次启动周期的内核与系统日志：
 
 ```bash
 journalctl --list-boots
@@ -481,36 +321,9 @@ last -x
 systemctl --failed --no-pager
 ```
 
-记录缺失时也要检查采集器自身、磁盘可写性和日志持久化。只有实际验证过恢复行为，才把 watchdog 计入恢复方案。
+若主板芯片组与驱动支持硬件看门狗，可参考 [systemd-system.conf(5)](https://manpages.debian.org/trixie/systemd/systemd-system.conf.5.en.html) 配置 `RuntimeWatchdogSec`，在系统彻底死机且停止喂狗时触发硬件复位。对于仅网络中断而内核仍在运行的场景，则可编写带超时保护的定时巡检脚本，在异常时自动抓取网卡、路由、Docker 状态落盘留证。
 
-## 脚本部署时踩过的坑
-
-从网页复制脚本可能引入开头空行、BOM 或 CRLF，导致 shebang 失效。`Exec format error` / `systemd 203/EXEC` 也可能来自解释器路径和权限问题，第一行只是排查起点。
-
-部署已有脚本前，按实际文件替换路径并检查：
-
-```bash
-head -n 3 /path/to/scripts/example.sh
-file /path/to/scripts/example.sh
-bash -n /path/to/scripts/example.sh
-systemd-analyze verify /etc/systemd/system/example.service
-```
-
-只修正异常的开头、编码或换行，保留脚本内部文本。`bash -n` 只检查语法；保存 unit 后还要重新加载 systemd、手动运行、检查退出状态与日志，再启用定时器。
-
-## 装完后的验收
-
-每完成一阶段，确认重启后仍能恢复：
-
-- SSH 和管理入口可达，网络地址符合预期。
-- 数据盘来自正确 UUID，共享读写正常。
-- 容器实际挂载、应用权限与配置一致。
-- 云盘挂载恢复后，依赖它的应用能读到真实内容。
-- 默认端口冲突已处理，各网络的访问范围符合预期。
-- 备份能上传、校验，并在隔离位置完成恢复。
-- 日志可以跨重启读取，监控和故障取证本身正常。
-
-安装示例只提供起点。后续每次变更记录修改内容与验证结果，遇到问题时就能知道上一次稳定状态是什么、应该从哪里恢复。
+全部配置就绪后，执行一次完整重启，逐项核验 SSH 登录、UUID 磁盘挂载、Samba 读写、容器服务互联以及日志跨重启留存，确认整套系统可稳定自愈。
 
 ## 参考资料
 

@@ -35,61 +35,52 @@ const navLabels: Record<string, string> = {
 // if breadcrumb is Home > Posts > [page] <etc>
 // replace Posts with localized "Posts (page number)"
 if (breadcrumbList[0] === "posts") {
+  const pageNum = Number(breadcrumbList[1] || 1);
   breadcrumbList.splice(
     0,
     2,
-    `${t.nav.posts} (${t.pagination.page.toLowerCase()} ${breadcrumbList[1] || 1})`
+    pageNum > 1 ? `${t.nav.posts}（第 ${pageNum} 页）` : t.nav.posts
   );
 }
 
 // if breadcrumb is Home > Tags > [tag] > [page] <etc>
 // replace [tag] > [page] with localized [tag] (page number)
 if (breadcrumbList[0] === "tags" && !isNaN(Number(breadcrumbList[2]))) {
+  const pageNum = Number(breadcrumbList[2]);
   breadcrumbList.splice(
     1,
     3,
-    `${decodeSegment(breadcrumbList[1])} ${
-      Number(breadcrumbList[2]) === 1
-        ? ""
-        : `(${t.pagination.page.toLowerCase()} ${breadcrumbList[2]})`
+    `${decodeSegment(breadcrumbList[1])}${
+      pageNum === 1 ? "" : `（第 ${pageNum} 页）`
     }`
   );
 }
 ---
 
-<nav class="app-layout mt-8 mb-1" aria-label="breadcrumb">
+<nav class="app-layout mt-8 mb-2 text-sm" aria-label="面包屑导航">
   <ul
-    class="flex flex-wrap items-center gap-x-1 font-light [&>li:not(:last-child)>a]:hover:opacity-100"
+    class="text-muted-foreground [&>li:not(:last-child)>a]:hover:text-accent flex flex-wrap items-center gap-x-1.5"
   >
-    <li class="flex items-center gap-x-1">
-      <a href={getRelativeLocaleUrl(locale, "")} class="opacity-80">
+    <li class="flex items-center gap-x-1.5">
+      <a href={getRelativeLocaleUrl(locale, "")}>
         {t.nav.home}
       </a>
-      <span aria-hidden="true" class="opacity-80">&raquo;</span>
+      <span aria-hidden="true">&raquo;</span>
     </li>
     {
       breadcrumbList.map((breadcrumb, index) =>
         index + 1 === breadcrumbList.length ? (
           <li>
-            <span
-              class:list={["capitalize opacity-75", { lowercase: index > 0 }]}
-              aria-current="page"
-            >
-              {/* make the last part lowercase in Home > Tags > some-tag */}
+            <span class="text-foreground/80" aria-current="page">
               {navLabels[breadcrumb] ?? decodeSegment(breadcrumb)}
             </span>
           </li>
         ) : (
-          <li class="flex items-center gap-x-1">
-            <a
-              href={getRelativeLocaleUrl(locale, breadcrumb)}
-              class="capitalize opacity-70"
-            >
+          <li class="flex items-center gap-x-1.5">
+            <a href={getRelativeLocaleUrl(locale, breadcrumb)}>
               {navLabels[breadcrumb] ?? decodeSegment(breadcrumb)}
             </a>
-            <span aria-hidden="true" class="opacity-70">
-              &raquo;
-            </span>
+            <span aria-hidden="true">&raquo;</span>
           </li>
         )
       )

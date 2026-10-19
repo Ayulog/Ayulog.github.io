@@ -9,6 +9,7 @@ type AdjacentPost = {
   id: string;
   title: string;
   filePath: string | undefined;
+  categoryLabel?: string;
 } | null;
 
 type Props = {
@@ -21,17 +22,26 @@ const locale = Astro.currentLocale ?? config.site.lang;
 const t = useTranslations(locale);
 ---
 
-<div data-pagefind-ignore class="my-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
+<nav
+  aria-label="上下篇导航"
+  data-pagefind-ignore
+  class="my-8 grid grid-cols-1 gap-4 sm:grid-cols-2"
+>
   {
     prevPost && (
       <a
         href={getPostUrl(prevPost.id, prevPost.filePath, locale)}
-        class="flex w-full gap-1 hover:opacity-75"
+        class="border-border/70 hover:border-accent/60 bg-muted/15 flex w-full items-start gap-2.5 rounded-lg border p-4 transition-colors"
       >
-        <IconArrowLeft class="inline-block flex-none rtl:rotate-180" />
-        <div>
-          <span>{t.post.previousPost}</span>
-          <div class="text-accent/85 text-sm">{prevPost.title}</div>
+        <IconArrowLeft class="text-muted-foreground mt-0.5 inline-block flex-none rtl:rotate-180" />
+        <div class="min-w-0">
+          <div class="text-muted-foreground text-xs">
+            {t.post.previousPost}
+            {prevPost.categoryLabel ? ` · ${prevPost.categoryLabel}` : ""}
+          </div>
+          <div class="text-accent mt-1 text-sm leading-6 font-medium">
+            {prevPost.title}
+          </div>
         </div>
       </a>
     )
@@ -40,14 +50,19 @@ const t = useTranslations(locale);
     nextPost && (
       <a
         href={getPostUrl(nextPost.id, nextPost.filePath, locale)}
-        class="flex w-full justify-end gap-1 text-end hover:opacity-75 sm:col-start-2"
+        class="border-border/70 hover:border-accent/60 bg-muted/15 flex w-full items-start justify-end gap-2.5 rounded-lg border p-4 text-end transition-colors sm:col-start-2"
       >
-        <div>
-          <span>{t.post.nextPost}</span>
-          <div class="text-accent/85 text-sm">{nextPost.title}</div>
+        <div class="min-w-0">
+          <div class="text-muted-foreground text-xs">
+            {nextPost.categoryLabel ? `${nextPost.categoryLabel} · ` : ""}
+            {t.post.nextPost}
+          </div>
+          <div class="text-accent mt-1 text-sm leading-6 font-medium">
+            {nextPost.title}
+          </div>
         </div>
-        <IconArrowRight class="inline-block flex-none rtl:rotate-180" />
+        <IconArrowRight class="text-muted-foreground mt-0.5 inline-block flex-none rtl:rotate-180" />
       </a>
     )
   }
-</div>
+</nav>

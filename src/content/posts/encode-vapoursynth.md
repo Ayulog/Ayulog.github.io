@@ -10,45 +10,30 @@ tags:
   - VapourSynth
 ---
 
-VapourSynth（下文简称 VS）负责读取、处理并输出视频帧。脚本描述如何导入片源、裁边、缩放或使用滤镜，编码器再把这些帧压成 H.264、HEVC 或 AV1，最后与音频、字幕和章节封装成成品。
+在脚本压制流程中，**VapourSynth（简称 VS）** 作为帧服务器负责解码读取片源，执行裁边、缩放、降噪、去色带等画面处理，再通过 `vspipe` 将未压缩的视频帧以 Y4M 流的形式通过管道送交 `x264`、`x265` 或 `SVT-AV1` 编码器，最后使用 MKVToolNix 与原片音轨、字幕、章节封装成 MKV。
 
-先走通最小流程，不预装一整套滤镜。示例面向 **Windows x64、逐行、恒定帧率、方形像素的 SDR YUV 片源**；裁边和缩放例子进一步限定为已确认的 BT.709、limited range 素材。HDR、Dolby Vision、隔行与 VFR 输入需要另外处理。
+本文面向 **Windows x64 环境**，基于 [VapourSynth R81](https://github.com/vapoursynth/vapoursynth/releases/tag/R81) 与 Python 3.12+ 的现代 `pip` 安装方式，以一份**逐行扫描、恒定帧率（CFR）、BT.709 SDR 的 4:2:0 片源**为例，从零走通环境搭建、最小脚本编写、裁边缩放与管道编码输出。若只需用图形工具快速转码，可先参考[一键压制篇](/posts/encode-one-click/)；相关软件与进阶教程汇总在[压制软件与资料清单](/posts/encode-software/)。
 
-公开文档核查于 **2026 年 10 月 10 日**。当日最新正式版为 [VapourSynth R81](https://github.com/vapoursynth/vapoursynth/releases/tag/R81)，官网安装页标题仍显示 R80。下文的接口按现行文档核对，尚未在实际环境中安装插件并完成编码测试。
+## 核心组件与职责分工
 
-只想先用图形界面转码，可以先看[一键压制篇](/posts/encode-one-click/)；工具与资料入口在[压制软件与资料清单](/posts/encode-software/)。
+一套最小可用的 VapourSynth 压制环境包含以下组件：
 
-## 工具之间怎样配合
+| 组件                   | 在工具链中的职责                                                        |
+| ---------------------- | ----------------------------------------------------------------------- |
+| Python（64 位 3.12+）  | 执行 `.vpy` 脚本，并通过 `pip` 管理 VS 本体与 Python 滤镜包             |
+| VapourSynth            | 提供视频处理核心 API、内置基础滤镜（`std`、`resize`）与插件接口         |
+| L-SMASH-Works 等源滤镜 | 解码 MKV / MP4 / M2TS 视频流，建立精确到帧的随机访问索引                |
+| VapourSynth Editor     | 编写 `.vpy` 脚本、逐帧预览画面、测量滤镜速度与辅助裁边                  |
+| `vspipe`               | 运行 `.vpy` 脚本并将处理后的视频帧以 Y4M 格式输出到标准输出管道         |
+| 编码器与 MKVToolNix    | `x264` / `x265` / `SVT-AV1` 负责压缩视频流，MKVToolNix 负责最终混流封装 |
 
-```text
-片源 → 源滤镜解码 → VapourSynth 处理 → vspipe 输出视频帧
-                                             ↓
-                                      x264 / x265 / AV1 编码器
-                                             ↓
-原有音轨、字幕、章节 ──────────────────────→ 封装 → 检查成品
-```
+## 阶段一：安装 VapourSynth 与预览编辑器
 
-| 组件                   | 分工                                 |
-| ---------------------- | ------------------------------------ |
-| Python                 | 执行 `.vpy` 脚本，管理 Python 包     |
-| VapourSynth            | 提供视频处理核心、内置滤镜与插件接口 |
-| L-SMASH-Works 等源滤镜 | 解码视频，建立可按帧访问的输入       |
-| Python 脚本库          | 组合滤镜；可能还依赖多个原生插件     |
-| VapourSynth Editor     | 编辑、检查和预览脚本，本身不是编码器 |
-| vspipe                 | 执行脚本并把视频输出到文件或管道     |
-| 编码器与封装器         | 分别完成视频压缩和轨道组合           |
+### 1. 用 pip 部署虚拟环境与源滤镜
 
-MOV、AVI、MKV 只是容器名，无损与否要看编码参数和位深。蓝光和 WEB 视频通常已经压缩过；重新编码是为了新的尺寸、体积或播放目标，会产生新的取舍。保留优质源，避免没有用途的反复有损转码。
+自 VapourSynth R74 起，[官方安装文档](https://www.vapoursynth.com/doc/installation.html)已改为直接通过 Python 的 `pip` 安装，无需再像早期教程那样手动拼凑便携包目录。
 
-## 安装当前环境
-
-### R74 之后的安装方式
-
-[官方安装说明](https://www.vapoursynth.com/doc/installation.html)已推荐使用 Python 包。R74 起 Windows 的打包与查找方式有变化，旧教程里“把 Python、VS Portable、编辑器文件全部复制到同一目录”的步骤不再作为默认方案。
-
-安装受支持的 **64 位 Python 3.12 或更高版本**。以下用已经安装 Python 3.12 和 Python Launcher 的机器举例；如果选择其他受支持版本，相应修改 `py -3.12`，并核对所需插件是否提供对应平台的包。
-
-在自己的工作目录中打开 PowerShell：
+先在系统中安装 **64 位 Python 3.12 或更高版本**（以及 Microsoft Visual C++ Redistributable 运行库）。随后在压制工作目录中打开 PowerShell，创建虚拟环境并安装 `vapoursynth` 与 [L-SMASH-Works 源滤镜](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works)（`vapoursynth-lsmas`）：
 
 ```powershell
 py -3.12 -m venv .venv
@@ -57,13 +42,11 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\vspipe.exe --version
 ```
 
-这里创建一个独立环境，并安装 VS 与 L-SMASH-Works 源滤镜。Windows 下按 `config` 提示检查 Microsoft Visual C++ 运行库。所有命令直接指定虚拟环境中的程序，无需先运行激活脚本。
+上面所有命令直接调用 `.venv\Scripts\` 下的可执行文件，无需事先激活虚拟环境。
 
-`vapoursynth-lsmas` 的对应上游是 [HomeOfAviSynthPlusEvolution/L-SMASH-Works](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works)。本次确认它有 Windows x64 包；其他插件能否用 pip 安装，要看各自项目说明。下载脚本时也要区分实际 `.py` 源码与 GitHub 网页，不能把保存的 HTML 改名为 `.py` 使用。
+### 2. 用测试脚本验证 VS 核心与 vspipe
 
-### 先验证 VS 本体
-
-保存为 `blank.vpy`：
+在工作目录新建 `blank.vpy`，生成一段 24 帧、1280×720、10-bit 的测试空白片段：
 
 ```python
 import vapoursynth as vs
@@ -78,59 +61,51 @@ vs.core.std.BlankClip(
 ).set_output()
 ```
 
-运行：
+在 PowerShell 中运行以下命令验证脚本解析与帧输出：
 
 ```powershell
 .\.venv\Scripts\vspipe.exe --info blank.vpy -
 .\.venv\Scripts\vspipe.exe --container y4m blank.vpy blank.y4m
 ```
 
-第一条应报告 1280×720、24 帧、24 fps 等信息；第二条实际请求这些帧并写入测试文件。`--info` 能成功只说明脚本可以建立，不能代替逐帧输出测试。
+第一条命令会打印 `1280×720`、`24 frames`、`24 fps`、`YUV420P10` 等流信息；第二条命令实际渲染出 24 帧并写入 `blank.y4m`（测试通过后即可删除 `blank.y4m`）。
 
-## 编辑器与插件目录
+### 3. 配置 VapourSynth Editor 预览器
 
-### VapourSynth Editor
+从 [YomikoR/VapourSynth-Editor Releases](https://github.com/YomikoR/VapourSynth-Editor/releases?page=1)（核对版本 `R19-mod-6.10`）下载已适配 R74+ 库查找机制的编辑器。
 
-收藏入口是 [YomikoR/VapourSynth-Editor Releases](https://github.com/YomikoR/VapourSynth-Editor/releases?page=1)。本次最新版本为 **R19-mod-6.10（2026-04-17）**，已适配 R74 之后的库查找方式。
-
-命令行能运行、编辑器却找不到 VS 时，先确认两者使用同一个 Python 环境。可查看当前库的位置：
+如果命令行下 `vspipe` 正常，但打开编辑器时提示找不到 VSScript 库，可在 PowerShell 中运行以下命令查看当前虚拟环境的库路径与插件目录：
 
 ```powershell
 .\.venv\Scripts\python.exe -c "import vapoursynth as vs; print(vs.get_vsscript()); print(vs.get_plugin_dir())"
 ```
 
-对照编辑器设置中的 VSScript 库路径。官方还提供 `vapoursynth register-install`，供外部程序通过 `VSSCRIPT_PATH` 找到所选安装；这是需要时再做的注册步骤，切换多个环境时尤其要知道注册的是哪一个。旧程序的兼容注册另见官方安装文档。
+然后将打印出的路径填入编辑器设置，或运行 `.\.venv\Scripts\vapoursynth.exe register-install` 注册当前环境。
 
-### 编辑器里常用的几个功能
+编辑器中的常用快捷键如下（基于[默认快捷键定义](https://github.com/YomikoR/VapourSynth-Editor/blob/R19-mod-6.10/common-src/settings/settings_manager.cpp)）：
 
-下面按 R19-mod-6.10 的[默认菜单和快捷键](https://github.com/YomikoR/VapourSynth-Editor/blob/R19-mod-6.10/common-src/settings/settings_manager.cpp)整理。自行改过快捷键时，以菜单显示为准。
+| 菜单项             | 快捷键 | 功能说明                                            |
+| ------------------ | ------ | --------------------------------------------------- |
+| Preview            | `F5`   | 打开画面预览窗口，拖动时间轴逐帧检查滤镜效果与裁边  |
+| Check script       | `F6`   | 检查脚本语法与输出节点属性（不实际渲染全片）        |
+| Benchmark          | `F7`   | 测试指定帧范围内的纯脚本解码与滤镜处理速度（fps）   |
+| Encode video       | `F8`   | 调用外部编码器压制当前脚本                          |
+| Enqueue encode job | `F9`   | 将当前脚本加入内置编码队列（按 `F10` 打开队列面板） |
 
-| Script 菜单        | 默认快捷键 | 用途                                     |
-| ------------------ | ---------- | ---------------------------------------- |
-| Preview            | F5         | 预览脚本输出，在不同位置检查画面         |
-| Check script       | F6         | 求值脚本并读取输出信息，不遍历全片       |
-| Benchmark          | F7         | 在所选帧范围请求视频帧，统计脚本处理速度 |
-| Encode video       | F8         | 配置外部编码器，执行单个编码任务         |
-| Enqueue encode job | F9         | 将脚本加入编码队列                       |
-| Jobs               | F10        | 查看和管理任务队列                       |
+### 4. 查找与按需安装滤镜插件
 
-Benchmark 可以指定首末帧，也可以选择 Whole video。它测的是解码与脚本处理速度，不包含 x264／x265 的编码开销；既不能把短范围测试当成全片检查，也不能拿这个速度直接估计最终编码耗时。
+日常无需预先塞入几十个滤镜包，遇到具体画质问题时再按需安装：
 
-在 **Edit → Snippets and templates** 中，可以把最小脚本保存为 New script template，把核对过的函数用法保存为 Code snippets。模板里先放导入、源读取与输出，不预设固定裁边、降噪或改帧率参数。
+- **[VapourSynth Database（VSDB）](https://vsdb.top/)**：检索滤镜插件的命名空间（Namespace）、功能简介与上游 GitHub 仓库地址。
+- **[vsrepo](https://github.com/vapoursynth/vsrepo)**：命令行插件管理工具，支持 `vsrepo update` 与 `vsrepo install <包名>`（已发布 PyPI wheel 的新版插件及脚本库如 `havsfunc`、`vstools` 等，也可按各自仓库说明直接用 `pip install` 安装；早期 `VSRepoGUI` 仓库已归档停更，不再使用）。
 
-使用 F8 编码时，需要分别设置 Header、Executable 和 Arguments。选择 Y4M 头时，编码器也要按 Y4M 输入读取；给输出文件写上 `.mkv` 后缀不会让只能输出裸流的编码器自动完成 MKV 封装。下面先用命令行走通同样的输入输出关系，再保存成编辑器预设。
+需要注意：像 `havsfunc` 这类 Python 脚本函数库内部往往还会调用多个底层 C/C++ 原生滤镜 DLL；导入某个函数报错时，根据报错提示补齐对应的底层插件即可。
 
-### 插件怎么找
+## 阶段二：编写最小脚本、裁边与缩放
 
-- [VapourSynth Database](https://vsdb.top/)：查插件用途、namespace、依赖与上游项目。它是第三方目录，条目版本可能落后上游。
-- [vsrepo](https://github.com/vapoursynth/vsrepo)：插件管理工具。当前可先在同一环境安装 `vsrepo`，再使用 `vsrepo update` 与 `vsrepo install lsmas` 等命令；已迁移到 pip 的包优先按项目新说明安装。
-- [VSRepoGUI Releases](https://github.com/theChaosCoder/VSRepoGUI/releases)：保留旧教程入口。**仓库已归档，项目明确标为 Obsolete**，不能再把它作为新环境的默认安装器。
+### 1. 用 LWLibavSource 导入源视频
 
-R74 之后插件布局有变化，旧目录不会全部照常自动加载。原生 DLL、Python 包和 Python 脚本库也不是同一种依赖：`import havsfunc` 成功只说明 Python 这一层可用，它调用的底层滤镜仍可能缺失。先装当前脚本真正用到的组件，缺什么再按报错和文档补齐。
-
-## 写一个最小脚本
-
-把已确认的测试视频命名为 `source.mkv`，与脚本放在当前工作目录，保存下面内容为 `encode.vpy`：
+将待处理的测试片源命名为 `source.mkv` 放入工作目录，新建 `encode.vpy`：
 
 ```python
 import vapoursynth as vs
@@ -140,30 +115,33 @@ src = core.lsmas.LWLibavSource(source="source.mkv")
 src.set_output()
 ```
 
-这时只有导入与输出，不必预先导入 `awsmfunc`、`havsfunc` 或一组暂时不用的包。当前写法使用 `vs.core`；旧文中的 `vs.get_core()` 和旧 API 插件要逐项更新。
+运行 `.\.venv\Scripts\vspipe.exe --info encode.vpy -` 或在编辑器中按 `F5` 预览。首次打开 `source.mkv` 时，L-SMASH-Works 会扫描全片并在同目录下生成 `source.mkv.lwi` 索引文件（耗时取决于文件大小与磁盘速度；若源目录只读，可通过 `cachefile` 或 `cachedir` 参数将索引指向可写目录，详见[插件说明](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works/blob/master/VapourSynth/README.md)）。
 
-```powershell
-.\.venv\Scripts\vspipe.exe --info encode.vpy -
-```
+### 2. 检查画幅黑边并执行偶数裁切（Crop）
 
-首次导入时 L-SMASH-Works 通常需要建立 `.lwi` 索引，耗时受片长、格式和存储速度影响。源目录不可写时，可按[插件文档](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works/blob/master/VapourSynth/README.md)设置 `cachefile` 或 `cachedir`。
+许多宽高比为 `2.39:1` 的宽银幕电影封装在 `1920×1080` 标准帧内，上下带有黑边。在编辑器中按 `F5` 打开预览窗：
 
-在编辑器中预览多个位置，确认帧率、帧数、尺寸和画面。`24000/1001` 与 `24` 不相同，不能用 `AssumeFPS` 单纯把标签改成看起来顺眼的数值；改变播放速度而不处理音轨会造成不同步。VFR 源的时间戳无法从这里报告的平均帧率恢复。
+1. 拖动时间轴抽查片头、中段、亮场与特效镜头，确认全片画幅固定（注意避开带有 IMAX 变画幅切换的影片，且不要把夜间纯黑场景误当成黑边）。
+2. 开启预览窗右下角的 **Crop（裁切辅助面板）**，模式选 `Relative`，放大画面边缘微调 `Top`、`Bottom`、`Left`、`Right`，直到正好切净黑边。
+3. **满足色度采样偶数对齐**：对于 `YUV 4:2:0` 视频，1 个色度像素对应 `2×2` 个亮度像素，因此上下左右的裁切像素数必须为**偶数**。如果发现边缘有 1 像素的暗线或脏边，可再多裁 1 像素凑成偶数（或后续用 `FillBorders` / 边缘修复滤镜处理）。
+4. 预览面板的数值仅作测量辅助，确认无误后需写入脚本的 `core.std.Crop` 中。
 
-## 裁边与缩放
+### 3. 等比缩放与转换 10-bit 输出（Resize）
 
-### 先确认全片画幅
+假设 `source.mkv` 为 `1920×1080` 方形像素（SAR `1:1`），经测量上下各有 `138` 像素黑边，裁切后有效画面为 `1920×804`。若目标是将宽度等比缩放到 `1280`，则对应高度为 $804 \times (1280 / 1920) = 536$，同时将输出位深转换为 10-bit（`vs.YUV420P10`）以减少后续编码色带。
 
-黑边需要在多个镜头检查，包括片头、字幕、暗场和画幅切换处。不要把黑暗画面当成黑边，也不要按一帧检测结果裁完整部电影。4:2:0 视频的裁切还受到色度采样对齐限制，通常需要偶数裁切量与输出尺寸；单像素脏边要多裁一行或换用其他处理，代价是损失一点画面。
-
-在编辑器中用 F5 预览尚未裁边的输出，找一个边界清楚的镜头，启用裁切面板并选择 Relative。放大边缘，逐项调整 left、right、top、bottom，再换几个位置确认数值。预览面板调整的是显示区域，**单纯调整面板不会改变正式脚本的输出**；需要把确定的数值写进 `core.std.Crop`，重新运行并检查输出尺寸。
-
-下面是一个**明确给定条件的例子**：输入为 1920×1080、方形像素，确认全片上下各有 138 像素黑边。裁后有效画面为 1920×804，等比缩至宽 1280 时，高度是 536。
-
-将最小脚本最后一行替换为：
+完整的 `encode.vpy` 如下：
 
 ```python
+import vapoursynth as vs
+
+core = vs.core
+src = core.lsmas.LWLibavSource(source="source.mkv")
+
+# 裁去上下各 138 像素黑边，得到 1920x804
 cropped = core.std.Crop(src, top=138, bottom=138)
+
+# 等比缩放到 1280x536，并转为 10-bit YUV420P10（使用误差扩散抖动）
 resized = core.resize.Bicubic(
     cropped,
     width=1280,
@@ -174,79 +152,79 @@ resized = core.resize.Bicubic(
 resized.set_output()
 ```
 
-**138 和 1280×536 仅属于这个算例。** 没有相应黑边就不运行裁切；不需要降分辨率就不填写缩放尺寸。非方形像素源还要考虑 SAR，直接按存储宽高相除会算错显示比例。`std.CropRel` 是旧文常见别名，当前文档使用 `std.Crop`。
+编写要点：
 
-### 位深与颜色信息
+- 若不需要缩放分辨率、仅需将 8-bit 裁边画面转为 10-bit 送交 x265，可去掉 `width` 与 `height` 参数（或直接使用 `core.resize.Point(cropped, format=vs.YUV420P10)`）。
+- 上例建立在源片与输出均为 **BT.709、Limited Range SDR** 的前提下，无需做色彩矩阵转换。若源片为 RGB、标清 BT.601 或 HDR BT.2020，需在 `resize` 中显式指定 `matrix_in_s`、`matrix_s` 等色彩转换参数（详见 [Resize 官方文档](https://www.vapoursynth.com/doc/functions/video/resize.html)与[认识 HDR](/posts/understanding-hdr/)）。
 
-`format=vs.YUV420P10` 把输出设为 10-bit 4:2:0，源里没有的细节不会因此出现，SDR 也不会变成 HDR。`error_diffusion` 是这里使用的 CPU resize 抖动方式；不要把这段直接移到不支持该方式的 GPU 路径。
+<a id="把画面交给编码器"></a>
 
-示例没有进行 RGB/YUV 矩阵转换或 HDR 色调映射。真实输入若是 RGB、BT.2020、PQ、HLG，或缺少可信的颜色信息，需要根据实际信号填写转换参数；单纯把标签写成 BT.709 不会完成转换。相关说明见 [Resize 文档](https://www.vapoursynth.com/doc/functions/video/resize.html)和本站[认识 HDR](/posts/understanding-hdr/)。
+## 阶段三：把画面交给编码器
 
-修复脏线、降噪、去色带、抗锯齿等操作，等确认源有对应问题后再加。保留处理前后的对比，避免“滤镜越多越好”。
+### 1. 截取片段试压（Trim 或 vspipe 帧范围）
 
-## 把画面交给编码器
+正式压制全片前，先截取一小段（例如 240 帧，约 10 秒）测试管道与编码参数。有两种常用截取方式：
 
-### 先输出短样片
+- **方式一：直接在 `vspipe` 命令行指定 `--start` 与 `--end`**（无需改动脚本，两边均包含边界帧，如 `0` 到 `239` 共 240 帧）：
+  ```powershell
+  .\.venv\Scripts\vspipe.exe --container y4m --start 0 --end 239 encode.vpy sample.y4m
+  ```
+- **方式二：在脚本末尾用 `std.Trim` 或 Python 切片截取特定镜头**：
+  ```python
+  # 截取第 10000 到 10239 帧（共 240 帧；等价于 Python 切片 resized[10000:10240]）
+  sample = core.std.Trim(resized, first=10000, last=10239)
+  sample.set_output()
+  ```
+  _注意：使用 `Trim` 试压完毕后，正式压制全片前务必删掉 `Trim` 行，恢复 `resized.set_output()`。_
 
-假设输入至少有 240 帧，下面输出前 240 帧；`--end` 包含指定的末帧：
+### 2. 通过管道连接 x265 / x264 编码
 
-```powershell
-.\.venv\Scripts\vspipe.exe --container y4m --start 0 --end 239 encode.vpy sample.y4m
-```
+由于未压缩的 `.y4m` 文件体积巨大，实际压制时使用匿名管道 `|` 将 `vspipe` 的标准输出（`-`）直接喂给 `x265` 的标准输入（`-`）。
 
-Y4M 是带尺寸、帧率等头信息的视频帧流，此处不含音频、字幕和章节。未压缩帧体积很大，只用短样片检查通路；正式流程通常用管道衔接。
+_环境提示：Windows 自带的旧版 PowerShell 5.1 会将管道 `|` 中的数据当作文本对象解析并破坏二进制视频流。因此运行管道命令时，请使用 **`cmd.exe`（命令提示符）**、保存为 `.bat` / `.cmd` 批处理脚本，或使用 **PowerShell 7（`pwsh`）**。_
 
-另选运动、渐变、暗部和细节片段分别试压。把零散样片拼起来可以帮助估计画质，但这条时间线不再与整片音轨一一对应，不能直接拿来做完整成品。
-
-也可以保存一个单独的测试脚本，在输出前截取连续片段。例如已经确认片长足够时，将前面裁边缩放示例的 `resized.set_output()` 替换为：
-
-```python
-sample = core.std.Trim(resized, first=10000, last=10239)
-sample.set_output()
-```
-
-这会取第 10000 至 10239 帧，共 240 帧。这里的末帧包含在内；等价的 Python 切片则写成 `resized[10000:10240]`，终点不包含在内，详见 [Trim 文档](https://www.vapoursynth.com/doc/functions/video/trim.html)。使用这种测试脚本时，vspipe 输出范围是截取后的新帧序号。正式编码前恢复完整输出节点，别把样片当成整片。
-
-### 用管道连接 x265
-
-准备能输出 10-bit 的 x265 构建，先运行 `x265 --version` 与 `x265 --help`。原版 x265 输入主要是 raw YUV／Y4M；部分修改版支持直接读 `.vpy`，不能把扩展功能当成所有版本都有。
-
-下面放在 **cmd.exe** 中执行，或保存为 `.cmd` 文件。使用同一工作目录，确保 `x265` 可从命令行找到；这样也避开 Windows PowerShell 5.1 对原生程序二进制管道的处理问题。
+在 `cmd.exe` 中执行以下试压命令（请确保 `x265.exe` 已放入环境变量 `PATH` 或当前目录）：
 
 ```bat
 ".venv\Scripts\vspipe.exe" --container y4m --start 0 --end 239 encode.vpy - | x265 --y4m --preset slow --crf 20 --output-depth 10 --colorprim bt709 --transfer bt709 --colormatrix bt709 --range limited --output sample-x265.hevc -
 ```
 
-这条命令沿用前面的 **BT.709、limited range、SDR** 前提，颜色参数是在标记实际信号。不能给其他片源无条件复制这些值；Y4M 也不会自动传递全部帧属性或 HDR 元数据。
+参数说明：
 
-`slow` 与 CRF 20 只是试压起点，不是推荐给所有素材的质量标准。确认几组样片后，正式输出时去掉 `--start`、`--end`，并换成独立的完整输出文件名。完整日志、编码帧数和退出状态都要检查；文件出现，任务未必结束。
+- `--container y4m` 与 `--y4m`：`vspipe` 在帧流头部附带分辨率、帧率与像素格式信息，`x265` 据此自动识别输入规格。
+- `--colorprim bt709 --transfer bt709 --colormatrix bt709 --range limited`：由于 Y4M 管道头不传递色彩空间元数据，需在编码器参数中显式写入源片的色彩标记，防止成品播放时因标记缺失被播放器误判。
+- `--output sample-x265.hevc -`：末尾的 `-` 表示从标准输入读取视频流，并将编码后的 HEVC 裸流保存为 `sample-x265.hevc`。
 
-需要换 x264 时，对照它的 `--demuxer y4m` 与输出位深选项；需要 AV1 时，对照具体编码器的 stdin／Y4M 输入说明。三种编码器的 CRF 和 preset 不能互相照搬，见[编码篇](/posts/encode-codecs/)。
+若改用 `x264` 压制 8-bit H.264，可将脚本输出改为 `vs.YUV420P8`，并使用：
 
-## 对比、封装与检查
+```bat
+".venv\Scripts\vspipe.exe" --container y4m --start 0 --end 239 encode.vpy - | x264 --demuxer y4m --preset slow --crf 18 --colorprim bt709 --transfer bt709 --colormatrix bt709 --range tv --output sample-x264.mkv -
+```
 
-测试分成两个问题：**前处理是否合理**，以及**编码损失是否可接受**。先对比源与处理结果，再把处理后的帧与编码后解码的帧比较；裁切、缩放已经改变画面，这部分差异要单独归因。
+（编码器参数对比与 SVT-AV1 用法详见[编码篇：x264、x265 与 AV1](/posts/encode-codecs/)与[压制练习篇](/posts/encode-learning/)。）
 
-对齐相同时间点和帧，保持显示尺寸、色彩转换与显示设备一致。除静态截图外，还要播放运动片段，观察拖影、闪烁和时域噪声；截图使用 PNG 等无损格式。
+## 阶段四：全片输出、MKV 封装与验收
 
-最后用 MKVToolNix 将新视频与选定的音轨、字幕、章节封装。若未改时间线，可以沿用相同来源的对应轨道；删帧、拼接或变速后必须重新核对同步。裸 `.hevc` 缺少完整容器时间戳信息，导入时核对其帧率是否正确，尤其分清 `24000/1001` 和 `24`。
+1. **执行全片编码**：试压样片确认画面、比例与色彩无误后，去掉 `vspipe` 命令中的 `--start 0 --end 239`，将输出文件名改为 `full-encode.hevc` 跑完全片，并在结束后核对终端打印的总编码帧数是否与源片一致。
+2. **使用 MKVToolNix 混流封装**：打开 MKVToolNix GUI，先拖入原始 `source.mkv`（取消勾选原视频轨，保留所需的原片音轨、字幕、字体附件与章节），再拖入新压好的 `full-encode.hevc` 裸流。
+   - **核对裸流帧率**：导入 `.hevc` 裸流时，在轨道属性的“默认时长 / 帧率”栏确认其识别出的帧率与源片完全一致（例如 `24000/1001p`），防止因裸流缺少容器时间戳导致音画逐渐失步。
+   - 具体的轨道语言标记、默认轨设置见[蓝光原盘 Remux 教程](/posts/blu-ray-remux/#第四步用-mkvtoolnix-整理成品)、[字幕处理教程](/posts/subtitle-workflow/)与[章节教程](/posts/media-chapters/)。
+3. **回看验收与记录归档**：用播放器打开最终封装的 MKV，抽查片头、中段与片尾的音画字幕同步，并用 MediaInfo 核对分辨率、帧率与色彩标记。最后将本次使用的 `encode.vpy` 脚本与 `.cmd` 编码命令保存在工程目录中以便日后复查。
 
-具体轨道设置见[蓝光原盘 Remux 的成品整理](/posts/blu-ray-remux/#第四步用-mkvtoolnix-整理成品)、[字幕的处理](/posts/subtitle-workflow/)和[章节的处理](/posts/media-chapters/)。这里视频已经重编码，最终文件不再属于视频 REMUX。
+## 常见报错排查速查
 
-保存脚本、编码命令、程序与插件版本，记录最终尺寸、帧数、耗时和输出体积。成品抽查开头、中段、结尾的音画同步、字幕及章节，并在目标设备上播放。
+| 报错或异常现象                           | 排查方向与解决办法                                                                       |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `No module named 'vapoursynth'`          | 检查当前调用的 `python.exe` 是否为安装了 VS 的 `.venv` 虚拟环境                          |
+| `No attribute with the name lsmas`       | 检查 `vapoursynth-lsmas` 是否安装在当前虚拟环境中，且均为 64 位                          |
+| 插件 DLL 加载失败（Error 126）           | 安装最新 Visual C++ 运行库，检查滤镜是否缺少依赖的外部 DLL（如 FFTW）                    |
+| 命令行 `vspipe` 正常但编辑器报错         | 在 VapourSynth Editor 设置中核对 `VSScript` 路径是否指向 `.venv`                         |
+| `Resize error: Matrix must be specified` | 源帧缺少色彩属性，或在做 RGB ↔ YUV 转换时未在 `resize` 中指定 `matrix_in_s` / `matrix_s` |
+| PowerShell 下管道编码立刻中断报错        | 改用 `cmd.exe`、`.bat` 批处理或 PowerShell 7（`pwsh`）运行二进制管道                     |
+| 封装后成片只有几十秒或音画失步           | 检查脚本中是否忘删测试用的 `std.Trim`，以及导入裸流时是否正确填写了 `24000/1001p` 帧率   |
 
-## 常见问题与进阶入口
+## 参考资料
 
-| 现象                          | 先检查什么                                                 |
-| ----------------------------- | ---------------------------------------------------------- |
-| `No module named vapoursynth` | 运行脚本的 Python 是否是安装 VS 的那个环境                 |
-| 找不到 `lsmas`                | 源滤镜是否装入同一环境，架构与 API 是否匹配                |
-| DLL 加载失败                  | Visual C++ 运行库、插件依赖与版本；不要用随机 DLL 覆盖     |
-| 脚本能导入，某一帧才报错      | 对应镜头、滤镜输入格式与边界条件，继续请求实际帧定位       |
-| 编辑器失败而 vspipe 正常      | 编辑器选择的 VSScript 路径、Python 环境与自身版本          |
-| 色彩转换提示缺少 matrix       | 确认源的实际矩阵、传递特性与范围，按文档补齐转换条件       |
-| 试压正常，成品不同步          | 是否保留抽帧／截取语句，是否改变帧率，裸流导入帧率是否正确 |
-
-官方入口：[安装](https://www.vapoursynth.com/doc/installation.html)、[入门](https://www.vapoursynth.com/doc/gettingstarted.html)、[输出与 vspipe](https://www.vapoursynth.com/doc/output.html)、[裁切](https://www.vapoursynth.com/doc/functions/video/crop_cropabs.html)、[缩放与格式转换](https://www.vapoursynth.com/doc/functions/video/resize.html)。
-
-后续按画面问题查 [VCB-Studio 教程](https://guides.vcb-s.com/)、[FXXS](https://fxxs-encoder.github.io/)、[Encode Mystery](https://guide.geeking.moe/)与[压制清单](/posts/encode-software/#编码器与滤镜进阶)里的进阶资料。旧 AVS 流程可继续查 [AviSynth Wiki](http://avisynth.nl/index.php/Main_Page) 与 [AvsPmod](https://github.com/gispos/AvsPmod)，但 `.avs` 和 `.vpy` 的语法、插件接口不能混用。
+- VapourSynth 官方文档：[安装指南](https://www.vapoursynth.com/doc/installation.html)、[快速入门](https://www.vapoursynth.com/doc/gettingstarted.html)、[vspipe 输出说明](https://www.vapoursynth.com/doc/output.html)、[Crop 裁切](https://www.vapoursynth.com/doc/functions/video/crop_cropabs.html)、[Resize 缩放与格式转换](https://www.vapoursynth.com/doc/functions/video/resize.html)、[Trim 截取](https://www.vapoursynth.com/doc/functions/video/trim.html)。
+- 工具与插件仓库：[VapourSynth Releases（R81）](https://github.com/vapoursynth/vapoursynth/releases/tag/R81)、[YomikoR/VapourSynth-Editor](https://github.com/YomikoR/VapourSynth-Editor/releases)、[L-SMASH-Works](https://github.com/HomeOfAviSynthPlusEvolution/L-SMASH-Works)、[vsrepo](https://github.com/vapoursynth/vsrepo)、[VSDB 插件目录](https://vsdb.top/)。
+- 进阶滤镜与片源处理教程：[VCB-Studio 公开教程](https://guides.vcb-s.com/)、[FXXS 压制教程](https://fxxs-encoder.github.io/)、[Encode Mystery](https://guide.geeking.moe/)，以及[压制软件与资料清单](/posts/encode-software/#编码器与滤镜进阶)。

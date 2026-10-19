@@ -11,166 +11,123 @@ tags:
   - Docker
 ---
 
-NAS 上装什么，取决于它要承担的角色：系统与容器、网络入口、媒体库与下载、网盘与照片。先按这四组挑，具体软件条目逐个附了部署文章或项目入口。
+这份清单将家用 NAS 常用软件按“底层系统与容器管理、网络与远程入口、媒体库与自动化下载、云盘与个人资料库”四类整理，每项附对应的部署笔记与上游仓库入口。
 
-做种相关的工具收在 [PT 工具清单](/posts/pt-software/)，路由与代理在 [软路由系统与插件清单](/posts/soft-router-software/)；Windows 上的容器环境另见 [WSL 与 Docker](/posts/windows-containers/)。
+专项工具分流在对应清单中：做种与刷流工具见 [PT 工具清单](/posts/pt-software/)，旁路由与代理固件见 [软路由系统与插件清单](/posts/soft-router-software/)，Windows 下的容器环境见 [WSL 与 Docker](/posts/windows-containers/)。
 
 ## 流程概览
 
-| 要完成的事         | 阅读顺序                                                                 | 对应文章                                                                        |
-| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| 从 Debian 建立 NAS | 系统与 SSH → 磁盘和共享 → 逐个部署应用 → 重启、备份与恢复验证            | [DebNAS 安装与验收](/posts/debnas-installation-notes/)                          |
-| 管理和更新容器     | 确认原部署入口 → 记录版本与挂载 → 备份 → 更新并验证 → 再清理旧镜像       | [Docker 应用维护](/posts/docker-management/)                                    |
-| 从外部访问家中服务 | 确认公网与组网条件 → 选择访问方案 → 配置入口 → 从实际客户端验证          | [NAS 远程访问](/posts/nas-remote-access/)                                       |
-| 自动整理和播放影视 | 下载或云端文件 → 命名与目录映射 → 整理或 STRM 同步 → 媒体库 → 客户端播放 | [DebNAS 自动观影流程](/posts/debnas-media-workflow/)                            |
-| 将网盘接入本地应用 | 选择文件路径或 WebDAV → 挂载与权限 → 核对缓存、上传和挂载恢复            | [CloudDrive2](/posts/cloud-storage-local-mount/) · [AList](/posts/alist-guide/) |
-| 整理照片与观看直播 | 照片按原件、配置和上传目录分别规划；直播按列表、节目单、播放器接入       | [MT Photos](/posts/mt-photos-guide/) · [IPTV 教程入口](#直播命名与刮削)         |
+按实际需求从对应主线切入，同类工具挑顺手的一套即可：
 
-容器管理面板、媒体库和网络入口都有可替代方案，不需要把软件表逐项装完。
+| 目标任务            | 实施路径                                                                  | 对应文章                                                                        |
+| ------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 从零搭建 Debian NAS | 安装系统与 SSH → 挂载数据盘与共享 → 部署容器 → 重启与备份恢复验证         | [DebNAS 安装与验收](/posts/debnas-installation-notes/)                          |
+| 维护和升级容器      | 固定维护入口 → 记录镜像版本与挂载 → 备份配置与数据 → 升级验证并清理旧镜像 | [Docker 应用维护](/posts/docker-management/)                                    |
+| 从外网访问家中服务  | 确认公网 IP 或组网条件 → 选择 DDNS / 反代或虚拟组网 → 客户端实测连通性    | [NAS 远程访问](/posts/nas-remote-access/)                                       |
+| 自动化追剧与观影    | 本地下载或网盘转存 → 识别整理或生成 STRM → Emby 入库 → 客户端播放         | [DebNAS 自动观影流程](/posts/debnas-media-workflow/)                            |
+| 将网盘接入本地应用  | 按应用需求选择本地路径挂载或 WebDAV → 配置缓存并验证重连恢复              | [CloudDrive2](/posts/cloud-storage-local-mount/) · [AList](/posts/alist-guide/) |
+| 管理家庭照片与直播  | 照片按原件、配置与上传目录分离挂载；直播按源列表、EPG 与播放器接入        | [MT Photos](/posts/mt-photos-guide/) · [IPTV 教程入口](#直播命名与刮削)         |
 
 ## 系统与容器基础
 
-- **[DebNAS](https://kekylin.github.io/debnas-docs/)**：基于 Debian 的 NAS 初始化与管理脚本。[安装、磁盘共享与备份笔记](/posts/debnas-installation-notes/)。
-- **[Docker Engine](https://docs.docker.com/engine/install/debian/)**：运行容器；Debian 按官方文档配置软件源和安装，品牌 NAS 使用厂商提供的容器应用或安装方式。
-- **[Docker Compose](https://docs.docker.com/compose/)**：用文件保存服务配置。现成模板放在 [Compose 存档](/setup/compose/)。
-- 拉不下镜像时，先看 [镜像加速、代理与离线导入](/posts/docker-registry-mirrors/)。
+- **[DebNAS](https://kekylin.github.io/debnas-docs/)**：基于 Debian 12 / 13 的 HomeNAS 初始化与管理脚本，配套说明见 [安装、磁盘共享与备份笔记](/posts/debnas-installation-notes/)。
+- **[Docker Engine](https://docs.docker.com/engine/install/debian/)**：Linux 容器运行环境；自建 Debian 按官方文档配置软件源安装，品牌 NAS 直接使用系统自带的容器套件。
+- **[Docker Compose](https://docs.docker.com/compose/)**：使用 YAML 文件声明式管理容器配置，常用模板汇总于 [Compose 存档](/setup/compose/)。
+- **镜像拉取配置**：遇到拉取超时或限流时，参考 [镜像加速、代理与离线导入](/posts/docker-registry-mirrors/) 配置加速器或 daemon 代理。
 
 ## 容器管理与定时任务
 
-| 软件                                                                       | 用途                                           | 教程                                                   |
-| -------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------ |
-| [Dockge](https://github.com/louislam/dockge)                               | 编辑和管理 Compose 项目                        | [部署与栈管理](/posts/dockge-guide/)                   |
-| [Portainer CE](https://www.portainer.io/)                                  | 管理容器、镜像、网络和卷                       | [部署与环境连接](/posts/portainer-guide/)              |
-| [Watchtower](https://github.com/containrrr/watchtower)                     | 监控镜像变化，可按标签更新；项目维护状态需留意 | [标签、通知与更新范围](/posts/watchtower-guide/)       |
-| [DockerCopilot](https://github.com/onlyLTY/dockerCopilot)                  | 容器更新、清理和配置备份                       | [部署与使用](/posts/dockercopilot/)                    |
-| [1Panel](https://1panel.cn/)                                               | Linux 服务与应用管理面板                       | [直接安装与 Docker 部署](/posts/1panel-guide/)         |
-| [QD / QD-Today](https://qd-today.github.io/qd/zh_CN/guide/deployment.html) | 用 HTTP 模板执行签到等定时任务                 | [qiandao 部署与任务配置](/posts/qiandao-docker-guide/) |
+| 软件                                                                       | 适用场景与特点                                                      | 教程入口                                               |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
+| [Dockge](https://github.com/louislam/dockge)                               | 网页端编辑与部署 `compose.yaml`，配置文件直接保存在宿主机目录       | [部署与栈管理](/posts/dockge-guide/)                   |
+| [Portainer CE](https://www.portainer.io/)                                  | 集中查看与管理容器、镜像、网络、卷及多套 Docker 环境                | [部署与环境连接](/posts/portainer-guide/)              |
+| [Watchtower](https://github.com/containrrr/watchtower)                     | 按标签监控镜像更新并通知或重建容器（官方仓库已归档于 `v1.7.1`）     | [标签、通知与更新范围](/posts/watchtower-guide/)       |
+| [DockerCopilot](https://github.com/onlyLTY/dockerCopilot)                  | 在网页端手动勾选更新容器、清理旧镜像并导出容器创建参数备份          | [部署与使用](/posts/dockercopilot/)                    |
+| [1Panel](https://1panel.cn/)                                               | 集成应用商店、容器、网站与系统监控的 Linux 面板（含原生与容器部署） | [直接安装与 Docker 部署](/posts/1panel-guide/)         |
+| [QD / QD-Today](https://qd-today.github.io/qd/zh_CN/guide/deployment.html) | 基于 HAR / HTTP 模板定时执行网页签到任务                            | [qiandao 部署与任务配置](/posts/qiandao-docker-guide/) |
 
-### 管理工具怎么选
-
-| 工具          | 适合怎样使用                                            | 需要记住的边界                                        |
-| ------------- | ------------------------------------------------------- | ----------------------------------------------------- |
-| Dockge        | 已经按 Compose 整理应用，希望在网页里编辑、部署和看日志 | 主要管理 Compose 项目，不以完整 Docker 资源管理为目标 |
-| Portainer CE  | 集中查看 Docker 资源，或管理多个环境                    | 能看到已有容器，不等于已接管其原始部署文件            |
-| Watchtower    | 维护已有部署，了解标签筛选和更新流程                    | 官方项目已停止维护；需先确认 API 兼容性               |
-| DockerCopilot | 通过简单界面手动更新、清理镜像和备份容器设置            | 设置备份不包含业务数据，也不代替原 Compose            |
-| 1Panel        | 通过应用模板和表单部署服务，同时管理服务器              | 官方原生安装与社区容器镜像是两种部署方式              |
-
-这些工具的职责有重叠，不必全装。同一个服务由哪个面板、哪份 Compose 管理，记清楚即可。迁移、备份与一次更新的操作见 [Docker 应用维护](/posts/docker-management/)。
-
-QD 官方文档用 `qdtoday/qd`，现有教程保留的是 [`a76yyyy/qiandao`](https://hub.docker.com/r/a76yyyy/qiandao/tags)。两者的标签、参数和数据迁移方式不同。
+- **面板分工**：同一应用建议固定由一个入口维护（如 Dockge 或原 Compose 目录），日常迁移、备份与手动更新流程见 [Docker 应用维护](/posts/docker-management/)。
+- **签到镜像说明**：QD 上游当前使用 `qdtoday/qd` 镜像，站内现有笔记基于旧分支 [`a76yyyy/qiandao`](https://hub.docker.com/r/a76yyyy/qiandao/tags) 整理，两者环境变量与数据目录结构有所区别。
 
 ## 网络访问与浏览器配套
 
-| 软件                                          | 用途                           | 教程                                                                 |
-| --------------------------------------------- | ------------------------------ | -------------------------------------------------------------------- |
-| [Lucky](https://github.com/gdy666/lucky)      | DDNS、反向代理、证书与转发     | [Lucky 设置](/posts/lucky-guide/) · [项目网站](https://lucky666.cn/) |
-| [ddns-go](https://github.com/jeessy2/ddns-go) | 跟踪公网地址并更新 DNS         | [ddns-go 设置](/posts/ddns-go-guide/)                                |
-| [Mihomo](https://github.com/MetaCubeX/mihomo) | 代理核心，配合 MetaCubeXD 管理 | [容器部署与配置](/posts/mihomo-docker/)                              |
-| [v2rayA](https://v2raya.org/)                 | 通过 Web 界面管理代理          | [部署与端口设置](/posts/v2raya-guide/)                               |
+| 软件                                          | 用途说明                                 | 教程与项目入口                                                       |
+| --------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| [Lucky](https://github.com/gdy666/lucky)      | 集成 DDNS、反向代理、证书与转发          | [Lucky 设置](/posts/lucky-guide/) · [项目网站](https://lucky666.cn/) |
+| [ddns-go](https://github.com/jeessy2/ddns-go) | 自动检测公网 IPv4 / IPv6 并更新域名解析  | [ddns-go 设置](/posts/ddns-go-guide/)                                |
+| [Mihomo](https://github.com/MetaCubeX/mihomo) | 规则代理核心，常配合 MetaCubeXD 面板使用 | [容器部署与配置](/posts/mihomo-docker/)                              |
+| [v2rayA](https://v2raya.org/)                 | 带 Web 图形界面的 Linux 代理客户端       | [部署与端口设置](/posts/v2raya-guide/)                               |
 
-公网 IPv4、IPv6、组网 VPN 和 VPS 转发各有适用条件，选方案看 [NAS 远程连接](/posts/nas-remote-access/)。
-
-## 通用下载
-
-- **[Aria2](https://aria2.github.io/)**：HTTP、FTP 等下载任务和 RPC 服务。
-- **[AriaNg](https://github.com/mayswind/AriaNg)**：Aria2 的网页前端，本身不执行下载。
-
-两者的部署、RPC 连接和下载设置合在 [Aria2 与 AriaNg 教程](/posts/aria2-guide/)里。
-
-qBittorrent 和 Transmission 的做种设置归在 [PT 工具清单](/posts/pt-software/) 下。
-
-## 路由器与家庭网络
-
-路由系统、插件、设备和配网教程都在 [软路由系统与插件清单](/posts/soft-router-software/)。
+家庭宽带公网 IPv4、IPv6 直连、Tailscale / ZeroTier 虚拟组网以及云服务器中转的选型对比，详见 [NAS 远程连接](/posts/nas-remote-access/)；主路由与旁路由配置见 [软路由系统与插件清单](/posts/soft-router-software/)。
 
 ## 媒体库与自动化整理
 
-### 媒体库
+### 媒体库与播放终端
 
-| 软件                              | 记录                                       | 选择时关注                                      |
-| --------------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| [Emby](https://emby.media/)       | [部署、媒体库与客户端](/posts/emby-guide/) | 本地账号、Premiere 硬解，以及常用的客户端       |
-| [Jellyfin](https://jellyfin.org/) | [部署与硬件转码](/posts/jellyfin-guide/)   | 官方服务端与客户端免费，核显权限需要配置        |
-| [Plex](https://www.plex.tv/)      | [部署与远程播放](/posts/plex-guide/)       | 账号认领、客户端体验和 Plex Pass / 远程播放要求 |
+| 软件                              | 部署教程                                   | 特点与关注项                                      |
+| --------------------------------- | ------------------------------------------ | ------------------------------------------------- |
+| [Emby](https://emby.media/)       | [部署、媒体库与客户端](/posts/emby-guide/) | 支持本地账号管理，客户端生态丰富，硬解需 Premiere |
+| [Jellyfin](https://jellyfin.org/) | [部署与硬件转码](/posts/jellyfin-guide/)   | 开源免费，原生支持核显硬件转码                    |
+| [Plex](https://www.plex.tv/)      | [部署与远程播放](/posts/plex-guide/)       | 海报刮削与跨平台客户端成熟，依赖在线账号认领      |
 
-三者可以读取同一份媒体文件，配置数据库各自独立。比较时用同一部电影和一集剧，检查字幕、音轨、拖动与续播；整库分析会占用资源，错开执行。
-
-[StrmAssistant（Emby 神医助手）](https://github.com/sjtuross/StrmAssistant) 是 Emby 的增强插件，提供媒体信息提取、外挂字幕扫描、中文搜索和视频预览图等功能。[Emby 教程](/posts/emby-guide/#神医助手按需安装)中记录了接入位置；另存 [PRO 版安装与授权](https://github.com/sjtuross/StrmAssistant/wiki/PRO%E7%89%88%E5%AE%89%E8%A3%85%E5%92%8C%E6%8E%88%E6%9D%83)。社区版和 PRO 的维护状态、功能与适配版本按项目说明确认。
+- **共享媒体目录**：三套服务端可只读挂载同一份影视目录进行对比测试，各自配置数据库独立存放。
+- **Emby 增强与客户端**：[StrmAssistant（Emby 神医助手）](https://github.com/sjtuross/StrmAssistant) 提供媒体信息提取、外挂字幕扫描与中文搜索优化，接入说明见 [Emby 教程](/posts/emby-guide/#神医助手按需安装) 及 [PRO 版安装与授权](https://github.com/sjtuross/StrmAssistant/wiki/PRO%E7%89%88%E5%AE%89%E8%A3%85%E5%92%8C%E6%8E%88%E6%9D%83)。手机、桌面与 Apple TV 端播放器选型见 [Emby 客户端设置](/posts/emby-guide/#各平台客户端怎么选)。
 
 ### 订阅、整理与云端同步
 
-| 软件                                                     | 记录                                                       | 用途                                          |
-| -------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------- |
-| [MoviePilot](https://github.com/jxxghp/MoviePilot)       | [V3 部署与配置](/posts/moviepilot-guide/)                  | 搜索、订阅、下载联动、整理和媒体库刷新        |
-| [Cloud Media Sync](https://github.com/imaliang/cms-docs) | [115 同步与 Emby 302](/posts/cloud-media-sync/)            | 同步云端目录、生成 STRM，并按配置提供播放入口 |
-| [CookieCloud](https://github.com/easychen/CookieCloud)   | [浏览器与 MoviePilot 同步](/posts/cookiecloud-moviepilot/) | 加密上传浏览器 Cookie，供受支持的应用读取     |
+| 软件                                                     | 部署教程                                                   | 用途说明                                          |
+| -------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------- |
+| [MoviePilot](https://github.com/jxxghp/MoviePilot)       | [V3 部署与配置](/posts/moviepilot-guide/)                  | 站点搜索、订阅下发、文件硬链接/复制整理与入库刷新 |
+| [Cloud Media Sync](https://github.com/imaliang/cms-docs) | [115 同步与 Emby 302](/posts/cloud-media-sync/)            | 云盘媒体整理、本地 STRM 生成及 Emby 302 直链反代  |
+| [CookieCloud](https://github.com/easychen/CookieCloud)   | [浏览器与 MoviePilot 同步](/posts/cookiecloud-moviepilot/) | 端到端加密同步浏览器站点 Cookie                   |
 
-MoviePilot 当前部署入口是 [V3 镜像](https://hub.docker.com/r/jxxghp/moviepilot-v3)，原收藏的[旧版镜像](https://hub.docker.com/r/jxxghp/moviepilot)保留作对照。[Windows-MoviePilot](https://github.com/developer-wlj/Windows-MoviePilot/releases) 是第三方 Windows 服务管理面板，不是官方 V3 Docker 镜像的 Windows 版本。
+- **版本与补充入口**：MoviePilot 当前主流版本为 [V3 镜像](https://hub.docker.com/r/jxxghp/moviepilot-v3)（旧版归档于 [`jxxghp/moviepilot`](https://hub.docker.com/r/jxxghp/moviepilot)），另有第三方维护的 [Windows-MoviePilot](https://github.com/developer-wlj/Windows-MoviePilot/releases) 供 Windows 环境参考。CMS 除官方仓库外可参考 [CMSHelp 社区文档](https://github.com/guyue2005/CMSHelp)。
+- **联动方案**：本地硬盘、115 网盘与 MoviePilot + CMS 的组合方式见 [DebNAS 自动观影流程](/posts/debnas-media-workflow/)。
 
-CMS 上面的项目链接是文档仓库，另有 [CMSHelp 补充帮助](https://github.com/guyue2005/CMSHelp)。部署时按当前安装页核对授权条件和参数。
+### 通用下载与 PT 工具
 
-[DebNAS 自动观影流程](/posts/debnas-media-workflow/)记录本地文件、网盘原文件与 STRM 的存放位置，以及命名、同步和入库的分工。
-
-## 下载器与 PT 配套工具
-
-[PT 工具清单](/posts/pt-software/)集中收录 qBittorrent、Transmission、TrguiNG、IYUUPlus、PTtool、Vertex 与浏览器扩展。
+- **[Aria2](https://aria2.github.io/) + [AriaNg](https://github.com/mayswind/AriaNg)**：用于常规 HTTP / FTP / BT 下载任务，RPC 对接与 Web 前端部署合集见 [Aria2 与 AriaNg 教程](/posts/aria2-guide/)。
+- **PT 下载与辅种**：qBittorrent、Transmission、TrguiNG、IYUUPlus 等工具集中在 [PT 工具清单](/posts/pt-software/)；另有追剧刷流工具 [VERTEX](https://hub.docker.com/r/lswl/vertex) 及硬链接整理脚本 [PTtool](https://github.com/appotry/PTtool)。
 
 ## 云盘、照片与音乐
 
 ### 网盘挂载与文件管理
 
-| 软件                                                     | 记录                                                      | 用途                                                               |
-| -------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------ |
-| [CloudDrive2](https://www.clouddrive2.com/)              | [挂载、目录共享与缓存](/posts/cloud-storage-local-mount/) | 把远端文件显示成 NAS 目录或 Windows 盘符                           |
-| [AList](https://alistgo.com/)                            | [部署、WebDAV 与路径权限](/posts/alist-guide/)            | 聚合多种存储，提供文件列表和 WebDAV                                |
-| [CloudSaver](https://github.com/jiangrui1994/CloudSaver) | 项目文档                                                  | 网盘资源搜索与转存；仓库公开源码停留在较早版本，新版以项目镜像为准 |
+| 软件                                                     | 教程或文档                                                | 用途说明                                                                                                |
+| -------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [CloudDrive2](https://www.clouddrive2.com/)              | [挂载、目录共享与缓存](/posts/cloud-storage-local-mount/) | 将网盘挂载为 NAS 本地目录或 Windows 盘符（含 [第三方安装脚本](https://github.com/sublaim/clouddrive2)） |
+| [AList](https://alistgo.com/)                            | [部署、WebDAV 与路径权限](/posts/alist-guide/)            | 聚合多网盘存储，对外提供网页文件浏览与 WebDAV 接口                                                      |
+| [CloudSaver](https://github.com/jiangrui1994/CloudSaver) | 项目文档                                                  | 网盘资源搜索与一键转存工具                                                                              |
 
-原收藏的 [CloudDrive2 第三方安装脚本](https://github.com/sublaim/clouddrive2)也留在这里。它是社区安装方案，和官方核心服务、fnOS 套件、Docker 镜像分开核对。
+支持 WebDAV 协议的播放器可直接连接 AList；需要读取本地文件路径的容器（如 MoviePilot 挂载整理）则搭配 CloudDrive2 使用。
 
-支持 WebDAV 的播放器可以直接连 AList，只认文件路径的应用再接 CloudDrive2。挂载目录里出现文件名，文件本体可能仍在远端；写入结束要检查远端上传是否完成。
+### 照片、音乐与有声书
 
-### 照片、音乐和有声书
-
-| 软件                                                                       | 记录或文档                                  | 用途                                         |
-| -------------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------- |
-| [MT Photos](https://mtmt.tech/)                                            | [部署与照片库设置](/posts/mt-photos-guide/) | NAS 照片整理、浏览与客户端访问               |
-| [Music Tag Web V2](https://xiers-organization.gitbook.io/music-tag-web-v2) | 项目文档                                    | 音乐标签、元数据刮削和播放，适合整理文件信息 |
-| [Audiobookshelf](https://audiobookshelf.org/)                              | 项目文档                                    | 自建有声书与播客库                           |
-
-配置和原始文件分开备份。照片整理、音乐标签写入会修改文件，自动任务先限制在测试目录。
+| 软件                                                                       | 教程或文档                                  | 用途说明                                   |
+| -------------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------ |
+| [MT Photos](https://mtmt.tech/)                                            | [部署与照片库设置](/posts/mt-photos-guide/) | 家庭照片备份、人脸与时间线整理、手机端同步 |
+| [Music Tag Web V2](https://xiers-organization.gitbook.io/music-tag-web-v2) | 项目文档                                    | 音乐文件标签编辑、歌词封面刮削与在线播放   |
+| [Audiobookshelf](https://audiobookshelf.org/)                              | 项目文档                                    | 自建有声书与播客媒体服务器                 |
 
 ## 直播、命名与刮削
 
-- [IPTV：Allinone 与频道整理](/posts/iptv-guide/)：记录 M3U、EPG、播放器与服务端的关系。Allinone 当前完整授权参数尚未确认，文章中保留了部署前提。
-- [IPTVindex：直播源、播放器与节目单](/posts/iptv-index/)：从 [IPTVindex](https://iptvindex.com/) 导航找到直播列表，导入 VLC 或电视播放器，再配置 EPG。
-- [影视资源命名](/posts/media-resource-naming/)：读懂发布名，整理电影、剧集、字幕与多版本入库名称。
-- [TMDB 代理](/posts/vercel-tmdb-proxy/)：Vercel 部署、API 与图片检查，以及媒体软件的地址设置。
+- **[IPTV：Allinone 与频道整理](/posts/iptv-guide/)**：介绍 M3U 播放列表、EPG 电子节目单与直播源聚合服务的对接方式。
+- **[IPTVindex：直播源、播放器与节目单](/posts/iptv-index/)**：通过 [IPTVindex](https://iptvindex.com/) 获取直播源与 EPG 地址，导入 VLC 或电视端播放器。
+- **[影视资源命名](/posts/media-resource-naming/)**：解析常见影视发布组命名规范，配置电影、剧集、多版本与外挂字幕的标准入库名称。
+- **[TMDB 代理](/posts/vercel-tmdb-proxy/)**：利用 Vercel 部署 TMDB API 与图片反代，解决媒体库刮削连接超时问题。
 
-## 播放器和下载配套
+## 服务器与参考站点
 
-手机、电视与桌面的 Emby 客户端入口放在 [Emby 客户端设置](/posts/emby-guide/#各平台客户端怎么选)。Jellyfin、Plex 教程中也有官方客户端目录。电视端尤其需要试一下遥控器操作、字幕和音轨切换。
+### 常用主机与模板仓库
 
-下载交给 qBittorrent、Transmission 等工具，配置见 [PT 工具清单](/posts/pt-software/)。原收藏的 [VERTEX](https://hub.docker.com/r/lswl/vertex) 用于 PT 场景的追剧、下载与任务管理；[PTtool](https://github.com/appotry/PTtool) 提供硬链接整理脚本与资料。硬链接要求同一文件系统，不能用来把本地文件“零空间上传”到网盘。
+- **[Hetzner](https://www.hetzner.com/)**：欧洲独立服务器、VPS 与存储块服务商。
+- **[HostLoc](https://hostloc.com/misc.php?mod=mobile)**：主机、网络线路与运维交流社区。
+- **[Dedicated-Seedbox](https://github.com/jerry048/Dedicated-Seedbox)**：Debian / Ubuntu 独立服务器 Seedbox 环境一键调优脚本，使用说明见 [PT 盒子](/posts/pt-seedbox-guide/)。
+- **[FrozenGEE/compose](https://github.com/FrozenGEE/compose)**：常用 NAS 容器的 Docker Compose 模板集合。
+- **[HD-Icons](https://github.com/xushier/HD-Icons)**：高清透明背景的 NAS 导航页应用图标库。
 
-## 服务器与常用网站
+### 博客与文档参考
 
-- **[Hetzner](https://www.hetzner.com/)**：独立服务器、云服务器与存储服务。
-- **[HostLoc](https://hostloc.com/misc.php?mod=mobile)**：服务器、主机商和线路讨论。
-- **[Dedicated-Seedbox](https://github.com/jerry048/Dedicated-Seedbox)**：Debian / Ubuntu 上的 Seedbox 部署脚本，使用笔记见 [PT 盒子](/posts/pt-seedbox-guide/)。
-- **[FrozenGEE/compose](https://github.com/FrozenGEE/compose)**：Compose 模板与 NAS 资料。
-- **[HD-Icons](https://github.com/xushier/HD-Icons)**：NAS 导航页与应用图标。
-
-## 教程与参考资料
-
-各教程保留对应原文。Compose 示例需要核对镜像维护者、版本与目录后再用。
-
-### 教程来源
-
-- [windowBR：在 Docker 中使用 Mihomo](https://windowbr.top/2024/11/02/mihomo-docker/)。
-- [kekylin：DebNAS 文档](https://kekylin.github.io/debnas-docs/)：Debian HomeNAS 的系统配置和配套服务。
-- [劲折腾的磕巴白菜](https://hi.keba.host/)：NAS、Emby、MoviePilot、网盘与 Compose 部署记录。
-
-## 之后想单独整理的内容
-
-CloudSaver、Music Tag Web V2、Audiobookshelf 等尚未写成文章的软件，先保留项目文档入口；有独立教程后，再从对应软件条目进入。
+- **[kekylin：DebNAS 文档](https://kekylin.github.io/debnas-docs/)**：Debian HomeNAS 系统初始化与配套组件指南。
+- **[windowBR：在 Docker 中使用 Mihomo](https://windowbr.top/2024/11/02/mihomo-docker/)**：容器化部署 Mihomo 的配置参考。
+- **[劲折腾的磕巴白菜](https://hi.keba.host/)**：绿联、极空间、飞牛等 NAS 的 Docker 容器与观影流程折腾笔记。

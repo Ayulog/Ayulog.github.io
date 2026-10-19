@@ -9,49 +9,43 @@ tags:
   - Docker
 ---
 
-入口：[Docker Hub 镜像 `lswl/vertex`](https://hub.docker.com/r/lswl/vertex)、[项目仓库](https://github.com/vertex-app/vertex)、[官方 Wiki](https://wiki.vertex-app.top/)。
+Vertex 用于集中连接 BT/PT 下载器，按 RSS 订阅与筛选规则自动添加种子，并根据预设条件管理刷流或删种任务。在完整工作流中，Vertex 负责种子筛选与任务生命周期管理，文件落盘后的硬链接整理与刮削入库则可交给 [MoviePilot](/posts/moviepilot-guide/) 或 PTtool（Vertex 官方也提供基于软链接的[追剧配置流程](https://wiki.vertex-app.top/pei-zhi-liu-cheng/zhui-ju-pei-zhi-liu-cheng)，使用时需与现有硬链接整理工具明确分工，避免重复操作同一批文件）。
 
-下载器、RSS 和整理工具都在跑之后，新资源该由谁判断、谁添加、任务之后归谁管，是紧接着要回答的问题。Vertex 做的是这一段：连接下载器，用 RSS 和筛选规则产生任务，再按规则管理后续状态。
+项目官方仓库与镜像说明已注明 **Vertex 目前处于仅修复问题、不再新增功能的状态**，选型与配置以现有功能范围为准。
 
-任务归 Vertex 管；文件落盘后的整理由 PTtool 负责，媒体识别、刮削和播放各有各的工具。
+## Docker 部署与下载器接入
 
-Vertex 官方也提供[追剧配置流程](https://wiki.vertex-app.top/pei-zhi-liu-cheng/zhui-ju-pei-zhi-liu-cheng)，包含选种、下载后建立软链接和媒体服务扫描。这里的软链接依赖原目标路径，与 PTtool 的硬链接机制不同；启用时先确认与现有整理工具的分工。
+### 部署与目录持久化
 
-## 接入时先控制自动化范围
+参照[官方安装说明](https://wiki.vertex-app.top/xin-shou-ru-men/an-zhuang-cao-zuo)，使用 `lswl/vertex:stable` 镜像部署，将容器内的 `/vertex` 目录映射到宿主机持久化保存配置与规则，默认 Web 端口为 `3000`。从容器内 `/vertex/data/password`（或首次启动日志）获取初始密码后，即可通过浏览器登录后台。
 
-建议先连接一个下载器，用一个 RSS 订阅和简单规则，确认任务能进入预期分类、保存到正确目录，再逐步增加条件。
+日常升级前先停止容器并备份 `/vertex` 挂载目录，拉取新镜像重建后再恢复自动化任务。
 
-自动添加和自动删除应分开配置。尤其开启删种规则前，要弄清楚它操作的是任务还是连同数据一起删除，以及是否会影响其他任务或媒体库。站点的最短做种时间、H&R 等要求，也需要纳入自己的保留策略。
+### 下载器兼容性与连接
 
-如果 Vertex 与其他工具共同连接同一个下载器，可以用分类、标签或规则划定各自管理的任务。避免多个工具同时决定同一批任务的移动、删除和整理。
+根据[官方下载器文档](https://wiki.vertex-app.top/zhu-yao-mo-kuai/xia-zai-qi)，Vertex 优先适配 [qBittorrent](/posts/qbittorrent-guide/)；[Transmission](/posts/transmission-guide/) 虽然可以接入查看与推送任务，但不支持 Vertex 的刷流与自动删种功能。
 
-## 维护状态：只做问题修复
+添加下载器时，填写 Vertex 容器能够访问的下载器 WebUI / RPC 地址（如 `http://NAS_IP:8080`）与账号密码；若与下载器共用同一个自定义 Docker 网络，也可填写容器服务名与内部端口。保存后先确认能正常读取下载器的状态与任务列表，再配置后续规则。
 
-截至核对时，官方 README 和镜像说明均写明：**Vertex 已处于不新增功能、仅做问题修复的状态。** 选型按现有功能判断，不把后续新增适配当作前提。
+## 配置 RSS 订阅与删种规则
 
-官方[安装说明](https://wiki.vertex-app.top/xin-shou-ru-men/an-zhuang-cao-zuo)使用 `lswl/vertex:stable`，持久化容器目录 `/vertex`，默认 HTTP 端口为 `3000`；部署前核对标签与架构，通知渠道和站点适配按当前文档确认。
+### 按分类隔离自动化范围
 
-## 下载器适配
+当 Vertex 与 MoviePilot、IYUUPlus 等多个工具共用同一个下载器时，建议通过下载器**分类（Category）**或标签划清各自管理的任务范围，避免多个工具同时移动或清理同一批种子。初次配置 RSS 规则时，可按以下顺序验证：
 
-[官方文档](https://wiki.vertex-app.top/zhu-yao-mo-kuai/xia-zai-qi)优先适配 qBittorrent。Transmission 可以接入，但不支持 Vertex 所说的刷流与自动删种。站点是否允许当前客户端版本，按站点规则确认。
+1. **建立专用分类**：在下载器中新建独立分类（如 `vertex-rss`）并指定对应的保存路径，不直接接管下载器内的全部存量任务。
+2. **设置筛选条件**：添加一条有效的站点 RSS 链接，配置体积范围、关键词或正则等过滤规则。
+3. **验证命中与落盘**：先查看规则命中记录，确认推送到下载器后的分类和保存路径准确无误，再保持自动添加开启。
 
-添加下载器时填写 Vertex 所在环境能够访问的 API 地址和凭据。Docker 中的 `localhost` 是 Vertex 自己；使用 NAS IP 和已发布端口，或在同一自定义网络中使用服务名和容器端口。连通后核对任务列表，再配置 RSS。
+### 谨慎启用自动删种
 
-## 一条 RSS 规则的检查顺序
+自动添加任务跑通、种子正常完成下载与做种后，再单独配置自动删种规则：
 
-1. 先连接一个下载器，建立独立分类，不接管现有全部任务。
-2. 添加一个有效 RSS 订阅，设置资源类型、体积和关键词等当前版本支持的筛选条件。
-3. 检查命中结果、任务分类和保存路径，再允许自动添加。
-4. 等任务下载并满足站点做种要求后，才单独评估自动删除规则。
-
-自动删除需确认操作的是任务还是连同数据。跨站辅种共用文件、媒体库的链接关系，以及站点 H&R 都不能由一个分享率数字代替。磁盘不足时先限制新增，不把空间阈值作为忽略保种要求的理由。
-
-## 部署与更新
-
-部署按[官方安装说明](https://wiki.vertex-app.top/xin-shou-ru-men/an-zhuang-cao-zuo)执行，使用该版本的完整参数。更新前备份 `/vertex` 对应目录和规则，确认版本变更后再恢复自动任务。
+- **核对站点保种要求**：删种条件需优先满足 PT 站点的最短做种时间、分享率或 H&R 考核要求，不能仅凭客户端本地分享率或磁盘剩余空间阈值直接删种；磁盘空间紧张时应优先暂停新增 RSS 任务。
+- **区分删任务与删文件**：开启删种前确认操作类型是“仅移除下载器任务”还是“同时删除本地数据”。若文件已通过 IYUUPlus 跨站辅种，或仅通过软链接提供给媒体库，删除底层数据文件会直接影响其他辅种任务或媒体播放。
 
 ## 参考资料
 
-- [Vertex 仓库](https://github.com/vertex-app/vertex)、[镜像](https://hub.docker.com/r/lswl/vertex)与[官方 Wiki](https://wiki.vertex-app.top/)。
-- [下载器设置](https://wiki.vertex-app.top/zhu-yao-mo-kuai/xia-zai-qi)。
+- [Vertex 项目仓库](https://github.com/vertex-app/vertex)、[Docker Hub 镜像 `lswl/vertex`](https://hub.docker.com/r/lswl/vertex)与[官方 Wiki](https://wiki.vertex-app.top/)。
+- [安装操作说明](https://wiki.vertex-app.top/xin-shou-ru-men/an-zhuang-cao-zuo)与[下载器设置](https://wiki.vertex-app.top/zhu-yao-mo-kuai/xia-zai-qi)。
 - [追剧配置流程](https://wiki.vertex-app.top/pei-zhi-liu-cheng/zhui-ju-pei-zhi-liu-cheng)。
