@@ -3,7 +3,7 @@ title: 游戏平台与工具清单
 description: 从游戏平台、Mod 管理到串流和安卓模拟器，按用途分组的软件清单。
 author: Ayulog
 pubDatetime: "2026-10-11T00:00:00+08:00"
-modDatetime: "2026-10-17T21:00:00+08:00"
+modDatetime: "2026-10-21T19:13:00+08:00"
 draft: false
 category: windows
 tags:
@@ -28,6 +28,7 @@ tags:
 - **[CurseForge](https://www.curseforge.com/)**：《Minecraft》模组与整合包、《魔兽世界》插件及《模拟人生 4》等游戏的主要模组平台，提供官方桌面管理客户端。
 - **[Steam 创意工坊（Workshop）](https://steamcommunity.com/workshop/)**：支持在 Steam 内一键订阅并自动同步更新游戏 Mod、地图与物品。
 - **[mayflyMods](https://github.com/aojiangfuyou1/mayflyMods/releases)**：开源的 Windows 桌面 Mod 管理器，支持本地 Mod 导入、安装卸载、多套配置切换、备份还原以及 Nexus Mods 在线浏览下载。
+- **[JuniGrid](https://github.com/MLD-yu/JuniGrid)**：专为《星露谷物语》设计的桌面 Mod 管理器与启动器，支持 Nexus Mods 授权登录、一键安装、依赖解析、任务中心管理与 SMAPI 日志查看。
 - **[小火星露谷管理器](https://smallfire.cn/tools/fsvm)**：专为《星露谷物语》设计的模组管理工具，支持模组批量安装更新、配置方案切换及常见 SMAPI 报错诊断。
 
 ## 单机修改器
